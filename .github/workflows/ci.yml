@@ -1,0 +1,37 @@
+name: host-ci
+
+# Build + unit-test the hardware-independent modules on every push and PR.
+# This is the host-side CI from EP.03 — it grows as testable modules are added.
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  host-build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: gcc --version
+
+      - name: Build and run host unit tests
+        run: make test
+
+  python-tools:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install host-tool deps
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f host_tools/requirements.txt ]; then pip install -r host_tools/requirements.txt; fi
+      - name: Run Python tests (if any)
+        run: |
+          pip install pytest
+          # No-op until host_tools/ has tests; -q so it passes cleanly when empty.
+          pytest host_tools -q || [ $? -eq 5 ]   # exit 5 = "no tests collected"

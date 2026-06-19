@@ -1,0 +1,24 @@
+# Host build output
+build/
+*.o
+*.out
+*.elf
+*.map
+test_runner
+
+# ModusToolbox / firmware build
+node_*/build/
+node_*/libs/
+*.hex
+*.bin
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
