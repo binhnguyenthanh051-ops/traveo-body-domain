@@ -20,11 +20,24 @@ read by humans (and quoted in blog posts) as much as it is run.
 - Both cores have an MPU. IPC uses hardware semaphores.
 - Toolchain: Infineon ModusToolbox for firmware. GCC for host-side tests.
 
+## System structure (read `docs/architecture/overview.md` for the full picture)
+
+- Two axes: **node** (A gateway, B actuator) × **image** (bootloader, app).
+- `shared/` modules are compiled into images with a **per-variant config** — prefer config
+  data over `#ifdef`. (ADR-0004)
+- The **application runs on FreeRTOS**. The `scheduler/` module is a **standalone deep-dive**,
+  NOT the app kernel and NOT linked into any image. (ADR-0005)
+- Node A has `bootloader/` (deliberately minimal — super-loop, small attack surface) and
+  `app/`. The FBL verifies the app image before a VTOR/MSP jump; a `.noinit` shared RAM
+  region carries the boot handshake across resets. (overview §3)
+- Security: **no hand-rolled crypto** — `shared/crypto` wraps vetted primitives (HW crypto /
+  M0+). Secure boot is ROM-root-of-trust + FBL-verifies-app. (ADR-0006)
+
 ## Architectural rules (enforce these in suggestions)
 
-1. Hardware-independent logic (`scheduler`, `eeprom_emu`, `common/messages`, `security`
-   logic) must NOT include vendor/ModusToolbox headers. It talks to hardware only through
-   interfaces in `common/hal/include`.
+1. Hardware-independent logic (`scheduler` core, `shared/eeprom_emu`, `shared/messages`,
+   `shared/secoc`, `shared/crypto` wrapper) must NOT include vendor/ModusToolbox headers.
+   It talks to hardware only through interfaces in `shared/hal/include`.
 2. Anything in those modules must compile and unit-test on the host with plain GCC.
 3. Target-only code (context-switch assembly, flash drivers, key storage) lives in the
    node apps or behind a HAL interface with a host "fake" implementation for tests.

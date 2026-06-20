@@ -7,9 +7,11 @@
 ## Goal
 
 Build a minimal **fixed-priority preemptive scheduler** that runs a handful of tasks on
-the **Cortex-M4** (Node A / gateway). This is the technical centrepiece of the portfolio,
-so the design and its tradeoffs matter as much as working code. The M0+ is out of scope
-here — it joins later (EP.11). One core, done well.
+the **Cortex-M4**, as a **standalone deep-dive** (ADR-0005) — it is NOT the product app
+kernel (the app runs on FreeRTOS) and is not linked into any image. It runs a representative
+task set on its own, anchors the EP.14 FreeRTOS comparison, and is the technical depth piece
+of the portfolio, so design and tradeoffs matter as much as working code. The M0+ is out of
+scope here. One core, done well.
 
 ## Hard constraints (non-negotiable)
 
@@ -71,7 +73,7 @@ yield, a blocking delay/sleep, fixed priorities.
    design and the decisions made.
 3. The public interface in `scheduler/include/` (header only, documented).
 4. A **failing Unity test** for the next-task selection + task-state logic. This also
-   drives migrating the host harness in `common/messages/tests/` to Unity
+   drives migrating the host harness in `shared/messages/tests/` to Unity
    (ThrowTheSwitch) — set that up as part of this.
 5. Then implement the core against the test + a host fake port; get `make test` and
    `make lint` green. The target-side PendSV/SysTick port can be stubbed/marked TODO
