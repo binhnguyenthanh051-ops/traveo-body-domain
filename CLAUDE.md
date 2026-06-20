@@ -29,6 +29,12 @@ read by humans (and quoted in blog posts) as much as it is run.
 3. Target-only code (context-switch assembly, flash drivers, key storage) lives in the
    node apps or behind a HAL interface with a host "fake" implementation for tests.
 4. Every non-trivial design choice gets a short ADR in `docs/architecture/decisions`.
+5. Target/production C is written to **MISRA C:2012** (see `docs/coding-standard.md`).
+   When generating C, apply MISRA: fixed-width types only, no implicit conversions, no
+   `<stdio.h>` in production code, explicit braces, no hidden side effects. If a clean
+   solution must break an advisory rule (e.g. 15.5 single-exit), do it deliberately and
+   note it as a deviation rather than contorting the code. Host test harnesses in `*/tests/`
+   are exempt and may use `printf`/macros.
 
 ## How I want to use you (Claude Code)
 
@@ -42,6 +48,6 @@ read by humans (and quoted in blog posts) as much as it is run.
 ## Conventions
 
 - C17 for host-testable modules; keep them freestanding-friendly (no libc assumptions
-  beyond what tests need).
+  beyond what tests need). Production C follows MISRA C:2012 (see `docs/coding-standard.md`).
 - Test naming: `test_<module>.c`, one runner per module, must return non-zero on failure.
 - Python: 3.11+, scripts under `host_tools/`, tests runnable with `pytest`.

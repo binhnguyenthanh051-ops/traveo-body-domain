@@ -11,11 +11,25 @@ MSG_INC := -Icommon/messages/include
 MSG_SRC := common/messages/src/body_msgs.c
 MSG_TEST:= common/messages/tests/test_body_msgs.c
 
-.PHONY: test clean
+.PHONY: test clean lint
 
 test: $(BUILD)/test_messages
 	@echo "== running host unit tests =="
 	@$(BUILD)/test_messages
+
+# Static analysis. Runs cppcheck over production C (not test harnesses).
+# With a licensed MISRA rule-texts file, enable the addon line below for MISRA C:2012.
+# cppcheck is installed in CI; locally, install it to run this target.
+LINT_SRC := common/messages/src common/messages/include \
+            common/hal/include scheduler/src scheduler/include \
+            eeprom_emu/src eeprom_emu/include security/src security/include
+lint:
+	@echo "== static analysis (cppcheck) =="
+	cppcheck --error-exitcode=1 --enable=warning,style,portability \
+	         --std=c17 --inline-suppr --quiet \
+	         -I common/messages/include -I common/hal/include \
+	         $(LINT_SRC)
+	@echo "(MISRA addon: add '--addon=misra.json' once the licensed rule-texts file is in place)"
 
 $(BUILD)/test_messages: $(MSG_SRC) $(MSG_TEST) | $(BUILD)
 	$(CC) $(CFLAGS) $(MSG_INC) $(MSG_SRC) $(MSG_TEST) -o $@

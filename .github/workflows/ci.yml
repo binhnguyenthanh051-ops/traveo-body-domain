@@ -19,6 +19,15 @@ jobs:
       - name: Build and run host unit tests
         run: make test
 
+  static-analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install cppcheck
+        run: sudo apt-get update && sudo apt-get install -y cppcheck
+      - name: Run static analysis (MISRA-oriented)
+        run: make lint
+
   python-tools:
     runs-on: ubuntu-latest
     steps:
