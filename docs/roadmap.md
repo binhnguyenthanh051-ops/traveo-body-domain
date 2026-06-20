@@ -104,7 +104,6 @@ Denser than the 10 hr/week version: ~26 chapters across the same 4 arcs / 12 mon
 ## 5. Working notes
 
 - Keep a `CLAUDE.md` per repo with: board/chip facts, architecture decisions log, conventions. Treat Claude Code session transcripts as raw material for chapters.
-- Write Vietnamese summaries alongside English posts where time allows — differentiates you from EN-only competition for VN-based hiring managers.
 - One GitHub repo for the flagship system (not one repo per chapter) — README shows the current architecture diagram, updated as it grows.
 - The repo is structured so hardware-independent logic lives in host-testable modules (scheduler core, eeprom_emu, message packing) with chip code behind interfaces — this is what the CI pipeline builds and tests.
 - Don't write a chapter until the thing in it actually works (or actually failed instructively). This roadmap is a backbone, not a fixed schedule — let real build problems reorder things.
