@@ -12,6 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive   # Unity test framework lives in vendor/unity
 
       - name: Show toolchain
         run: gcc --version
