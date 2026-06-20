@@ -1,5 +1,5 @@
 /* Host-side unit tests for body_msgs. Tiny hand-rolled assert harness — no
- * framework needed for a skeleton; swap in Unity/CMocka later if desired. */
+ * framework needed for a skeleton; migrating to Unity (ThrowTheSwitch) is an early task — see docs/workflow.md. */
 #include "body_msgs.h"
 #include <stdio.h>
 #include <string.h>

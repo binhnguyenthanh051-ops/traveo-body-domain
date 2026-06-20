@@ -49,5 +49,7 @@ read by humans (and quoted in blog posts) as much as it is run.
 
 - C17 for host-testable modules; keep them freestanding-friendly (no libc assumptions
   beyond what tests need). Production C follows MISRA C:2012 (see `docs/coding-standard.md`).
-- Test naming: `test_<module>.c`, one runner per module, must return non-zero on failure.
+- Host unit tests use **Unity** (ThrowTheSwitch, pure C). Test naming: `test_<module>.c`,
+  one runner per module, must return non-zero on failure. Test harnesses are exempt from
+  MISRA (see `docs/coding-standard.md`). See `docs/workflow.md` for the AI tool split.
 - Python: 3.11+, scripts under `host_tools/`, tests runnable with `pytest`.
