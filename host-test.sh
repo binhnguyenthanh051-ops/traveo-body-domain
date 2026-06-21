@@ -4,6 +4,7 @@
 #   bash host-test.sh              # build + run all tests
 #   bash host-test.sh messages     # messages tests only
 #   bash host-test.sh scheduler    # scheduler tests only
+#   bash host-test.sh boot         # boot (FBL) tests only
 #   bash host-test.sh clean        # remove build artifacts
 
 set -euo pipefail
@@ -47,16 +48,31 @@ run_scheduler() {
     "$BUILD/test_scheduler"
 }
 
+build_boot() {
+    $CC $CFLAGS $UNITY_INC -Ishared/boot/include \
+        $UNITY_SRC shared/boot/src/boot.c \
+        shared/boot/tests/test_boot.c shared/boot/tests/boot_port_fake.c \
+        -o "$BUILD/test_boot"
+}
+
+run_boot() {
+    build_boot
+    echo "== boot =="
+    "$BUILD/test_boot"
+}
+
 case "${1:-all}" in
     messages)   run_messages ;;
     scheduler)  run_scheduler ;;
+    boot)       run_boot ;;
     clean)      rm -rf "$BUILD" ;;
     all)
         run_messages
         run_scheduler
+        run_boot
         ;;
     *)
-        echo "Usage: $0 {all|messages|scheduler|clean}" >&2
+        echo "Usage: $0 {all|messages|scheduler|boot|clean}" >&2
         exit 1
         ;;
 esac
