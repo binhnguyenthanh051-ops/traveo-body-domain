@@ -62,10 +62,11 @@ uint32_t          fbl_port_app_region_len(void);
  * return FBL-touched peripherals toward reset state. Ordinary C; host no-op. */
 void              fbl_port_deinit_for_jump(void);
 
-/* Perform the context handover: set VTOR/MSP and branch to the app. Target is a
- * naked asm helper with nothing stack-dependent between MSP-set and the branch;
- * never returns. Host fake records the call. */
-void              fbl_port_jump_to_app(uint32_t msp, uint32_t reset);
+/* Perform the context handover from the app vector-table base: set VTOR, load
+ * the initial MSP and reset vector from it, and branch. Target is a naked asm
+ * helper with nothing stack-dependent between the MSP-set and the branch; never
+ * returns. Host fake records the call. */
+void              fbl_port_jump_to_app(uint32_t app_base);
 
 /* Enter programming mode (M1: minimal wait; M3: UDS services). */
 void              fbl_port_enter_programming_mode(void);

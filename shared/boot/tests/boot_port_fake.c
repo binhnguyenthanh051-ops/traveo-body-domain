@@ -22,9 +22,9 @@ static const uint8_t    *g_app_base;
 static uint32_t          g_app_len;
 static int               g_prime_called;
 static int               g_clear_cause_called;
+static int               g_deinit_called;
 static int               g_jump_called;
-static uint32_t          g_jump_msp;
-static uint32_t          g_jump_reset;
+static uint32_t          g_jump_app_base;
 static int               g_programming_called;
 static int               g_reset_called;
 
@@ -41,9 +41,9 @@ void fake_reset(void)
     g_app_len = 0U;
     g_prime_called = 0;
     g_clear_cause_called = 0;
+    g_deinit_called = 0;
     g_jump_called = 0;
-    g_jump_msp = 0U;
-    g_jump_reset = 0U;
+    g_jump_app_base = 0U;
     g_programming_called = 0;
     g_reset_called = 0;
 }
@@ -56,9 +56,9 @@ uint32_t          fake_get_backup(uint8_t i)              { return (i < FAKE_BAC
 void              fake_set_contact_at(uint32_t ms)        { g_contact_at_ms = ms; }
 void              fake_set_app(const uint8_t *b, uint32_t n) { g_app_base = b; g_app_len = n; }
 int               fake_prime_called(void)                 { return g_prime_called; }
+int               fake_deinit_called(void)                { return g_deinit_called; }
 int               fake_jump_called(void)                  { return g_jump_called; }
-uint32_t          fake_jump_msp(void)                     { return g_jump_msp; }
-uint32_t          fake_jump_reset(void)                   { return g_jump_reset; }
+uint32_t          fake_jump_app_base(void)                { return g_jump_app_base; }
 int               fake_programming_called(void)           { return g_programming_called; }
 
 /* ---- fbl_port implementation ---- */
@@ -85,14 +85,7 @@ bool fbl_port_tool_contact(void)
 const uint8_t *fbl_port_app_image_base(void)             { return g_app_base; }
 uint32_t       fbl_port_app_region_len(void)             { return g_app_len; }
 
-void fbl_port_deinit_for_jump(void)                      { /* host no-op */ }
-
-void fbl_port_jump_to_app(uint32_t msp, uint32_t reset)
-{
-    ++g_jump_called;
-    g_jump_msp = msp;
-    g_jump_reset = reset;
-}
-
+void fbl_port_deinit_for_jump(void)                      { ++g_deinit_called; }
+void fbl_port_jump_to_app(uint32_t app_base)             { ++g_jump_called; g_jump_app_base = app_base; }
 void fbl_port_enter_programming_mode(void)               { ++g_programming_called; }
 void fbl_port_system_reset(void)                         { ++g_reset_called; }
