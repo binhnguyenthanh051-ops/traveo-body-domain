@@ -1,24 +1,58 @@
-# Host build output
+# ── Secrets / crypto material — NEVER commit (this repo discusses secure boot) ──
+# If a real key is ever staged by accident, treat it as COMPROMISED, not just deleted.
+*.pem
+*.key
+*.der
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.crt
+*.cer
+id_rsa*
+secrets/
+keys/
+*.secret
+*_private*
+*.priv
+# signing artifacts / fuse data
+*.sig
+*.signed
+fuse*.txt
+otp*.bin
+.env
+.env.*
+
+# ── Host build output ──
 build/
 *.o
+*.a
 *.out
 *.elf
 *.map
 test_runner
 
-# ModusToolbox / firmware build
-node_*/build/
-node_*/libs/
+# ── ModusToolbox / firmware build ──
+node_*/**/build/
+node_*/**/libs/
+**/build/
+**/libs/
 *.hex
-*.bin
+# NOTE: *.bin is intentionally NOT globally ignored — it may collide with OTP/key blobs
+#       above, but firmware .bin lives under build/ which is already ignored. If you must
+#       keep a firmware .bin, add a narrow allow-rule rather than un-ignoring globally.
 
-# Python
+# ── Python (host_tools) ──
 __pycache__/
 *.pyc
 .venv/
+venv/
 .pytest_cache/
+*.egg-info/
 
-# Editor / OS
+# ── Editor / OS ──
 .vscode/
 .idea/
+*.swp
 .DS_Store
+Thumbs.db
