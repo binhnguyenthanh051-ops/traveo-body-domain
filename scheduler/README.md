@@ -14,7 +14,7 @@ target-only behind a `shared/hal` port interface, with a host fake for tests.
 - `tests/`   — host unit tests (Unity) + host fake port (`sched_port_fake.c`)
 
 Design: ADR-0009 (reviewed in `docs/review/ADR-0009-review.md`).
-See `docs/briefs/EP06-07-scheduler-brief.md`.
+See `docs/briefs/S1-S2-scheduler-brief.md`.
 
 **Status (EP.06–07):** core implemented and host-tested green — static task
 creation, fixed-priority preemptive selection (priority bitmap + `__builtin_ctz`),
