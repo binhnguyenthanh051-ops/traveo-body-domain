@@ -2,20 +2,34 @@
 # Firmware itself is built with ModusToolbox (see node READMEs), not this Makefile.
 
 CC      ?= gcc
-CFLAGS  ?= -std=c17 -Wall -Wextra -Werror -O1 -g
+CFLAGS  ?= -std=c17 -Wall -Wextra -Werror -O1 -g -pipe
 BUILD   := build
 
-# Each testable module: <name>:<src dirs>:<include dirs>
-# Add a line here as new host-testable modules come online (scheduler, eeprom_emu, ...).
-MSG_INC := -Ishared/messages/include
-MSG_SRC := shared/messages/src/body_msgs.c
-MSG_TEST:= shared/messages/tests/test_body_msgs.c
+# Unity test framework (vendored as a git submodule).
+UNITY_SRC := vendor/unity/src/unity.c
+UNITY_INC := -Ivendor/unity/src
 
-.PHONY: test clean lint
+# --- messages module ---
+MSG_INC  := -Ishared/messages/include
+MSG_SRC  := shared/messages/src/body_msgs.c
+MSG_TEST := shared/messages/tests/test_body_msgs.c
 
-test: $(BUILD)/test_messages
-	@echo "== running host unit tests =="
+# --- scheduler module ---
+SCHED_INC  := -Ischeduler/include
+SCHED_SRC  := scheduler/src/sched.c
+SCHED_TEST := scheduler/tests/test_sched.c scheduler/tests/sched_port_fake.c
+
+.PHONY: test test_messages test_scheduler clean lint
+
+test: test_messages test_scheduler
+
+test_messages: $(BUILD)/test_messages
+	@echo "== messages =="
 	@$(BUILD)/test_messages
+
+test_scheduler: $(BUILD)/test_scheduler
+	@echo "== scheduler =="
+	@$(BUILD)/test_scheduler
 
 # Static analysis. Runs cppcheck over production C (not test harnesses).
 # With a licensed MISRA rule-texts file, enable the addon line below for MISRA C:2012.
@@ -29,12 +43,15 @@ lint:
 	@echo "== static analysis (cppcheck) =="
 	cppcheck --error-exitcode=1 --enable=warning,style,portability \
 	         --std=c17 --inline-suppr --quiet \
-	         -I shared/messages/include -I shared/hal/include \
+	         -I shared/messages/include -I shared/hal/include -I scheduler/include \
 	         $(LINT_SRC)
 	@echo "(MISRA addon: add '--addon=misra.json' once the licensed rule-texts file is in place)"
 
-$(BUILD)/test_messages: $(MSG_SRC) $(MSG_TEST) | $(BUILD)
-	$(CC) $(CFLAGS) $(MSG_INC) $(MSG_SRC) $(MSG_TEST) -o $@
+$(BUILD)/test_messages: $(MSG_SRC) $(MSG_TEST) $(UNITY_SRC) | $(BUILD)
+	$(CC) $(CFLAGS) $(UNITY_INC) $(MSG_INC) $(UNITY_SRC) $(MSG_SRC) $(MSG_TEST) -o $@
+
+$(BUILD)/test_scheduler: $(SCHED_SRC) $(SCHED_TEST) $(UNITY_SRC) | $(BUILD)
+	$(CC) $(CFLAGS) $(UNITY_INC) $(SCHED_INC) $(UNITY_SRC) $(SCHED_SRC) $(SCHED_TEST) -o $@
 
 $(BUILD):
 	@mkdir -p $(BUILD)
