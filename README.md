@@ -66,10 +66,19 @@ hardware-independent modules build on the host.
 - `node_a_gateway/` — gateway ECU: `bootloader/` (FBL + secure boot) and `app/` (FreeRTOS)
 - `node_b_actuator/` — actuator ECU: `app/`
 - `host_tools/` — Python: CAN tooling, UDS client, integration test scripts
-- `docs/` — `architecture/overview.md`, ADRs, roadmap, coding standard, workflow, briefs
+- `docs/` — `architecture/overview.md`, ADRs, roadmap, coding standard, workflow, briefs,
+  reviews, `references.md`
 - `.github/workflows/ci.yml` — host build + test + static analysis on every push
 
 ## Chapter ↔ module map
 
 See `docs/roadmap.md` for the full series outline. Each module's own README notes which
 episode introduces it.
+
+## Contributing / Git workflow
+
+This repo follows a lightweight Git workflow — see **`GitRules.md`** for branch naming,
+Conventional Commits, milestone tagging, PR hygiene, and the secrets rule.
+
+`main` is protected: changes land via pull request, and the CI status checks
+(`host-build-test`, `static-analysis`) must pass before merge — so `main` stays green.

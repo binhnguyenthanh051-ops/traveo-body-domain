@@ -4,115 +4,133 @@
 **Goal:** Build a Medium series + GitHub portfolio demonstrating *architecture-level* thinking — not protocol checklists — to support a move into an automotive embedded software architect role in Vietnam.
 **Format inspiration:** Toby (@johnehk86) — episodic, narrative, failures included, Claude Code shown as a visible collaborator.
 **Cadence:** ~20 hrs/week (incl. weekends), 12-month horizon.
+**Architecture:** see `docs/architecture/overview.md`. This roadmap's milestones are the M0–M6 staging from overview §8.
 
 ---
 
 ## 1. Guiding principles
 
 1. **Depth over breadth.** Deep, hands-on topics beat shallow ones. CAN/Diag are *not* a focus — you already know them; mention briefly, don't anchor chapters on them.
-2. **One flagship system, growing over time.** Every chapter adds to the same running codebase (a 2-node body-domain network), not disconnected demos. This is what makes the series read as "architecture," not "tutorials."
+2. **One flagship system, growing over time.** Every chapter adds to the same running codebase (a 2-node body-domain network with a bootloader + app on the gateway), not disconnected demos. This is what makes the series read as "architecture," not "tutorials."
 3. **Be honest about what the hardware proves.** This board is asymmetric dual-core (M4 + M0+), no cache. Topics outside what it can prove (true symmetric multicore, cache behavior) are written as *design/comparative essays*, clearly labeled — not faked as hands-on. Revisit hands-on once/if a Body High (Cortex-M7) board is added.
 4. **Claude Code is a visible collaborator, not a ghostwriter.** Show prompts, show what it got wrong, show how you corrected it — especially for architecture/design decisions, not just code generation.
 5. **Every chapter ends with a decision, not just a result.** "It worked" is a tutorial. "Here's the tradeoff I chose and why" is architecture.
-6. **Architecture for testability.** Logic-heavy modules (scheduler core, EEPROM emulation, message packing) are written hardware-independent and unit-testable on the host, with chip-specific code behind interfaces. This is what makes host-side CI possible — and is itself an architect-level structural decision worth writing about.
+6. **Architecture for testability.** Hardware-independent logic is written host-testable with chip code behind interfaces — what makes host CI possible, and itself an architect-level decision worth writing about.
+7. **The design doc is a deliverable.** The architecture exists on paper before all the code does; the overview + ADRs are portfolio artifacts in their own right.
 
 ---
 
-## 2. Topic inventory (scoped to this board)
+## 2. Topic inventory
 
-| Topic | Status | How it's used |
+| Topic | Status | Where it lives |
 |---|---|---|
-| Custom preemptive scheduler (your own, bare-metal) | **Core, hands-on** | Spine of Arc 2 — your strongest differentiator |
-| FreeRTOS (after your own scheduler exists) | **Core, hands-on** | Comparative chapter: "I built mine, then ported FreeRTOS — what I'd actually choose and why" |
-| EEPROM emulator on work-flash | **Core, hands-on** | Arc 3 — wear-leveling, sector management, power-loss safety |
-| Fail-safe / fault handling | **Core, hands-on** | Arc 4 — watchdog, safe-state design, fault injection |
-| Asymmetric dual-core (M4 + M0+) IPC | **Core, hands-on** | Threaded through Arc 2–4 — task partitioning, shared-memory protection, hardware semaphores |
-| **Security — secure boot + flash protection** | **Core, hands-on** | Arc 2 — the M0+ secure boot chain, flash/access protection on this chip |
-| **Security — crypto / HSM on the M0+ core** | **Core, hands-on** | Arc 2 — offloading crypto to the security core, ties into the dual-core IPC story |
-| **Security — authenticated CAN messages (SecOC-style)** | **Core, hands-on** | Arc 3 — signed/authenticated bus comms between Node A and Node B |
-| **CI — host-side build + test on every push** | **Core, hands-on** | Introduced in Arc 1, grows every arc as testable modules are added |
-| CAN bus (node-to-node) | Supporting, brief | 1 chapter — the "wire" the system runs on, not the subject |
-| UDS diagnostics | Supporting, brief | 1 chapter — diagnostic session design as *architecture* (why OEMs separate diag from app logic), not protocol mechanics |
-| Design patterns (HAL abstraction, state machines, pub/sub) | **Woven through every chapter** | No standalone chapter — called out inline wherever applied |
-| Cache handling | **Dropped for now** | Revisit with a Cortex-M7 (Body High) board later |
-| True symmetric multicore | **Dropped for now** | Revisit with a multi-M7 board later |
-| Functional safety (ASIL concepts) | Design essay only | Framing/comparative chapter in Arc 4; explicitly not claiming ISO 26262 compliance work |
+| **Bootloader (FBL) + app split, memory map, VTOR/MSP jump** | **Core, hands-on** | M1 — the system-partitioning spine |
+| **Secure boot (ROM root of trust + FBL-verifies-app)** | **Core, hands-on** | M1 (config) → M4 (app verification) |
+| **No-init shared RAM handshake (+ ECC priming)** | **Core, hands-on** | M1 — boot/app state across resets |
+| **FreeRTOS application** | **Core, hands-on** | M2 — the product RTOS |
+| Custom preemptive scheduler | **Core, hands-on** | **Parallel track S** (standalone deep-dive, ADR-0005) |
+| FreeRTOS vs custom scheduler comparison | **Core, hands-on** | Track S — concrete A/B |
+| **UDS reprogramming (FBL programming services)** | **Core, hands-on** | M3 |
+| EEPROM emulator on work-flash | **Core, hands-on** | M2/M3 — wear-levelling, power-loss safety |
+| **Security — crypto / HSM offload to M0+** | **Core, hands-on** | M4 — vetted primitives, clean service interface |
+| **Security — authenticated CAN (SecOC-style)** | **Core, hands-on** | M5 — A↔B message auth |
+| Fail-safe / fault handling, fault injection | **Core, hands-on** | M6 — watchdog, safe-state |
+| Asymmetric dual-core (M4 + M0+) IPC | **Core, hands-on** | M4 — crypto offload + shared-memory protection |
+| CAN bus (node-to-node) | Supporting, brief | M2 — the "wire," config-varied per image |
+| UDS diagnostics (data/DTC, in app) | Supporting, brief | M5/M6 — diag-as-architecture, not protocol |
+| Design patterns (HAL abstraction, state machines, pub/sub, config-over-#ifdef) | **Woven through** | Every milestone |
+| CI — host build + test + static analysis | **Core, hands-on** | M0, grows every milestone |
+| MISRA C:2012 | **Core, hands-on** | M0, enforced throughout |
+| Functional safety (ASIL concepts) | Design essay only | M6 — design literacy, not compliance |
+| Cache / true symmetric multicore | **Dropped for now** | Comparative essay (M6); revisit with M7 board |
 
 ---
 
-## 3. Flagship project
+## 3. Milestone roadmap
 
-**A 2-node automotive body-domain network**, mirroring a real gateway + actuator-ECU architecture:
+The series follows the M0–M6 staging from `docs/architecture/overview.md` §8. Each
+milestone is publishable. Episode numbers are guidance, not a contract — let real build
+problems reorder them. The **scheduler runs as a parallel track (S)** that can advance in
+gaps (it needs no board for the host-testable core).
 
-- **Node A — "Gateway"**: owns CAN arbitration, runs UDS diagnostics, hosts your custom scheduler, aggregates signals, runs the secure-boot chain and crypto offload to the M0+.
-- **Node B — "Actuator node"**: simulated window/door/light controller, publishes sensor data, consumes (authenticated) commands over CAN.
-- **(Stretch) Node C**: PC-based cluster simulator via USB-CAN, or a second physical board if budget allows later.
+### M0 — Foundations (done / in place)
+*Repo, host CI, MISRA, and the whole-system architecture on paper.*
 
-The system grows in sophistication across all four arcs — each arc adds a layer rather than starting a new demo. **Security and CI are not separate projects — they thread into this same system.**
+- **EP.01** — Why this project, and the architecture up front: the 2-node system, the FBL+app split, the design-doc-as-deliverable stance. (Publish the overview.)
+- **EP.02** — Host CI + MISRA from day one: testability as an architectural decision, not an afterthought.
+- **EP.03** — Fundamentals: automotive E/E architecture — gateways, domain controllers, why a bootloader exists at all.
+
+### M1 — Bootloader MVP (FBL boots → jumps to app)
+*The system-partitioning centrepiece. Needs the board for real flashing.*
+
+- **EP.04** — The memory map: partitioning code flash (FBL vs app), the linker scripts, where the vector tables live. *(verify addresses in TRM)*
+- **EP.05** — Bring-up: FBL blinks, first debug session, ModusToolbox project for CYT2B7. (Board has arrived.)
+- **EP.06** — The no-init shared RAM handshake — and the ECC-on-uninitialised-SRAM gotcha (cold-boot priming vs warm-reset preservation). Likely a *failure* chapter.
+- **EP.07** — The jump: VTOR relocation, MSP set, branch to the app reset vector. What breaks when you get it subtly wrong.
+- **EP.08** — ROM secure boot configured: anchoring the root of trust. Why app-level verification is meaningless without it. *(verify mechanism in TRM; document before touching fuses)*
+
+### M2 — Application on FreeRTOS
+*A minimal but real app under the product kernel.*
+
+- **EP.09** — Bringing up FreeRTOS on the gateway: first tasks, why FreeRTOS for the product (and what it hides — forward-reference to Track S).
+- **EP.10** — CAN online (app config: interrupt-driven), the HAL seam in practice, shared module compiled with an app vs FBL config.
+- **EP.11** — EEPROM emulator on work-flash: wear-levelling, sector rotation, power-loss safety — host-tested logic over a flash interface.
+
+### M3 — Reprogramming (UDS in the FBL)
+*Field-update path: PC tool flashes the app through the bootloader.*
+
+- **EP.12** — UDS programming-session architecture: why diagnostics/programming is a separate layer; session + security-access design in the FBL.
+- **EP.13** — The download sequence (request/transfer/exit + routine), a PC-side Python flash tool, and integration tests in CI.
+- **EP.14** — Failure/retrospective: a reprogramming edge case (interrupted download, power loss mid-flash) and how the design recovers.
+
+### M4 — App secure boot + crypto offload
+*The bootloader trusts the app; crypto lives on the M0+.*
+
+- **EP.15** — Crypto/HSM on the Cortex-M0+: offloading primitives, a clean `shared/crypto` service interface, the asymmetric dual-core IPC + shared-memory protection story.
+- **EP.16** — App image verification in the FBL: manifest format, hash + signature, key handling (secret vs public, storage, lifecycle).
+- **EP.17** — Architecture essay: "how I'd scale secure boot + reprogramming to a real multi-ECU vehicle."
+
+### M5 — Second node + authenticated bus
+*Node B online; the bus becomes trustworthy.*
+
+- **EP.18** — Node B (actuator) app: door/light/window state machine, publishes/consumes signals.
+- **EP.19** — SecOC-style authenticated CAN: MAC + freshness/replay protection between A and B, using the M0+ crypto service.
+- **EP.20** — App-side UDS (data/DTC services) as architecture — separation from application logic.
+
+### M6 — Resilience + capstone
+*Tie safety and security together; reflect.*
+
+- **EP.21** — Fundamentals: functional-safety concepts (ASIL framing, fault-tolerance patterns) — design literacy, not compliance.
+- **EP.22** — Watchdog + safe-state design on the gateway.
+- **EP.23** — Fault injection: kill Node B / corrupt a message, observe and harden.
+- **EP.24** — Threat-model essay: secure boot + authenticated comms + safe-state as one defensive story — how safety and security reinforce each other.
+- **EP.25** — Cache & true symmetric multicore: comparative design essay (no hands-on claim) — what changes on M7-class silicon and why an architect should know it.
+- **EP.26** — Capstone: the full architecture retrospective — "what I'd do differently" — plus the updated overview doc as the centrepiece.
+
+### Track S — Custom scheduler (parallel, standalone)
+*Runs alongside the milestones; host-testable core needs no board (ADR-0005).*
+
+- **S.1** — Why build your own scheduler? What FreeRTOS hides, and why an architect should know it anyway.
+- **S.2** — A minimal preemptive scheduler on the Cortex-M4 from scratch: TCB, ready-set, context switch (PendSV/SysTick, PSP/MSP, the M4F FPU gotcha).
+- **S.3** — The failure chapter: the first thing that breaks (stack corruption / priority inversion / a race). Highest-engagement content.
+- **S.4** — FreeRTOS comparison: run a representative task set on both, compare design tradeoffs honestly.
+
+(See `docs/briefs/S1-S2-scheduler-brief.md` — the brief that kicks off S.1–S.2.)
 
 ---
 
-## 4. Chapter roadmap
+## 4. Working notes
 
-Denser than the 10 hr/week version: ~26 chapters across the same 4 arcs / 12 months. Security and CI are interleaved, not bolted on at the end.
-
-### Arc 1 — Foundations, bring-up + CI from day one (Months 1–2)
-*Goal: working hardware, working build+test pipeline, the system is "alive" and every push is green.*
-
-- **EP.01** — Board bring-up: first blink, first debug session, project skeleton with Claude Code (`CLAUDE.md` setup story)
-- **EP.02** — Fundamentals: automotive E/E architecture 101 — why gateways and domain controllers exist
-- **EP.03** — **CI from day one**: host-side build on every push, and *why* an embedded project should be testable on x86 from the start (the architecture-for-testability argument)
-- **EP.04** — Design patterns primer: the HAL abstraction layer you'll reuse — and how it's what lets logic run host-side under CI
-- **EP.05** — First CAN frame: Node A sends, you receive on a PC tool. Brief — plumbing, not the point.
-
-### Arc 2 — Scheduler, dual-core + security foundations (Months 3–6)
-*Goal: the technical core of the portfolio + the secure-boot/crypto story.*
-
-- **EP.06** — Why build your own scheduler? What FreeRTOS hides, and why an architect should know it anyway
-- **EP.07** — Building a minimal preemptive scheduler on the Cortex-M4 from scratch (context switching, SysTick, priorities)
-- **EP.08** — The failure chapter: whatever breaks first (stack corruption, priority inversion, a race) — lean into it, highest-engagement content
-- **EP.09** — Unit-testing the scheduler core on the host under CI (proving the testability argument pays off)
-- **EP.10** — Scheduler at work: Node A's gateway tasks (CAN RX, diagnostics, housekeeping) running under your scheduler
-- **EP.11** — Asymmetric dual-core: handing work to the Cortex-M0+, IPC via hardware semaphores, shared-memory protection design
-- **EP.12** — **Security: secure boot + flash protection** — the M0+ secure boot chain on this chip, access protection, what "root of trust" actually means here
-- **EP.13** — **Security: crypto / HSM on the M0+** — offloading crypto to the security core, designed as a clean service behind an interface (ties into the dual-core IPC work)
-- **EP.14** — FreeRTOS comparison: port the same workload, compare design tradeoffs honestly — "what I'd choose for a real project and why"
-
-### Arc 3 — Memory, diagnostics + secure comms (Months 7–9)
-*Goal: production-flavored subsystems, second node online, the bus gets trustworthy.*
-
-- **EP.15** — Fundamentals: how real automotive EEPROM emulation works (wear-leveling, sector rotation, power-loss safety)
-- **EP.16** — Building your own EEPROM emulator on work-flash, from scratch — host-testable logic under CI
-- **EP.17** — Node B comes online: actuator node joins the bus, publishes/consumes signals
-- **EP.18** — **Security: authenticated CAN (SecOC-style)** — signing/verifying messages between Node A and Node B, freshness/replay protection, using the M0+ crypto service from EP.13
-- **EP.19** — UDS diagnostics architecture: why diagnostics is a separate layer from application logic; session design on the gateway (brief — design-focused)
-- **EP.20** — CI grows up: PC-side integration tests (host drives the protocol logic, asserts responses) running on every push
-- **EP.21** — Architecture essay: "how I'd scale this to a real 10-ECU vehicle network" — your most architect-flavored post
-
-### Arc 4 — Fail-safe, threat model + retrospective (Months 10–12)
-*Goal: resilience + security story tied together, capstone.*
-
-- **EP.22** — Fundamentals: functional safety concepts (ASIL framing, fault-tolerance patterns) — framed as design literacy, not compliance work
-- **EP.23** — Watchdog + safe-state design on the gateway node
-- **EP.24** — Fault injection: kill Node B, observe and harden the gateway's response
-- **EP.25** — Threat-model essay: secure boot + authenticated comms + safe-state combined into one defensive story — "how safety and security design reinforce each other"
-- **EP.26** — Cache & true multicore: comparative design essay (no hands-on claim) — what changes on M7-class silicon, why an architect should know it even without the hardware
-- **EP.27** — Capstone: full architecture document for the 2-node system + retrospective — "what I'd do differently" (the reflective judgment architect interviews probe for)
+- Keep `CLAUDE.md` and the ADRs current — they're what keep Claude Code (and the code it shapes for Copilot) on the architecture.
+- Treat ADRs, commit history, and Claude Code transcripts as raw material for chapters.
+- One GitHub repo; README shows the current architecture, updated as it grows.
+- Don't write a chapter until the thing in it works (or failed instructively). Milestones are a backbone, not a fixed schedule.
 
 ---
 
-## 5. Working notes
+## 5. Open items / revisit later
 
-- Keep a `CLAUDE.md` per repo with: board/chip facts, architecture decisions log, conventions. Treat Claude Code session transcripts as raw material for chapters.
-- One GitHub repo for the flagship system (not one repo per chapter) — README shows the current architecture diagram, updated as it grows.
-- The repo is structured so hardware-independent logic lives in host-testable modules (scheduler core, eeprom_emu, message packing) with chip code behind interfaces — this is what the CI pipeline builds and tests.
-- Don't write a chapter until the thing in it actually works (or actually failed instructively). This roadmap is a backbone, not a fixed schedule — let real build problems reorder things.
-
----
-
-## 6. Open items / revisit later
-
-- Body High (Cortex-M7) board purchase — unlocks cache + symmetric multicore hands-on content (year 2 candidate)
-- Hardware-in-the-loop CI (auto-flash + on-target tests) — natural extension of the host-side CI once it's mature
-- Third node / PC cluster simulator — stretch goal if Arc 3 runs ahead
-- AUTOSAR-flavored layer — only if year-1 content lands well and time allows
+- Body High (Cortex-M7) board — unlocks cache + symmetric multicore hands-on (year 2).
+- Hardware-in-the-loop CI (auto-flash + on-target tests) — natural extension once host CI is mature.
+- Third node / PC cluster simulator — stretch if a milestone runs ahead.
+- AUTOSAR-flavored layer — only if year-1 content lands well and time allows.
