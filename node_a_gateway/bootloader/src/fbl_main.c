@@ -7,9 +7,13 @@
  */
 #include "boot.h"
 #include "fbl_port.h"
+#include "cybsp.h"      /* target-only: clocks + BSP pins (incl. the user LED) */
 
 int main(void)
 {
+    /* Bring up clocks and BSP pins so timing + the LED heartbeat work. */
+    (void)cybsp_init();
+
     fbl_boot_action_t action = fbl_run_boot();
 
     if (action == FBL_ACTION_JUMP_APP)

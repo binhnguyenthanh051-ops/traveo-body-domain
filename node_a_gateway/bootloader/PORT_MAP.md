@@ -29,6 +29,7 @@ src/
   port_security.c             device-lifecycle read
   port_image.c                app-image/flash read + optional HW-CRC
   port_jump.c (+ asm)         de-init + the naked/asm VTOR/MSP/branch
+  port_prog.c                 programming-mode entry (M1: user-LED heartbeat) + system reset
 ```
 
 ## Function → file → hardware → host fake
@@ -44,7 +45,8 @@ src/
 | `lifecycle` | `port_security.c` | device lifecycle stage (eFuse/SFLASH) — gates the knock window | settable stage |
 | `app_image` / flash read | `port_image.c` | code flash is memory-mapped (pointer + len); optional HW-CRC via crypto block | RAM buffer = fake image |
 | `deinit_for_jump` (D4 step 3) | `port_jump.c` | `__disable_irq`, stop SysTick (+clear `ICSR` pend), NVIC `ICER`/`ICPR`, peripherals→reset | no-op |
-| `jump_to_app(msp, reset)` (D4 5–7) | `port_jump.c` (naked/asm) | set `VTOR`, `__set_MSP`, `DSB`/`ISB`, `BX` — nothing stack-dependent between MSP-set and branch | records (msp,reset) for assertions |
+| `jump_to_app(app_base)` (D4 5–7) | `port_jump.c` (naked/asm) | read MSP/reset from the app vectors, set `VTOR`, `MSR MSP`, `DSB`/`ISB`, `BX` — nothing stack-dependent between MSP-set and branch | records the call |
+| `enter_programming_mode` / `system_reset` | `port_prog.c` | M1: stay resident + blink a user-LED heartbeat (P19.0 on this kit); `NVIC_SystemReset` for reset | call counters |
 
 Notes:
 - **The jump is two pieces** (ADR-0008 D4): `deinit_for_jump()` is ordinary C; the final
