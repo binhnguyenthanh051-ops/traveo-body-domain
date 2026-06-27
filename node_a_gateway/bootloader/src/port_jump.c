@@ -7,23 +7,38 @@
  * *run* until the board. Board-gated register writes are marked TODO.
  */
 #include "fbl_port.h"
+#include "cy_pdl.h"   /* CMSIS core: SysTick, SCB, NVIC */
 
 /*
- * B3 handover contract: leave all IRQ sources disabled and pending cleared,
- * peripherals toward reset state. The app re-enables interrupts and re-inits
- * clocks/peripherals in its own startup.
+ * B3 handover contract: leave all IRQ sources disabled and pending cleared so a
+ * leftover exception cannot vector through the app's (not-yet-initialised)
+ * vector table after VTOR is switched. The app re-enables interrupts and
+ * re-inits clocks/peripherals in its own startup.
+ *
+ * This MUST be real: skipping it means a clean POR jump works but a jump taken
+ * after the app has run (e.g. a software reset) carries dirty interrupt state
+ * into the app and HardFaults.
  */
 void fbl_port_deinit_for_jump(void)
 {
-    __asm volatile ("cpsid i" ::: "memory");   /* disable IRQs (PRIMASK) */
+    __disable_irq();                              /* PRIMASK = 1 during the swap */
 
-    /* TODO(M1, board), via CMSIS device header:
-     *   SysTick->CTRL = 0u;                       // stop SysTick
-     *   SCB->ICSR = SCB_ICSR_PENDSTCLR_Msk;       // clear SysTick pending
-     *   for (i in NVIC banks) { NVIC->ICER[i] = 0xFFFFFFFFu;
-     *                           NVIC->ICPR[i] = 0xFFFFFFFFu; }
-     *   // return FBL-touched peripherals (CAN, clocks) toward reset state
-     */
+    /* Stop SysTick and drop any pending SysTick/PendSV exception. */
+    SysTick->CTRL = 0U;
+    SysTick->LOAD = 0U;
+    SysTick->VAL  = 0U;
+    SCB->ICSR = SCB_ICSR_PENDSTCLR_Msk | SCB_ICSR_PENDSVCLR_Msk;
+
+    /* Disable and clear every NVIC peripheral interrupt (CM4: 8 banks). */
+    for (uint32_t bank = 0U; bank < 8U; bank++)
+    {
+        NVIC->ICER[bank] = 0xFFFFFFFFU;           /* disable  */
+        NVIC->ICPR[bank] = 0xFFFFFFFFU;           /* un-pend  */
+    }
+
+    __DSB();
+    __ISB();
+    /* PRIMASK left set; the app (or its RTOS) re-enables IRQs in its startup. */
 }
 
 /*

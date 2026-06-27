@@ -58,12 +58,17 @@ host-tested table). Each cause drives three independent behaviours:
 | **Hibernate-wake** | lost → **prime** | **no** (fast wake) | unchanged |
 | **Other / unknown / multiple** | **prime** (safe default) | no | treat as power-on path |
 
-Two implementation notes *(verify in TRM — likely SRSS `RES_CAUSE`/`RES_CAUSE2`)*:
+Two implementation notes — **now confirmed against the TRM** (`RES_CAUSE` @ `0x4026_1800`,
+`docs/references/Reg_ResetCause.png`); the PDL `Cy_SysLib_GetResetReason()` exposes these:
 
-- A power-on reset often also resets the cause register, so **`cause == 0` can itself mean
-  POR** → cold. Other resets set their specific bit.
-- **Clear the cause register after reading**, and decode with priority (if a POR bit is
-  present alongside others, POR wins → cold).
+- **POR is bit 30 (`RESET_PORVDDD`), not `cause == 0`.** An earlier draft assumed a POR
+  clears the register to 0; on this part the register's **default is `0x4000_0000`** (bit 30
+  set), so POR is detected by that bit, together with brown-out (`BOD*`) and external reset
+  (`XRES`/`PXRES`) as the "came up cold" group. (Verified by silicon — the assumption was
+  wrong; see `port_reset.c`.)
+- **Clear the cause register after reading** (`Cy_SysLib_ClearResetReason`). Decode with the
+  cold group taking priority (prime-bias), and check **hibernate-wake first** — the
+  low-voltage cause bits re-assert on wakeup on this part, so it must not be misread as POR.
 
 ### D3. ECC priming and the prime-bias safety rule
 
@@ -192,8 +197,10 @@ register array, so the whole table and counter rule unit-test without hardware.
 
 ## To verify in the TRM / app notes
 
-- Reset-cause register(s) and bit semantics; how POR/BOD and hibernate-wake are reported;
-  whether POR clears the cause register (the `cause == 0 ⇒ POR` assumption).
+- ~~Reset-cause register(s) and bit semantics; how POR/BOD are reported; the
+  `cause == 0 ⇒ POR` assumption.~~ **Resolved:** `RES_CAUSE` bit 30 = POR (`RESET_PORVDDD`),
+  not `cause == 0` — see D2 and `port_reset.c`. *(Hibernate-wake reporting on this part still
+  to confirm — not exercised in M1.)*
 - Backup-register count and retention semantics across hibernate, warm reset, and power-on
   (and whether the backup domain needs a separate supply on this board).
 - ECC behaviour on uninitialised SRAM reads (trap vs. status) and ECC word granularity for
