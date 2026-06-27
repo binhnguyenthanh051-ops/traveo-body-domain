@@ -42,7 +42,7 @@ static uint32_t ref_crc32(const uint8_t *data, size_t len)
 
 /* ---- representative valid vectors ---- */
 #define IMG_MSP    0x08020000u   /* top of SRAM, 8-byte aligned */
-#define IMG_RESET  0x10010101u   /* in app flash, Thumb bit set */
+#define IMG_RESET  0x10040101u   /* in app flash (FBL_APP_FLASH_BASE), Thumb bit set */
 #define IMG_BODY   16u
 #define IMG_LEN    (FBL_APP_HEADER_OFFSET + (uint32_t)sizeof(fbl_app_header_t) + IMG_BODY)
 #define IMG_BUFSZ  (IMG_LEN + FBL_DIGEST_SIZE)
@@ -165,7 +165,7 @@ void test_vectors_valid_pass(void)            { TEST_ASSERT_TRUE(fbl_vector_sane
 void test_vectors_msp_outside_sram_fail(void) { TEST_ASSERT_FALSE(fbl_vector_sane(0x20000000u, IMG_RESET)); }
 void test_vectors_msp_misaligned_fail(void)   { TEST_ASSERT_FALSE(fbl_vector_sane(0x08000004u, IMG_RESET)); }
 void test_vectors_reset_outside_flash_fail(void){ TEST_ASSERT_FALSE(fbl_vector_sane(IMG_MSP, 0x20000001u)); }
-void test_vectors_reset_no_thumb_fail(void)   { TEST_ASSERT_FALSE(fbl_vector_sane(IMG_MSP, 0x10010100u)); }
+void test_vectors_reset_no_thumb_fail(void)   { TEST_ASSERT_FALSE(fbl_vector_sane(IMG_MSP, 0x10040100u)); }
 
 /* ==================================================================
  * App image validity (ADR-0008 D3)

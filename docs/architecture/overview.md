@@ -137,15 +137,22 @@ See ADR-0006. A consolidated threat model lands in EP.25.
 
 ---
 
-## 6. Memory map (representative — confirm in TRM)
+## 6. Memory map (confirmed against the BSP linker)
+
+The board corrected an earlier assumption: TRAVEO™ T2G is **dual-core at boot**, so code
+flash is *not* a flat FBL+app split from `0x1000_0000`. The ROM starts the **CM0+**, whose
+prebuilt image occupies the first 128 KB; the CM0+ then starts the **CM4** at `0x1002_0000`.
+Our FBL is the CM4 image, and the app lives **above** it (the FBL stays small).
 
 ```
 Code Flash (1 MB)  @ 0x1000_0000
   ┌───────────────────────────────────────────┐ 0x1000_0000
-  │ Bootloader (FBL)        ~64 KB             │  vector table at flash base (boot entry)
-  ├───────────────────────────────────────────┤ 0x1001_0000
-  │ Application             ~960 KB            │  app vector table at app base; FBL sets VTOR here
-  └───────────────────────────────────────────┘ 0x100F_FFFF
+  │ CM0+ prebuilt           128 KB            │  ROM→CM0+ boot; CM0+ starts CM4 (FLASH_CM0P_SIZE)
+  ├───────────────────────────────────────────┤ 0x1002_0000
+  │ Bootloader (FBL, CM4)   128 KB            │  CM4 vector table / entry; CM0+ starts CM4 here
+  ├───────────────────────────────────────────┤ 0x1004_0000
+  │ Application (CM4)        ~832 KB           │  app vector table; FBL sets VTOR here and jumps
+  └───────────────────────────────────────────┘ 0x1011_0000
 
 Work Flash (96 KB) @ 0x1400_0000
   ┌───────────────────────────────────────────┐
@@ -154,14 +161,18 @@ Work Flash (96 KB) @ 0x1400_0000
 
 SRAM (128 KB)      @ 0x0800_0000
   ┌───────────────────────────────────────────┐ 0x0800_0000
-  │ Active-image RAM (.data/.bss/stack/heap)  │
+  │ CM0+ RAM                ~32 KB            │
+  ├───────────────────────────────────────────┤ 0x0800_8000
+  │ CM4 RAM (.data/.bss/stack/heap)           │  the FBL + app share this (they don't run at once)
   ├───────────────────────────────────────────┤
   │ .noinit shared handshake region           │  preserved across warm reset; ECC-primed on cold boot
   └───────────────────────────────────────────┘ 0x0802_0000
 ```
 
 Linker scripts per image enforce these regions; the FBL/app split and VTOR relocation are
-driven from here. This map is a first-class artifact (and a blog chapter).
+driven from here. The **app is a CM4-only image** relocated to `0x1004_0000` (no CM0+
+prebuilt of its own — the FBL's image already booted CM0+). This map is a first-class
+artifact (and a blog chapter — "the design doc said flat; the silicon said dual-core").
 
 ---
 
