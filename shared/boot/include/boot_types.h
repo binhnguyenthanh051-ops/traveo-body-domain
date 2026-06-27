@@ -42,11 +42,14 @@
 #define FBL_BREG_COUNTER_IDX     1U            /* boot-loop counter */
 #define FBL_BREG_APP_BASE_IDX    2U            /* reserved: App wake-context */
 
-/* Representative memory map for vector sanity (overview Sec.6 — verify in TRM). */
+/* Memory map for vector sanity. Confirmed against the BSP linker (dual-core):
+ * code flash 0x1000_0000 holds the CM0+ prebuilt (first 128 KB), then the CM4
+ * FBL at 0x1002_0000; the CM4 app lives above the FBL at 0x1004_0000.
+ * (overview Sec.6.) */
 #define FBL_SRAM_BASE            0x08000000U
 #define FBL_SRAM_SIZE            (128U * 1024U)
-#define FBL_APP_FLASH_BASE       0x10010000U
-#define FBL_APP_FLASH_SIZE       (960U * 1024U)
+#define FBL_APP_FLASH_BASE       0x10040000U      /* CM4 app vector table */
+#define FBL_APP_FLASH_SIZE       (832U * 1024U)   /* 0x1004_0000 .. 0x1011_0000 */
 
 /* --------------------------------------------------------------------
  * Image digest selection (ADR-0008 D3) — M1: CRC32; M4: flip to SHA-256.
