@@ -6,3 +6,14 @@ images
 .settings
 .vscode
 
+# Use the app's FreeRTOSConfig.h (config/), NOT the library's template — the
+# library ships one under COMPONENT_CM4 alongside portmacro.h, which would make
+# #include "FreeRTOSConfig.h" ambiguous (ADR-0010). Excluding just the template
+# file leaves portmacro.h / port.c in place.
+../../mtb_shared/freertos/release-v10.6.202/Source/portable/COMPONENT_CM4/FreeRTOSConfig.h
+
+# This app uses FreeRTOS directly, not the ModusToolbox RTOS abstraction or
+# newlib locking layer. Those wrappers assume heap-backed create APIs and
+# conflict with the app's static-task policy.
+../../mtb_shared/abstraction-rtos/release-v1.12.0
+../../mtb_shared/clib-support/release-v1.8.0

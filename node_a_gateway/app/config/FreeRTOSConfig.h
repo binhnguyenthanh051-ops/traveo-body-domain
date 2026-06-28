@@ -19,10 +19,16 @@
 
 /* ---- Scheduler / timing (D1) ---- */
 #define configUSE_PREEMPTION                    1
-#define configCPU_CLOCK_HZ                      ( 160000000UL )
+/* Use the runtime core clock the BSP computes (design target ~160 MHz, ADR-0010
+ * D1) so the SysTick reload is correct regardless of the configured clock tree. */
+extern uint32_t SystemCoreClock;
+#define configCPU_CLOCK_HZ                      ( SystemCoreClock )
 #define configTICK_RATE_HZ                      ( 1000U )
 #define configMAX_PRIORITIES                    5
-#define configMINIMAL_STACK_SIZE                ( 128U )       /* words */
+/* Words. Sized for the CM4F context frame (HW exception frame up to 26 words
+ * with an FP frame, + R4-R11 + S16-S31). Generous for bring-up; trim later from
+ * uxTaskGetStackHighWaterMark (ADR-0010 D4/D5). */
+#define configMINIMAL_STACK_SIZE                ( 256U )
 #define configUSE_16_BIT_TICKS                  0
 #define configIDLE_SHOULD_YIELD                 1
 
@@ -39,7 +45,7 @@
 /* ---- Software timers (D5) ---- */
 #define configUSE_TIMERS                        1
 #define configTIMER_TASK_PRIORITY               ( configMAX_PRIORITIES - 1 )   /* 4 */
-#define configTIMER_TASK_STACK_DEPTH            ( 160U )       /* pinned; callbacks stay short */
+#define configTIMER_TASK_STACK_DEPTH            ( 256U )       /* generous for bring-up; trim later */
 #define configTIMER_QUEUE_LENGTH                8
 
 /* ---- Synchronisation primitives in use ---- */

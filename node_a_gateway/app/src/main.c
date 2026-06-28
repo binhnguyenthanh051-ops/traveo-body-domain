@@ -26,12 +26,21 @@
 #define M2_BRINGUP_ASSERTS  1
 #endif
 
+/* The app's RAM vector table (from app_cm4.ld). Cypress SystemInit copies the
+ * flash vectors here and re-points VTOR at it for runtime ISR registration. */
+extern uint32_t __ram_vectors_start__;
+
 static void verify_handover(void)
 {
 #if M2_BRINGUP_ASSERTS
-    /* Trust the B3 contract, verify cheaply (D7): the FBL set VTOR to us, and
-     * the CM0+ prebuilt disabled the WDT (M2-6). Not a runtime dependency. */
-    configASSERT(SCB->VTOR == APP_VECTOR_BASE);
+    /* Trust the B3 contract, verify cheaply (D7) — but correctly: by the time
+     * main() runs, SystemInit has relocated VTOR to the RAM vector table, so it
+     * is NOT the flash app base any more. Accept the RAM vectors or the flash
+     * base; anything else (e.g. the FBL's table at 0x1002_0000, or garbage) is a
+     * genuine handover failure. */
+    uint32_t vtor = SCB->VTOR;
+    configASSERT( (vtor == (uint32_t)&__ram_vectors_start__) ||
+                  (vtor == APP_VECTOR_BASE) );
 #endif
 }
 
@@ -93,26 +102,35 @@ void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTcb,
 /* -------------------------------------------------------------------
  * Kernel hooks (D3/D4).
  * ----------------------------------------------------------------- */
+/* Bring-up aids: which task overflowed (read these in the debugger when the
+ * trap below is hit). pcTaskName points into the static TCB, so it stays valid. */
+volatile TaskHandle_t  g_overflow_task;
+volatile const char   *g_overflow_task_name;
+
 void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
 {
-    (void)xTask;
-    (void)pcTaskName;
-    /* TODO(bring-up): record the offending task, then safe-state. */
+    g_overflow_task      = xTask;
+    g_overflow_task_name = pcTaskName;   /* e.g. "idle" / "health" / "can" / ... */
     taskDISABLE_INTERRUPTS();
     for (;;)
     {
-        /* trap */
+        /* trap — inspect g_overflow_task_name, bump that stack, re-check
+         * uxTaskGetStackHighWaterMark (ADR-0010 D5). */
     }
 }
 
+/* Bring-up aid: which configASSERT fired. Read these in the debugger at the
+ * trap — g_assert_file:g_assert_line names the exact failing assertion. */
+volatile const char   *g_assert_file;
+volatile unsigned long g_assert_line;
+
 void vAssertCalled(const char *file, unsigned long line)
 {
-    (void)file;
-    (void)line;
-    /* TODO(bring-up): record file/line; halt for the debugger. */
+    g_assert_file = file;
+    g_assert_line = line;
     taskDISABLE_INTERRUPTS();
     for (;;)
     {
-        /* trap */
+        /* trap — inspect g_assert_file / g_assert_line. */
     }
 }

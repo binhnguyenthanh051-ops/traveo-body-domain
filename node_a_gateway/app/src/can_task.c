@@ -14,8 +14,21 @@
 #include "can_hal.h"
 #include "body_msgs.h"
 
-#define CAN_STACK_WORDS     256U
+#define CAN_STACK_WORDS     512U   /* generous for bring-up; trim from high-water (ADR-0010 D5) */
 #define RAW_FRAME_QDEPTH     16U
+
+/* CANFD channel for the gateway (ADR-0011). The kit routes CAN0 channel 1 to the
+ * onboard transceiver on P0.2 (TX) / P0.3 (RX). Bitrates per ADR-0011 D1 — full
+ * CAN FD: 500 kbit/s nominal, 2 Mbit/s data + BRS. The message-RAM partition and
+ * the bit-timing register values come from the Device Configurator (seam 2). */
+#define CAN_HW_INSTANCE      CANFD0
+#define CAN_HW_CHANNEL       1U
+#define CAN_TX_PORT          GPIO_PRT0
+#define CAN_TX_PIN           2U
+#define CAN_RX_PORT          GPIO_PRT0
+#define CAN_RX_PIN           3U
+#define CAN_NOMINAL_BITRATE  500000U
+#define CAN_DATA_BITRATE     2000000U
 
 static StaticTask_t  s_tcb;
 static StackType_t   s_stack[CAN_STACK_WORDS];
