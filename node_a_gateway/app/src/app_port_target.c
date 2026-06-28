@@ -9,8 +9,11 @@
 #include "app_port.h"
 #include "cy_pdl.h"   /* CMSIS core: __DSB, NVIC_SystemReset */
 
-/* Pinned, not zeroed by startup. Same address as the FBL's region (noinit.ld). */
-static fbl_handshake_t g_handshake __attribute__((section(".noinit")));
+/* The handshake lives in its OWN section (.fbl_handshake), pinned by app_cm4.ld
+ * at the shared address (noinit.ld) — separate from the general .noinit that the
+ * BSP/libraries use, so its address can't drift when their .noinit changes. Same
+ * address as the FBL's region; NOLOAD so startup never zeroes it. */
+static fbl_handshake_t g_handshake __attribute__((section(".fbl_handshake")));
 
 fbl_handshake_t *app_port_noinit(void)
 {

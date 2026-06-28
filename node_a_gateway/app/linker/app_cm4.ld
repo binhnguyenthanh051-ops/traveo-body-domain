@@ -274,12 +274,23 @@ SECTIONS
     } > ram AT>flash
 
 
-    /* Shared App<->FBL handshake — pinned at the absolute shared address (ADR-0007
-    *  D8), just above ram, and NOT zeroed by startup so it survives warm resets.
+    /* General .noinit — the BSP and libraries (system_psoc6, cyhal, cy_syslib) put
+    *  state here. It floats in ram and is NOLOAD (startup never zeroes it). This is
+    *  NOT the shared handshake.
     */
-    .noinit _noinit_start (NOLOAD) :
+    .noinit (NOLOAD) : ALIGN(8)
     {
       KEEP(*(.noinit))
+    } > ram
+
+    /* Shared App<->FBL handshake — its OWN section, pinned at the absolute shared
+    *  address (ADR-0007 D8) so its location is independent of how much .noinit the
+    *  BSP/libraries pull in. Both images agree via noinit.ld; NOLOAD so startup
+    *  never clears it. Sits just above ram, below the BSP-reserved 2 KB.
+    */
+    .fbl_handshake _noinit_start (NOLOAD) :
+    {
+      KEEP(*(.fbl_handshake))
     }
 
 
@@ -383,7 +394,7 @@ SECTIONS
  * .noinit base, which must match the FBL (both INCLUDE noinit.ld). */
 ASSERT(ORIGIN(ram) + LENGTH(ram) == _noinit_start,
        "App CM4 RAM must end at .noinit base — sync app_cm4.ld with noinit.ld")
-ASSERT(ADDR(.noinit) == _noinit_start,
-       "App .noinit not pinned at _noinit_start (noinit.ld)")
+ASSERT(ADDR(.fbl_handshake) == _noinit_start,
+       "App handshake not pinned at _noinit_start (noinit.ld)")
 
 /* EOF */

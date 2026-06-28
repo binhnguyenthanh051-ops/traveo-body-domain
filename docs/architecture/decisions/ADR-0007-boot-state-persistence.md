@@ -264,9 +264,19 @@ The M2 fix — one region, one definition, honoured by both:
   headroom and room for future handshake fields — **not** an App register block (the App's
   cross-reset state lives in BREG, D6, not in `.noinit`).
 - **Single source of truth:** a shared fragment `shared/boot/linker/noinit.ld`
-  (`_noinit_start = 0x0801F700; _noinit_size = 0x100;`) is `INCLUDE`d by **both** `fbl.ld`
-  and `app_cm4.ld`; each places `.noinit _noinit_start (NOLOAD)` and shrinks its CM4 RAM
-  `LENGTH` by `_noinit_size`. A future address mismatch becomes structurally impossible.
+  (`_noinit_start = 0x0801F700; _noinit_size = 0x100;`) is `INCLUDE`d by **both** linkers,
+  which shrink CM4 RAM `LENGTH` to end at `_noinit_start`. A future address mismatch becomes
+  structurally impossible.
+- **The handshake gets its OWN section — not the shared `.noinit` (silicon-verified).** The
+  general `.noinit` section is **not ours alone**: the BSP `system_psoc6` plus `cyhal`/`cy_syslib`
+  contribute to it (≈`0x5A0`+ bytes), and they land *first*, so pinning the whole `.noinit`
+  output section put our handshake at an **offset** (observed `0x0801_FCA0`, inside the reserved
+  2 KB) — matching across images only by coincidence of identical `.noinit` layouts, which a BSP
+  or lib change would silently break. Fix: the handshake lives in a **dedicated `.fbl_handshake`
+  section** pinned at `_noinit_start`; the general `.noinit` floats back in `ram` (`> ram`, NOLOAD)
+  for the BSP/libs. The `ASSERT(ADDR(.fbl_handshake) == _noinit_start)` guards it. The handshake
+  object (`g_handshake` in both `app_port_target.c` and `port_noinit.c`) carries
+  `__attribute__((section(".fbl_handshake")))`.
 - **Guard against BSP regeneration:** `app_cm4.ld` is a ModusToolbox-generated file, so a BSP
   re-generation could silently revert the `INCLUDE` + length edit and reintroduce the very
   M2-3 hazard this fixes. Mitigation: the app **forks `app_cm4.ld` into a repo-owned linker**
