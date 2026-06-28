@@ -41,6 +41,10 @@ SEARCH_DIR(.)
 GROUP(-lgcc -lc -lnosys)
 ENTRY(Reset_Handler)
 
+/* Shared .noinit pin — single source of truth across the FBL + app (ADR-0007 D8).
+ * The build adds `-L shared/boot/linker` so this resolves. */
+INCLUDE noinit.ld
+
 /* The size of the stack section at the end of CM4 SRAM */
 STACK_SIZE = 0x1000;
 
@@ -67,7 +71,7 @@ MEMORY
      * Your changes must be aligned with the corresponding memory regions for CM0+ core in 'xx_cm0plus.ld',
      * where 'xx' is the device group; for example, 'cyb06xx7_cm0plus.ld'.
      */
-    ram               (rwx)   : ORIGIN = 0x08008000, LENGTH = 0x17800
+    ram               (rwx)   : ORIGIN = 0x08008000, LENGTH = 0x17700  /* M2-3: ends at _noinit_start; the 2 KB system area above .noinit stays reserved */
     flash             (rx)    : ORIGIN = 0x10000000, LENGTH = 0x110000
 
     /* The following regions define device specific memory regions and must not be changed. */
@@ -270,13 +274,13 @@ SECTIONS
     } > ram AT>flash
 
 
-    /* Place variables in the section that should not be initialized during the
-    *  device startup.
+    /* Shared App<->FBL handshake — pinned at the absolute shared address (ADR-0007
+    *  D8), just above ram, and NOT zeroed by startup so it survives warm resets.
     */
-    .noinit (NOLOAD) : ALIGN(8)
+    .noinit _noinit_start (NOLOAD) :
     {
       KEEP(*(.noinit))
-    } > ram
+    }
 
 
     /* The uninitialized global or static variables are placed in this section.
@@ -374,5 +378,12 @@ SECTIONS
     } > sflash_rtoc_2
 
 }
+
+/* Cross-image guards (ADR-0007 D8): CM4 RAM must end exactly at the pinned
+ * .noinit base, which must match the FBL (both INCLUDE noinit.ld). */
+ASSERT(ORIGIN(ram) + LENGTH(ram) == _noinit_start,
+       "App CM4 RAM must end at .noinit base — sync app_cm4.ld with noinit.ld")
+ASSERT(ADDR(.noinit) == _noinit_start,
+       "App .noinit not pinned at _noinit_start (noinit.ld)")
 
 /* EOF */
