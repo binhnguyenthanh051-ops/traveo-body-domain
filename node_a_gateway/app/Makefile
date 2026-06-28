@@ -125,7 +125,10 @@ CXXFLAGS=
 ASFLAGS=
 
 # Additional / custom linker flags.
-LDFLAGS=
+# Add the shared linker-fragment dir so `INCLUDE noinit.ld` in app_cm4.ld
+# resolves (ADR-0007 D8 — the single-source .noinit pin). ld searches -L dirs
+# for INCLUDE; $(CURDIR) is this app directory.
+LDFLAGS=-L$(CURDIR)/../../shared/boot/linker
 
 # Additional / custom libraries to link in to the application.
 LDLIBS=
