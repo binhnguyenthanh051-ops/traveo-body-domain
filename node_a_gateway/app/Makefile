@@ -85,7 +85,7 @@ VERBOSE=
 # ... then code in directories named COMPONENT_foo and COMPONENT_bar will be
 # added to the build
 #
-COMPONENTS=
+COMPONENTS=FREERTOS
 
 # Like COMPONENTS, but disable optional code that was enabled by default.
 DISABLE_COMPONENTS=
@@ -94,11 +94,16 @@ DISABLE_COMPONENTS=
 # tree for source code and builds it. The SOURCES variable can be used to
 # manually add source code to the build process from a location not searched
 # by default, or otherwise not found by the build system.
-SOURCES=
+SOURCES=../../shared/messages/src/body_msgs.c ../../shared/boot/src/boot.c
+
+# Exclude host-only test sources and the pre-FreeRTOS bring-up stub main; the
+# target app entry lives in src/main.c.
+CY_IGNORE=logic/tests src/app_main.c
 
 # Like SOURCES, but for include directories. Value should be paths to
-# directories (without a leading -I).
-INCLUDES=
+# directories (without a leading -I). Keep config first so the app's committed
+# FreeRTOSConfig.h wins over library templates.
+INCLUDES=./config ./include ./logic/include ../../shared/can/include ../../shared/messages/include ../../shared/boot/include ../../shared/hal/include
 
 # Add additional defines to the build process (without a leading -D).
 DEFINES=
@@ -126,9 +131,14 @@ ASFLAGS=
 
 # Additional / custom linker flags.
 # Add the shared linker-fragment dir so `INCLUDE noinit.ld` in app_cm4.ld
-# resolves (ADR-0007 D8 — the single-source .noinit pin). ld searches -L dirs
-# for INCLUDE; $(CURDIR) is this app directory.
-LDFLAGS=-L$(CURDIR)/../../shared/boot/linker
+# resolves (ADR-0007 D8 — the single-source .noinit pin). On Windows, the GNU
+# linker is a native executable, so pass it a native-style path rather than a
+# Cygwin `/cygdrive/...` path.
+NOINIT_LD_DIR=$(abspath ../../shared/boot/linker)
+ifeq ($(OS),Windows_NT)
+NOINIT_LD_DIR:=$(shell cygpath -m '$(NOINIT_LD_DIR)')
+endif
+LDFLAGS=-L$(NOINIT_LD_DIR)
 
 # Additional / custom libraries to link in to the application.
 LDLIBS=

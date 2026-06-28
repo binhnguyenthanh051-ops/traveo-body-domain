@@ -185,7 +185,7 @@ everything it uses and assumes nothing the FBL left**:
 
 | App **may** assume | App **must NOT** assume (re-init from scratch) |
 |---|---|
-| `VTOR == app_base` (FBL set it; app `SystemInit` re-asserts it) | SysTick config — none survives; FreeRTOS reprograms it at scheduler start |
+| `VTOR` valid — FBL sets it to `app_base`, then Cypress `SystemInit` **relocates it to the RAM vector table** (`.ramVectors`) for runtime ISR registration, so by `main()` it is *not* `app_base` (silicon correction to an earlier draft) | SysTick config — none survives; FreeRTOS reprograms it at scheduler start |
 | All peripheral IRQs disabled + un-pended | PendSV/SVC priorities — the port sets them itself |
 | No SysTick/PendSV pending | FPU enabled — the port enables `CPACR` CP10/CP11 |
 | `MSP` = app initial SP | Any FBL-used peripheral (CAN, LED GPIO) is configured |

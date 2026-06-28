@@ -17,7 +17,7 @@
 #include "reprogram.h"
 #include "body_msgs.h"
 
-#define APP_STACK_WORDS     256U
+#define APP_STACK_WORDS     512U   /* generous for bring-up; trim from high-water (ADR-0010 D5) */
 #define APP_MSG_QDEPTH       8U
 
 static StaticTask_t  s_tcb;
