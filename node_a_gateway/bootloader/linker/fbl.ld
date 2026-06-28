@@ -1,13 +1,10 @@
 /*
- * fbl.ld — FBL linker script: the M2-3 .noinit design reference.
+ * fbl.ld — FBL linker: simplified .noinit design reference (overview Sec.6 map).
  *
- * NOTE: this is NOT yet the FBL's build linker. The bootloader Makefile has
- * LINKER_SCRIPT empty, so the FBL is currently built with the BSP default
- * linker. Wiring the FBL's real linker to this .noinit pin (fork the BSP CM4
- * linker as the app did for app_cm4.ld, set LINKER_SCRIPT + add
- * `-L shared/boot/linker`) is an on-board bring-up task: it changes the FBL
- * image, so M1 must be re-verified (ADR-0007 D8). Addresses are representative —
- * verify in the TRM.
+ * NOTE: the FBL now BUILDS with linker/fbl_cm4.ld — a fork of the BSP CM4 linker
+ * carrying the same shared .noinit pin (ADR-0007 D8); see the bootloader Makefile
+ * LINKER_SCRIPT. This file is kept as the readable design reference only.
+ * Addresses are representative — verify in the TRM.
  *
  * Implements the overview Sec.6 memory map for the bootloader image:
  *   - FBL occupies the first 64 KB of code flash; its vector table sits at the
