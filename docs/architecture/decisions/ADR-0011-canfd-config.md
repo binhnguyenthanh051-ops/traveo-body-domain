@@ -61,14 +61,22 @@ host-testable logic.
 
 ### D3. RX path — RX FIFO 0 + the `RF0N` interrupt
 
-- Accepted frames land in **RX FIFO 0**; the **`RF0N` (RX FIFO 0 New-message)** interrupt is
-  enabled and routed to its NVIC line at **level 5 (`0xA0`)** — kernel-aware per ADR-0010 D3
-  (numerically ≥ `configMAX_SYSCALL_INTERRUPT_PRIORITY` = `0x40`), set **explicitly** (never
-  the reset-default level 0).
-- The ISR **drains FIFO 0 until empty** (one read per interrupt can stall under burst), pushes
-  each `can_raw_frame_t` to `raw_frame_q` with `xQueueSendFromISR`, clears the `RF0N` flag
-  (write-1-clear), and calls `portYIELD_FROM_ISR(woken)` so `CAN_CyclicTask` runs on ISR exit
-  (ADR-0010 D5).
+- Accepted frames land in **RX FIFO 0**; `Cy_CANFD_Init` enables the **`RF0N` (RX FIFO 0
+  New-message)** interrupt on **interrupt line 0** and runs it at **level 5 (`0xA0`)** —
+  kernel-aware per ADR-0010 D3 (numerically ≥ `configMAX_SYSCALL_INTERRUPT_PRIORITY` = `0x40`),
+  set **explicitly** (never the reset-default level 0).
+- **TRAVEO NVIC mux (silicon-verified — the seam-2 bring-up trap).** On TRAVEO T2G the CM4
+  reaches peripheral interrupts through an **8-channel NVIC mux** (`NvicMux0..7`); the CANFD
+  IRQ enum (`canfd_0_interrupts0_1_IRQn` = 58) is a **system-interrupt index, not a CM4 NVIC
+  line**. `cy_stc_sysint_t.intrSrc` must **pack a mux channel** (`<< CY_SYSINT_INTRSRC_MUXIRQ_SHIFT`)
+  with that system interrupt, and `NVIC_EnableIRQ` takes the **mux channel** (we use `NvicMux3`).
+  Passing the bare IRQn silently maps it to `NvicMux0` and enables a non-existent line → the
+  FIFO fills and RF0N sets in the peripheral but **no interrupt reaches the CM4** (the classic
+  "init OK, no RX"). This is distinct from PSoC6 CM4, which has direct NVIC lines.
+- The PDL `Cy_CANFD_IrqHandler` (called from the channel ISR) drains FIFO 0 and invokes the
+  config's `rxCallback` per frame; our callback packs a `can_raw_frame_t` and pushes it to
+  `raw_frame_q` with `xQueueSendFromISR`. The ISR then calls `portYIELD_FROM_ISR(woken)` so
+  `CAN_CyclicTask` runs on ISR exit (ADR-0010 D5).
 - `CAN_CyclicTask` dispatches on `id` to the existing `unpack_*` (host-testable
   `shared/messages`), producing a `body_msg_t` for `App_CyclicTask` / `bodyctl_step`. For the
   M2 echo demo it re-transmits the received frame to prove the loop.
