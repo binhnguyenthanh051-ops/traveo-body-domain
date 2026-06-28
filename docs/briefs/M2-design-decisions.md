@@ -94,8 +94,10 @@ flowchart TB
 **Why pinned here:** above the CM0+ tenant (safe from the other core) and below the BSP's
 reserved 2 KB (M1 wrongly placed it *inside* that 2 KB). The address is defined once in
 `shared/boot/linker/noinit.ld` and `INCLUDE`d by both the FBL and app linkers, so the two
-images can never disagree. The FBL `SRAM` origin is also corrected to `0x0800_8000` so the
-bootloader's own RAM stops overlapping the CM0+ tenant.
+images can never disagree. To stop a ModusToolbox BSP regeneration from silently reverting the
+pin, the app **forks `app_cm4.ld` into a repo-owned linker** (as the FBL owns `fbl.ld`) plus a
+link-time `ASSERT` on the address. The FBL `SRAM` origin is also corrected to `0x0800_8000` so
+the bootloader's own RAM stops overlapping the CM0+ tenant.
 
 ## Memory budget (CM4 app RAM ≈ 93.75 KB)
 
@@ -103,7 +105,8 @@ bootloader's own RAM stops overlapping the CM0+ tenant.
 |---|---:|---|
 | FreeRTOS task stacks (5) | ~3.8 KB | incl. FP-frame headroom |
 | TCBs (5 × `StaticTask_t`) | ~0.5 KB | static |
-| `raw_frame_q` (16 × ~72 B) | ~1.2 KB | static queue storage |
+| `raw_frame_q` (16 × ~72 B) | ~1.2 KB | CAN ISR → `CAN_CyclicTask` (raw frames) |
+| `app_msg_q` (8 × `body_msg_t`) | ~0.2 KB | `CAN_CyclicTask` → `App_CyclicTask` (decoded) |
 | MSP / ISR stack | 4 KB | handlers run on MSP |
 | App `.bss`/`.data` + PDL | remainder | ~84 KB headroom |
 | **Heap** | **0 KB** | forbidden (link-time guarantee) |

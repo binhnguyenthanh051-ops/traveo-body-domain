@@ -127,11 +127,18 @@ avoid RX overrun); health lowest of ours (its starvation is itself diagnostic); 
 top so callbacks are timely — **callbacks must be short and non-blocking** (they run in the
 daemon context).
 
-**Execution model = "cyclic, hybrid":** each cyclic task blocks on its input queue *with a
-timeout equal to its cycle period* — `xQueueReceive(q, &item, pdMS_TO_TICKS(period))` — so it
-wakes on an event (low latency) **or** every period (periodic housekeeping + drain). This
+**Execution model = "cyclic, hybrid":** each *event-fed* cyclic task blocks on its input queue
+*with a timeout equal to its cycle period* — `xQueueReceive(q, &item, pdMS_TO_TICKS(period))` —
+so it wakes on an event (low latency) **or** every period (periodic housekeeping + drain). This
 honours the cyclic, AUTOSAR-runnable-friendly structure without paying a full period of
-latency on every frame.
+latency on every frame. `CAN_CyclicTask` and `App_CyclicTask` are event-fed.
+`Health_CyclicTask` is the exception: it has **no input queue**, so it is plain-periodic
+(`vTaskDelayUntil`), not the hybrid form.
+
+**Two transport queues** carry the RX path (both static, both in the budget below):
+`raw_frame_q` (CAN ISR → `CAN_CyclicTask`, raw frames) and `app_msg_q` (`CAN_CyclicTask` →
+`App_CyclicTask`, decoded `body_msg_t`). The decode happens in `CAN_CyclicTask`; only decoded
+structs cross into `App_CyclicTask`, which keeps the host-test seam (D6) clean.
 
 **The ISR→task handoff** (first-class):
 
@@ -212,6 +219,8 @@ configSUPPORT_STATIC_ALLOCATION          1
 configSUPPORT_DYNAMIC_ALLOCATION         0            /* heap forbidden (D2) */
 configUSE_TIMERS                         1
 configTIMER_TASK_PRIORITY                (configMAX_PRIORITIES - 1)   /* 4 */
+configTIMER_TASK_STACK_DEPTH             160          /* words — pinned; callbacks stay short */
+configTIMER_QUEUE_LENGTH                 8            /* pending timer commands */
 configCHECK_FOR_STACK_OVERFLOW           2            /* FP frame makes stacks big (D1/D4) */
 configUSE_IDLE_HOOK                      0            /* health is a task, not the hook */
 configUSE_MALLOC_FAILED_HOOK             0            /* no heap to fail */
