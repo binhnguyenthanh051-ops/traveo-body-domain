@@ -130,13 +130,23 @@ CXXFLAGS=
 ASFLAGS=
 
 # Additional / custom linker flags.
-LDFLAGS=
+# Add the shared linker-fragment dir so `INCLUDE noinit.ld` in fbl_cm4.ld
+# resolves (ADR-0007 D8 — the single-source .noinit pin shared with the app).
+# On Windows, the GNU linker is a native executable, so pass it a native-style
+# path rather than a Cygwin `/cygdrive/...` path.
+NOINIT_LD_DIR=$(abspath ../../shared/boot/linker)
+ifeq ($(OS),Windows_NT)
+NOINIT_LD_DIR:=$(shell cygpath -m '$(NOINIT_LD_DIR)')
+endif
+LDFLAGS=-L$(NOINIT_LD_DIR)
 
 # Additional / custom libraries to link in to the application.
 LDLIBS=
 
 # Path to the linker script to use (if empty, use the default linker script).
-LINKER_SCRIPT=
+# Repo-owned fork of the BSP CM4 linker, pinning .noinit at the address the app
+# agrees on (ADR-0007 D8). Survives BSP regeneration.
+LINKER_SCRIPT=linker/fbl_cm4.ld
 
 # Custom pre-build commands to run.
 PREBUILD=
