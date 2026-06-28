@@ -29,6 +29,11 @@ static QueueHandle_t s_msg_q;
 
 static bodyctl_state_t s_body;
 
+/* Seam-3 reprogram trigger (M2 debug trigger, ADR-0007 D7). Set to 1 in the
+ * debugger to request reprogramming — no GPIO needed. A physical user button can
+ * drive this later (set APP_BTN_PORT/PIN and poll it in the cyclic slot). */
+volatile uint32_t g_reprogram_request;
+
 QueueHandle_t app_msg_queue(void) { return s_msg_q; }
 
 static void apply_output(const bodyctl_output_t *out)
@@ -61,9 +66,14 @@ static void app_task(void *arg)
             apply_output(&out);
         }
 
-        /* Cyclic slot: poll the debug reprogram trigger. */
-        /* TODO(bring-up): if user-button pressed (debounced): app_request_reprogram();
-         * (does not return — writes .noinit and triggers a software reset). */
+        /* Cyclic slot: poll the seam-3 reprogram trigger. app_request_reprogram()
+         * writes the PROGRAMMING_REQUESTED handshake into .noinit and triggers a
+         * software reset (does not return); the FBL then reads it and stays in
+         * programming mode, clearing the boot-loop counter (ADR-0007 D7/D9). */
+        if (g_reprogram_request != 0U)
+        {
+            app_request_reprogram();
+        }
     }
 }
 
