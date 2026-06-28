@@ -289,6 +289,48 @@ void test_decide_hibernate_valid_app_jumps_without_knock(void)
 }
 
 /* ==================================================================
+ * M2-5 — App-side reprogram vs the boot-loop fallback (ADR-0007 D7/D9)
+ *
+ * The App writes a programming-request with boot_handshake_encode (the write
+ * mirror), then a software reset. The FBL must enter programming mode AND clear
+ * the counter every time, so a legitimate reflash never looks like a crash-loop.
+ * ================================================================ */
+
+void test_handshake_encode_programming_request_is_valid(void)
+{
+    fbl_handshake_t h;
+    boot_handshake_encode(&h, FBL_PROGRAMMING_REQUESTED);
+    TEST_ASSERT_TRUE(fbl_handshake_valid(&h));
+    TEST_ASSERT_EQUAL_UINT8((uint8_t)FBL_PROGRAMMING_REQUESTED, h.mode);
+
+    boot_handshake_encode(&h, FBL_BOOT_APP);
+    TEST_ASSERT_TRUE(fbl_handshake_valid(&h));
+    TEST_ASSERT_EQUAL_UINT8((uint8_t)FBL_BOOT_APP, h.mode);
+}
+
+void test_m2_5_repeated_reprogram_never_trips_bootloop(void)
+{
+    const uint32_t iterations = FBL_BOOTLOOP_THRESHOLD + 5u;
+
+    /* Start with the counter sitting right at the trip threshold: a legitimate
+     * reprogram must still clear it, not push it over. */
+    set_valid_breg(FBL_BOOTLOOP_THRESHOLD);
+    set_valid_app();
+
+    for (uint32_t i = 0u; i < iterations; ++i)
+    {
+        /* App writes the request into .noinit, then triggers a software reset. */
+        boot_handshake_encode(fake_noinit(), FBL_PROGRAMMING_REQUESTED);
+        fake_set_cause(FBL_RST_SOFTWARE);
+
+        /* FBL: programming mode every time, and the counter is cleared (D4), so
+         * the boot-loop fallback (counter > N) never trips. */
+        TEST_ASSERT_EQUAL(FBL_ACTION_PROGRAMMING_MODE, fbl_run_boot());
+        TEST_ASSERT_EQUAL_UINT32(0u, fake_get_backup(FBL_BREG_COUNTER_IDX));
+    }
+}
+
+/* ==================================================================
  * Runner
  * ================================================================ */
 int main(void)
@@ -337,6 +379,9 @@ int main(void)
     RUN_TEST(test_decide_bootloop_counter_over_threshold_enters_programming);
     RUN_TEST(test_decide_invalid_app_fails_safe_to_programming);
     RUN_TEST(test_decide_hibernate_valid_app_jumps_without_knock);
+
+    RUN_TEST(test_handshake_encode_programming_request_is_valid);
+    RUN_TEST(test_m2_5_repeated_reprogram_never_trips_bootloop);
 
     return UNITY_END();
 }

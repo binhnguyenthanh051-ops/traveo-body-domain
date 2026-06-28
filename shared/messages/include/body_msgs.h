@@ -37,4 +37,34 @@ size_t pack_sensor_report(const sensor_report_msg_t *in, uint8_t *buf, size_t bu
 int unpack_light_cmd(const uint8_t *buf, size_t len, light_cmd_msg_t *out);
 int unpack_sensor_report(const uint8_t *buf, size_t len, sensor_report_msg_t *out);
 
+/* -------------------------------------------------------------------
+ * Decoded-message envelope (M2-8 seam, ADR-0010 D6)
+ *
+ * The RTOS-independent body-control logic consumes one of these plain structs
+ * over an interface — never a CAN frame and never a FreeRTOS queue handle. The
+ * CAN task decodes a frame into a body_msg_t and hands it across; host tests
+ * build body_msg_t values directly.
+ * ----------------------------------------------------------------- */
+
+typedef enum {
+    BODY_MSG_NONE = 0,
+    BODY_MSG_DOOR_CMD,
+    BODY_MSG_LIGHT_CMD,
+    BODY_MSG_SENSOR_REPORT
+} body_msg_kind_t;
+
+typedef struct {
+    body_msg_kind_t kind;
+    union {
+        door_cmd_msg_t      door_cmd;
+        light_cmd_msg_t     light_cmd;
+        sensor_report_msg_t sensor_report;
+    } u;
+} body_msg_t;
+
+/* Decode a CAN payload (selected by id) into a body_msg_t. Returns 1 on a known,
+ * valid message (out->kind set accordingly); 0 on unknown id or bad payload
+ * (out->kind = BODY_MSG_NONE). Pure logic — no hardware, no FreeRTOS. */
+int body_decode(uint32_t id, const uint8_t *buf, size_t len, body_msg_t *out);
+
 #endif /* BODY_MSGS_H */

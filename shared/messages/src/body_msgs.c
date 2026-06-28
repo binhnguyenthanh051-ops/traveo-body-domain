@@ -37,3 +37,31 @@ int unpack_sensor_report(const uint8_t *buf, size_t len, sensor_report_msg_t *ou
     out->door_ajar   = buf[2];
     return 1;
 }
+
+int body_decode(uint32_t id, const uint8_t *buf, size_t len, body_msg_t *out)
+{
+    if (out == NULL) return 0;
+    out->kind = BODY_MSG_NONE;
+
+    switch (id)
+    {
+        case MSG_ID_DOOR_CMD:
+            if (buf == NULL || len < 1u || buf[0] > 1u) return 0;
+            out->u.door_cmd.cmd = (door_cmd_t)buf[0];
+            out->kind = BODY_MSG_DOOR_CMD;
+            return 1;
+
+        case MSG_ID_LIGHT_CMD:
+            if (!unpack_light_cmd(buf, len, &out->u.light_cmd)) return 0;
+            out->kind = BODY_MSG_LIGHT_CMD;
+            return 1;
+
+        case MSG_ID_SENSOR_RPT:
+            if (!unpack_sensor_report(buf, len, &out->u.sensor_report)) return 0;
+            out->kind = BODY_MSG_SENSOR_REPORT;
+            return 1;
+
+        default:
+            return 0;
+    }
+}
