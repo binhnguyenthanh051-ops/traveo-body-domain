@@ -115,8 +115,12 @@ the bootloader's own RAM stops overlapping the CM0+ tenant.
 
 1. ✅ Design discussion (this doc + the ADRs).
 2. ✅ ADRs — 0010 (FreeRTOS), 0011 (CANFD), 0007 D7–D9 (`.noinit` app side).
-3. ⬜ App skeleton — `FreeRTOSConfig.h`, `main()`, task stubs, HAL seams (CAN, `.noinit`).
-4. ⬜ Failing Unity tests — `bodyctl` state machine, routing via structs, `.noinit`
-   encode/decode, **the M2-5 "N reprograms ⇒ no boot-loop trip" test**.
-5. ⬜ Implement to green (`make test` + `make lint`); target-only port behind the HAL.
+3. ✅ App skeleton — `FreeRTOSConfig.h`, `main()`, task stubs, CAN + `.noinit`/`app_port` HAL seams.
+4. ✅ Unity tests — `bodyctl`, routing via `body_decode`, `.noinit` encode + the M2-5
+   "N reprograms ⇒ no boot-loop trip" test. `make test` green.
+5. 🔶 Host-testable logic implemented + green. The `.noinit` linker pin is wired on the
+   **app** side (`noinit.ld` + `app_cm4.ld` + `-L`). Remaining target port is `TODO(bring-up)`:
+   FreeRTOS/MTB build, CANFD driver, LED/button GPIO, stack high-water.
 6. ⬜ On-board bring-up in M2-1 order: FreeRTOS + heartbeat → CAN echo → App-requests-reprogram.
+   **Includes** wiring the FBL's real linker to the `.noinit` pin (fork its BSP CM4 linker;
+   `fbl.ld` is the design reference) and re-verifying M1.
