@@ -118,9 +118,11 @@ the bootloader's own RAM stops overlapping the CM0+ tenant.
 3. ✅ App skeleton — `FreeRTOSConfig.h`, `main()`, task stubs, CAN + `.noinit`/`app_port` HAL seams.
 4. ✅ Unity tests — `bodyctl`, routing via `body_decode`, `.noinit` encode + the M2-5
    "N reprograms ⇒ no boot-loop trip" test. `make test` green.
-5. 🔶 Host-testable logic implemented + green. The `.noinit` linker pin is wired on the
-   **app** side (`noinit.ld` + `app_cm4.ld` + `-L`). Remaining target port is `TODO(bring-up)`:
-   FreeRTOS/MTB build, CANFD driver, LED/button GPIO, stack high-water.
-6. ⬜ On-board bring-up in M2-1 order: FreeRTOS + heartbeat → CAN echo → App-requests-reprogram.
-   **Includes** wiring the FBL's real linker to the `.noinit` pin (fork its BSP CM4 linker;
-   `fbl.ld` is the design reference) and re-verifying M1.
+5. ✅ Implemented + green. Target port done: FreeRTOS/MTB build, CANFD driver, LED/button
+   path, the FBL linker fork (`fbl_cm4.ld`), the dedicated `.fbl_handshake` pin.
+6. 🔶 On-board bring-up (M2-1 order) — see `M2-bringup_log.md`:
+   - ✅ Seam 1: FreeRTOS + heartbeat (LED4/P12.2).
+   - ✅ Seam 2: CANFD echo — full RX→task→TX path proven in **internal loopback**;
+     **real-bus echo (VN1610) pending**.
+   - ✅ Seam 3: App→FBL `.noinit` reprogram — closes the deferred M1 thread on silicon.
+   - ⬜ Remaining: real-bus CAN (Phase B); optional physical button; stack-high-water trim.
