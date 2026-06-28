@@ -260,11 +260,19 @@ The M2 fix — one region, one definition, honoured by both:
 ```
 
 - **`.noinit` base = `0x0801_F700`, size `0x100`** — below the reserved 2 KB (legal) and
-  above the CM0+ tenant (safe). 256 B preserves room for the reserved App BREG-analogue use.
+  above the CM0+ tenant (safe). The handshake struct is only 16 B; the 256 B is alignment
+  headroom and room for future handshake fields — **not** an App register block (the App's
+  cross-reset state lives in BREG, D6, not in `.noinit`).
 - **Single source of truth:** a shared fragment `shared/boot/linker/noinit.ld`
   (`_noinit_start = 0x0801F700; _noinit_size = 0x100;`) is `INCLUDE`d by **both** `fbl.ld`
   and `app_cm4.ld`; each places `.noinit _noinit_start (NOLOAD)` and shrinks its CM4 RAM
   `LENGTH` by `_noinit_size`. A future address mismatch becomes structurally impossible.
+- **Guard against BSP regeneration:** `app_cm4.ld` is a ModusToolbox-generated file, so a BSP
+  re-generation could silently revert the `INCLUDE` + length edit and reintroduce the very
+  M2-3 hazard this fixes. Mitigation: the app **forks `app_cm4.ld` into a repo-owned linker**
+  (as the FBL already owns `fbl.ld`) and points the build at it, rather than editing the
+  generated copy in place. The fork is a tracked file; regeneration cannot touch it. A
+  link-time `ASSERT` that `.noinit` sits at `_noinit_start` is added as a second guard.
 - **Also corrected:** the FBL `SRAM` origin moves from `0x0800_0000` to `0x0800_8000` so the
   FBL's own `.data/.bss/stack` stop living in the CM0+ tenant. This changes the FBL image, so
   **M1 boot is re-verified on board** (it is M2 bring-up seam 1 regardless).
