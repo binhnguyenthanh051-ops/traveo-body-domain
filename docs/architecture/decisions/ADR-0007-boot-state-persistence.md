@@ -206,6 +206,88 @@ register array, so the whole table and counter rule unit-test without hardware.
 - ECC behaviour on uninitialised SRAM reads (trap vs. status) and ECC word granularity for
   the priming write.
 
+## M2 extension — the app side of the handshake (D7–D9)
+
+*Added 2026-06-28 for M2 (Node A application). M1 built the **FBL read side** of the
+`.noinit` channel; M2 adds the **App write side** and pins the region across both images.
+This extends the accepted ADR; it does not revise D1–D6.*
+
+### D7. App-side write path — App is a producer of one field only
+
+The App writes exactly one thing to `.noinit`: a programming-request. The encode is **pure
+logic in `shared/boot`** (mirror of the FBL's validate), the side effects are two App ports:
+
+```c
+/* shared/boot — pure, host-testable (mirrors the FBL read/validate). */
+void boot_handshake_encode(fbl_handshake_t *out, fbl_boot_mode_t mode);
+                  /* fills magic, version, mode, crc32 over the preceding bytes */
+
+/* App request flow (target glue is two ports; host fakes back both). */
+void App_request_reprogram(void)
+{
+    fbl_handshake_t h;
+    boot_handshake_encode(&h, FBL_PROGRAMMING_REQUESTED);
+    *app_port_noinit_region() = h;   /* store to the pinned .noinit (D8)        */
+    __DSB();                         /* ensure the write lands before reset     */
+    app_port_system_reset();         /* NVIC_SystemReset                        */
+}
+```
+
+App port hooks introduced: `app_port_noinit_region` (returns the pinned `.noinit` pointer)
+and `app_port_system_reset`. Host fakes back them with a RAM buffer and a "reset requested"
+flag, so the request path unit-tests without hardware. The App **never** touches BREG (D1).
+
+**On-board trigger for M2:** a simple debug trigger (the kit **user button**) calls
+`App_request_reprogram()`. Real UDS-driven reprogramming is **M3**; M2 only exercises the
+mechanism, and the trigger is intentionally non-CAN so seam 3 is independent of seam 2.
+
+### D8. Linker pinning of `.noinit` across **both** images (M2-3)
+
+M1 left a latent cross-image hazard: the FBL pinned `.noinit` at `0x0801_FF00` (top−256) —
+**inside the BSP's reserved top-2 KB**, and with the FBL's whole SRAM region based at
+`0x0800_0000`, i.e. **in the CM0+ RAM tenant** — while the app's stock BSP linker left
+`.noinit` **floating** in its `ram` region. The two images did not agree on the address.
+
+The M2 fix — one region, one definition, honoured by both:
+
+```
+0x0800_0000  CM0+ RAM tenant (32 KB)          ── both images AVOID
+0x0800_8000  CM4 RAM (.data/.bss/stack/        ── app: ~93.75 KB usable
+             FreeRTOS static)
+0x0801_F700  .noinit handshake (256 B)         ── PINNED, NOLOAD, both linkers
+0x0801_F800  reserved "system use" (2 KB)      ── both images AVOID (BSP rule)
+0x0802_0000  top of SRAM
+```
+
+- **`.noinit` base = `0x0801_F700`, size `0x100`** — below the reserved 2 KB (legal) and
+  above the CM0+ tenant (safe). 256 B preserves room for the reserved App BREG-analogue use.
+- **Single source of truth:** a shared fragment `shared/boot/linker/noinit.ld`
+  (`_noinit_start = 0x0801F700; _noinit_size = 0x100;`) is `INCLUDE`d by **both** `fbl.ld`
+  and `app_cm4.ld`; each places `.noinit _noinit_start (NOLOAD)` and shrinks its CM4 RAM
+  `LENGTH` by `_noinit_size`. A future address mismatch becomes structurally impossible.
+- **Also corrected:** the FBL `SRAM` origin moves from `0x0800_0000` to `0x0800_8000` so the
+  FBL's own `.data/.bss/stack` stop living in the CM0+ tenant. This changes the FBL image, so
+  **M1 boot is re-verified on board** (it is M2 bring-up seam 1 regardless).
+- The App's C-startup must **not** zero `.noinit` (it is `NOLOAD` and excluded from the
+  startup zero-table) — verified when the app linker change lands.
+
+### D9. ECC-priming ownership and the M2-5 counter interaction (reaffirmed)
+
+- **The FBL is the sole ECC primer** (D3). It always runs first and primes on its prime-cause
+  path; on a read-cause the region was retained ECC-valid from a prior prime. So **the App
+  consumes a primed, ECC-valid region and never primes** — its write in D7 is an ordinary
+  store to valid ECC SRAM, with no first-read fault and no prime race.
+- **M2-5 is the first silicon exercise of the B2 rule (D4).** App writes
+  `FBL_PROGRAMMING_REQUESTED` → software reset → FBL classifies *software reset* → `.noinit`
+  action = **READ** → valid `magic`/`crc32` + `mode == PROGRAMMING_REQUESTED` ⇒ **programming
+  mode** (ADR-0008 D1) **and counter CLEAR → 0** (D4: "sw-reset *with* programming-request").
+  The required host test (M2 deliverable): *App requests reprogram N× in a row ⇒ programming
+  mode every time, boot-loop fallback (counter > N) never trips.*
+
+**Host/target split additions:** host-testable — `boot_handshake_encode` and the M2-5
+sequence over the existing classify + counter rule; target-only — `app_port_noinit_region`,
+`app_port_system_reset`, and the two-linker `.noinit` pinning.
+
 ## Review history
 
 Design-reviewed before implementation (`docs/review/ADR-0007-0008-review.md`). Findings
