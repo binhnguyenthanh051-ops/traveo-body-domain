@@ -33,6 +33,11 @@ bool     fbl_handshake_valid(const fbl_handshake_t *h);
 /* Initialise to the safe default (mode = boot-app), set magic + crc32. */
 void     fbl_handshake_init_default(fbl_handshake_t *h);
 
+/* Encode a handshake with the given mode (magic, version, mode, crc32). The
+ * App side uses this to write a programming-request (ADR-0007 D7); it is the
+ * write mirror of fbl_handshake_valid. Pure logic — host-testable. */
+void     boot_handshake_encode(fbl_handshake_t *h, fbl_boot_mode_t mode);
+
 /* -------------------------------------------------------------------
  * BREG boot-loop counter rule (ADR-0007 D4)
  *

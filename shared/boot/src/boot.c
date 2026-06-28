@@ -71,13 +71,18 @@ bool fbl_handshake_valid(const fbl_handshake_t *h)
     return (h->crc32 == fbl_handshake_crc(h));
 }
 
-void fbl_handshake_init_default(fbl_handshake_t *h)
+void boot_handshake_encode(fbl_handshake_t *h, fbl_boot_mode_t mode)
 {
     h->magic    = FBL_HANDSHAKE_MAGIC;
     h->version  = 1U;
-    h->mode     = (uint8_t)FBL_BOOT_APP;
+    h->mode     = (uint8_t)mode;
     h->reserved = 0U;
     h->crc32    = fbl_handshake_crc(h);
+}
+
+void fbl_handshake_init_default(fbl_handshake_t *h)
+{
+    boot_handshake_encode(h, FBL_BOOT_APP);
 }
 
 /* --------------------------------------------------------------------
