@@ -7,8 +7,11 @@
  */
 #include "fbl_port.h"
 
-/* Placed by fbl.ld in the pinned, never-zeroed .noinit region (ADR-0007 D1). */
-static fbl_handshake_t g_handshake __attribute__((section(".noinit")));
+/* In its OWN section (.fbl_handshake), pinned by fbl_cm4.ld at the shared address
+ * (noinit.ld) — separate from the general .noinit the BSP/libraries use, so the
+ * App and FBL agree on a fixed address regardless of how much .noinit each pulls
+ * in. Never zeroed by startup (ADR-0007 D1/D8). */
+static fbl_handshake_t g_handshake __attribute__((section(".fbl_handshake")));
 
 fbl_handshake_t *fbl_port_noinit(void)
 {
