@@ -103,7 +103,7 @@ the bootloader's own RAM stops overlapping the CM0+ tenant.
 
 | Consumer | Estimate | Note |
 |---|---:|---|
-| FreeRTOS task stacks (5) | ~3.8 KB | incl. FP-frame headroom |
+| FreeRTOS task stacks (5) | ~3 KB | sized from on-silicon high-water (idle/timer/health 128 w, app/can 192 w); used 11–88 w |
 | TCBs (5 × `StaticTask_t`) | ~0.5 KB | static |
 | `raw_frame_q` (16 × ~72 B) | ~1.2 KB | CAN ISR → `CAN_CyclicTask` (raw frames) |
 | `app_msg_q` (8 × `body_msg_t`) | ~0.2 KB | `CAN_CyclicTask` → `App_CyclicTask` (decoded) |

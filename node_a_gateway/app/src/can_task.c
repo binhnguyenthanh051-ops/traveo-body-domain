@@ -24,7 +24,7 @@
 #include "cybsp.h"      /* generated canfd_0_chan_1_* (config, IRQ) via cycfg */
 #include <string.h>
 
-#define CAN_STACK_WORDS     512U   /* generous for bring-up; trim from high-water (ADR-0010 D5) */
+#define CAN_STACK_WORDS     192U   /* used ~88 words (g_hw_can; incl. can_tx) + margin (ADR-0010 D5) */
 #define RAW_FRAME_QDEPTH     16U
 
 /* CANFD channel for the gateway (ADR-0011). The kit routes CAN0 channel 1 to the
@@ -82,6 +82,9 @@ static QueueHandle_t s_raw_q;
 
 static cy_stc_canfd_context_t s_canfd_context;
 static volatile BaseType_t    s_rx_woken;
+
+/* Bring-up: free stack words (min ever) for this task (ADR-0010 D5). */
+volatile UBaseType_t g_hw_can;
 
 QueueHandle_t raw_frame_queue(void) { return s_raw_q; }
 
@@ -175,6 +178,8 @@ static void can_task(void *arg)
 
     for (;;)
     {
+        g_hw_can = uxTaskGetStackHighWaterMark(NULL);
+
         if (xQueueReceive(s_raw_q, &frame, pdMS_TO_TICKS(APP_PERIOD_CAN_MS)) == pdTRUE)
         {
 #if CAN_LOOPBACK_TEST

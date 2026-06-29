@@ -10,10 +10,17 @@
  */
 #include "tasks.h"
 #include "task.h"
+#include "timers.h"   /* xTimerGetTimerDaemonTaskHandle */
 #include "cybsp.h"
 #include "cy_pdl.h"   /* Cy_GPIO_* */
 
-#define HEALTH_STACK_WORDS   256U   /* generous for bring-up; trim from high-water (ADR-0010 D5) */
+#define HEALTH_STACK_WORDS   128U   /* used ~26 words (g_hw_health) + margin (ADR-0010 D5) */
+
+/* Bring-up: free stack words (min ever) per task — read in the debugger to size
+ * the stacks (ADR-0010 D5). Small value = close to overflow. */
+volatile UBaseType_t g_hw_health;
+volatile UBaseType_t g_hw_idle;
+volatile UBaseType_t g_hw_timer;
 
 /* App heartbeat = LED4 (P12.2) on the CYTVII-B-E-1M-SK (kit guide). Deliberately
  * NOT the FBL's LED (P19.0), so app-blink vs FBL-blink is visible at a glance.
@@ -31,9 +38,13 @@ static void health_task(void *arg)
     for (;;)
     {
         Cy_GPIO_Inv(APP_LED_PORT, APP_LED_PIN);   /* heartbeat — slower than the FBL's */
-        /* TODO(bring-up): once all tasks are up, sample
-         * uxTaskGetStackHighWaterMark per task and record the minima for the
-         * stack-trim pass. */
+
+        /* Stack high-water for this task + the two FreeRTOS-owned tasks (the app
+         * tasks report their own into g_hw_app / g_hw_can). */
+        g_hw_health = uxTaskGetStackHighWaterMark(NULL);
+        g_hw_idle   = uxTaskGetStackHighWaterMark(xTaskGetIdleTaskHandle());
+        g_hw_timer  = uxTaskGetStackHighWaterMark(xTimerGetTimerDaemonTaskHandle());
+
         vTaskDelayUntil(&last, pdMS_TO_TICKS(APP_PERIOD_HEALTH_MS));
     }
 }
