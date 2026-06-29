@@ -25,10 +25,9 @@ extern uint32_t SystemCoreClock;
 #define configCPU_CLOCK_HZ                      ( SystemCoreClock )
 #define configTICK_RATE_HZ                      ( 1000U )
 #define configMAX_PRIORITIES                    5
-/* Words. Sized for the CM4F context frame (HW exception frame up to 26 words
- * with an FP frame, + R4-R11 + S16-S31). Generous for bring-up; trim later from
- * uxTaskGetStackHighWaterMark (ADR-0010 D4/D5). */
-#define configMINIMAL_STACK_SIZE                ( 256U )
+/* Words. The idle task. Sized from measured high-water (idle used ~11 words) plus
+ * a margin over the worst-case CM4F context frame (~50 words). ADR-0010 D4/D5. */
+#define configMINIMAL_STACK_SIZE                ( 128U )
 #define configUSE_16_BIT_TICKS                  0
 #define configIDLE_SHOULD_YIELD                 1
 
@@ -45,7 +44,7 @@ extern uint32_t SystemCoreClock;
 /* ---- Software timers (D5) ---- */
 #define configUSE_TIMERS                        1
 #define configTIMER_TASK_PRIORITY               ( configMAX_PRIORITIES - 1 )   /* 4 */
-#define configTIMER_TASK_STACK_DEPTH            ( 256U )       /* generous for bring-up; trim later */
+#define configTIMER_TASK_STACK_DEPTH            ( 128U )       /* daemon used ~28 words + margin */
 #define configTIMER_QUEUE_LENGTH                8
 
 /* ---- Synchronisation primitives in use ---- */
@@ -86,6 +85,7 @@ extern void vAssertCalled(const char *file, unsigned long line);
 #define INCLUDE_vTaskDelayUntil                 1
 #define INCLUDE_vTaskDelay                      1
 #define INCLUDE_uxTaskGetStackHighWaterMark     1              /* health task uses this */
+#define INCLUDE_xTaskGetIdleTaskHandle          1              /* idle high-water sample */
 #define INCLUDE_xTaskGetSchedulerState          1
 
 /* The CM4F port maps these CMSIS handlers to the kernel. */
