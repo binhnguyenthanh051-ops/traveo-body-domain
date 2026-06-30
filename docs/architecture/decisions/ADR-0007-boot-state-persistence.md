@@ -313,3 +313,11 @@ actioned here: **B2** — D4 made explicit (sw-reset + `.noinit` programming-req
 hibernate-wake classified independently so it never increments); **B6** — backup-domain
 register map (D6) reserves FBL and App partitions up front. Counter increment is now
 single-sourced in D4 (the duplicate in ADR-0008 was removed — B1).
+
+The **M2 extension (D7–D9)** was reviewed in `docs/review/ADR-0010-0011-review.md`. Findings
+actioned: **2** — fork `app_cm4.ld` into a repo-owned linker + a link-time `ASSERT`, so a BSP
+regeneration can't silently un-pin `.noinit` (D8); **6** — reworded the 256 B rationale (the
+App's cross-reset state lives in BREG per D6, not `.noinit`) (D8); **S4** (silicon) — the
+handshake gets its **own** `.fbl_handshake` section pinned at `_noinit_start`, not the shared
+`.noinit` catch-all (which the BSP/libraries populate first, pushing the handshake to a floating
+offset `0x0801_FCA0`) (D8).
