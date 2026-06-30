@@ -155,3 +155,13 @@ typedef struct {
 - Nominal and data bit-timing register values and the achieved sample points.
 - Message-RAM section offsets/sizes fit the part's CANFD message RAM.
 - `RF0N` is the correct new-message source and the write-1-clear semantics on this IP.
+
+## Review history
+
+Design-reviewed (`docs/review/ADR-0010-0011-review.md`) before implementation, then corrected
+against silicon during M2 bring-up. Findings actioned here: **4** — the message-RAM footprint
+made an explicit sizing constraint (D2); **S2** (silicon) — the TRAVEO CM4 **NVIC mux**:
+`intrSrc` packs a mux channel (`<< CY_SYSINT_INTRSRC_MUXIRQ_SHIFT`) with the system interrupt and
+`NVIC_EnableIRQ` takes the **mux channel**, not the bare IRQn — the bare form gives "init OK, no
+RX" (D3); **S3** (silicon) — RX FIFO 0 must have a non-zero element count or every accepted frame
+is dropped (D2; see `docs/briefs/M2-bringup_log.md`).

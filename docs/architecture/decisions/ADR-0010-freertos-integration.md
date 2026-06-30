@@ -271,3 +271,13 @@ configMAX_SYSCALL_INTERRUPT_PRIORITY     (2 << (8 - configPRIO_BITS))   /* 0x40 
 - FPU-frame stack costs trimmed from `uxTaskGetStackHighWaterMark` during bring-up.
 - Nothing re-enables the WDT across the FBL→app window (M2-6).
 - The port's SysTick reprogramming vs the FBL's stop is conflict-free (M2-2) on board.
+
+## Review history
+
+Design-reviewed (`docs/review/ADR-0010-0011-review.md`) before implementation, then corrected
+against silicon during M2 bring-up. Findings actioned here: **1** — named `app_msg_q` (the
+CAN→App decoded-struct queue) and added it to the budget (D5); **3** — clarified
+`Health_CyclicTask` is plain-periodic, not the hybrid cyclic form (D5); **5** — pinned
+`configTIMER_TASK_STACK_DEPTH` / `configTIMER_QUEUE_LENGTH`; **S1** (silicon) — corrected the
+handover claim: Cypress `SystemInit` relocates `VTOR` to the RAM vector table, so it is *not*
+`app_base` by `main()` (D7).
