@@ -52,7 +52,7 @@
  * so NO transceiver / bus / CAN tool is needed. The echo is disabled and the task
  * self-transmits a test frame each cycle. Set to 0 for the real bus (Phase B). */
 #ifndef CAN_LOOPBACK_TEST
-#define CAN_LOOPBACK_TEST   1
+#define CAN_LOOPBACK_TEST   0
 #endif
 
 #if CAN_LOOPBACK_TEST
