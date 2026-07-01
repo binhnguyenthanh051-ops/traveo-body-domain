@@ -146,8 +146,13 @@ answerable to "which seam?".
 
 ## Where M2 stands
 
-All three seams up on silicon: FreeRTOS + heartbeat, CANFD echo (internal
-loopback — full path proven), and the App→FBL `.noinit` reprogram (the deferred M1
-thread, closed). Remaining: **real-bus CANFD echo** with the VN1610 (the loopback
-proved the software; the bus proves the transceiver + bit timing + a second node's
-ACK).
+All three seams up on silicon: FreeRTOS + heartbeat, CANFD echo, and the App→FBL
+`.noinit` reprogram (the deferred M1 thread, closed).
+
+The CANFD echo was proven twice: first in **internal loopback** (software path, no
+hardware), then on the **real bus** with a Vector VN1610 driving `python-can` (no
+CANalyzer license — just the free XL Driver Library; see
+`host_tools/can_echo_probe/`). 10/10 FD frames (id `0x200`, BRS) echoed back, with
+the alternating `door_ajar` byte confirming the full RX→decode→`bodyctl`→echo path
+end to end, plus the real transceiver, bit timing, and a second node's ACK. **M2
+bring-up is complete.**

@@ -120,9 +120,9 @@ the bootloader's own RAM stops overlapping the CM0+ tenant.
    "N reprograms ⇒ no boot-loop trip" test. `make test` green.
 5. ✅ Implemented + green. Target port done: FreeRTOS/MTB build, CANFD driver, LED/button
    path, the FBL linker fork (`fbl_cm4.ld`), the dedicated `.fbl_handshake` pin.
-6. 🔶 On-board bring-up (M2-1 order) — see `M2-bringup_log.md`:
+6. ✅ On-board bring-up (M2-1 order) — see `M2-bringup_log.md`:
    - ✅ Seam 1: FreeRTOS + heartbeat (LED4/P12.2).
-   - ✅ Seam 2: CANFD echo — full RX→task→TX path proven in **internal loopback**;
-     **real-bus echo (VN1610) pending**.
+   - ✅ Seam 2: CANFD echo — internal loopback, then **real bus** (VN1610 via
+     `host_tools/can_echo_probe/`, 10/10 FD frames echoed).
    - ✅ Seam 3: App→FBL `.noinit` reprogram — closes the deferred M1 thread on silicon.
-   - ⬜ Remaining: real-bus CAN (Phase B); optional physical button; stack-high-water trim.
+   - Button (SW1/P7.0) + measured stack trim done. **M2 complete.**
