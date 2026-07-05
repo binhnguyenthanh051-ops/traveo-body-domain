@@ -207,3 +207,38 @@ in ADR-0007 D4); **B4** — D3 reworked into a covered descriptive header + an e
 integrity trailer so the digest never covers itself (M4 inherits the layout); **B3/B9** —
 added the FBL→app handover contract to D4; **B7** — noted the asm-helper MISRA deviation;
 **B8** — extended the vector-table sanity check (MSP in SRAM bounds + 8-byte aligned).
+
+The FBL's M3 Seam 3 bring-up (the knock window running for real) surfaced two further
+findings, this time in the boot-time environment the decision tree runs in, not the decision
+logic itself (host-tested and unchanged):
+
+- **S1** (silicon) — `fbl_port_lifecycle()` (`port_security.c`) was still the M1 stub,
+  hardcoded to `FBL_LC_SECURE` — a correct *safe default* while nothing needed the knock
+  window to actually open, but wrong for this stage: per D5's own design intent ("develop in
+  the open (pre-SECURE) lifecycle... the knock window is the convenience this buys"), a dev
+  board should read as pre-SECURE through M1–M4, and this board has never been
+  lifecycle-provisioned. Replaced with a real read of `CPUSS_PROTECTION.STATE` (`0x402020C4`,
+  confirmed against `docs/references/CPUSS_Protection_Secure_State.png`), mapping the
+  register's five raw states (`UNKNOWN`/`VIRGIN`/`NORMAL`/`SECURE`/`DEAD`) onto
+  `fbl_lifecycle_t`'s four — `VIRGIN` → `NORMAL` (unprovisioned is at least as open),
+  `UNKNOWN`/`DEAD` → `SECURE` (ambiguous or terminal, deny the knock window; same prime-bias
+  safe-default direction as ADR-0007 D3).
+- **S2** (silicon) — the vendor startup leaves `PRIMASK` set (interrupts globally masked)
+  after `SystemInit()`/`cybsp_init()`, expecting whatever runs next to turn them back on; an
+  RTOS scheduler start does this for the App for free (ADR-0010), but the FBL is bare-metal
+  (ADR-0004: no RTOS) and nothing ever called `__enable_irq()`. This silently broke
+  `fbl_port_now_ms()`: SysTick's counter ran correctly in hardware (confirmed via
+  `SysTick->CTRL`/`->VAL`), but its interrupt was never taken, so `s_tick_ms` never
+  incremented — `fbl_dwell_for_tool()`'s timeout branch could then only ever be escaped by a
+  knock, never by elapsed time (the dwell hung indefinitely with no CAN traffic and only
+  appeared to work once traffic started). Fixed with an explicit `__enable_irq()` in
+  `fbl_main()`, right after `cybsp_init()`.
+
+  **Retroactive impact on ADR-0013's S1:** this same `PRIMASK` bug was present through M3
+  Seam 2 (ISO-TP) bring-up too, meaning `isotp.c`'s `N_Cr` timeout (ADR-0013 D3) was never
+  actually functional on hardware at the time that seam was verified — the timing
+  degenerates harmlessly to `now_ms - last_activity == 0` when `now_ms` never advances,
+  which happens not to matter for a prompt, successful exchange. Seam 2's success did not
+  exercise the timeout path; an interrupted-transfer scenario before this fix would not have
+  timed out correctly. Both `N_Cr` and the knock dwell now share the same real clock, fixed
+  once here.

@@ -306,6 +306,54 @@ The M2 fix — one region, one definition, honoured by both:
 sequence over the existing classify + counter rule; target-only — `app_port_noinit_region`,
 `app_port_system_reset`, and the two-linker `.noinit` pinning.
 
+## M3 extension — the FBL clears the programming-request after a successful reprogram (D10)
+
+*Added 2026-07-02 for M3 (UDS reprogramming, ADR-0012). D1–D9 built the App→FBL direction of
+the handshake (App writes a request, FBL reads/validates/primes). M3 is the first time the
+**FBL writes** `.noinit` — closing a gap that would otherwise strand the ECU in the
+bootloader after a successful reprogram.*
+
+### D10. FBL-side clear, unconditional on `ECUReset`
+
+Without this, a successful download loops forever: the App's original
+`PROGRAMMING_REQUESTED` write (D7) is never overwritten, so every reset after `ECUReset`
+re-reads it and re-enters programming mode (ADR-0008 D1 step 1) — even though a valid,
+freshly-flashed app is sitting there unjumped-to.
+
+The fix reuses existing pieces unchanged — no new port hook:
+
+```c
+fbl_handshake_t h;
+boot_handshake_encode(&h, FBL_BOOT_APP);   /* same function the App uses (D7), other mode */
+*fbl_port_noinit() = h;                     /* same pointer accessor already used to read */
+__DSB();
+fbl_port_system_reset();                    /* already exists */
+```
+
+**This runs on every `ECUReset` (0x11), regardless of whether a download actually completed
+successfully** — it is not conditioned on transfer success. Clearing the request only removes
+the *override*; it does not assert the app is good. The existing digest/vector check
+(ADR-0008 D1 step 4 / D3) is the actual safety net: if a tester aborts mid-download and sends
+`ECUReset` anyway, clearing `.noinit` simply lets the normal fail-safe decide, and it
+correctly falls back to programming mode on its own. One mechanism, two cases covered.
+
+**`.noinit`, not EEPROM, and permanently so.** The reset following `ECUReset` is a software
+reset, which retains `.noinit` (D2) — the correct tier. A power cycle after a successful
+reprogram already primes `.noinit` back to `FBL_BOOT_APP` by default anyway (D3), so nothing
+is lost either way. EEPROM would only matter for a genuinely different, **not built**, future
+need — a durable "last reprogram result / app version" record surviving hibernate, readable
+long after boot (e.g. a future `ReadDataByIdentifier`) — a diagnostic log, not the handshake.
+
+**Explicitly reserved, not built now: an App-readable status.** The channel stays
+App-writes-request / FBL-reads-and-clears only. A future FBL→App direction (e.g. "you were
+just freshly reprogrammed, version X" for the App to consume on its next boot) would need a
+new field in `fbl_handshake_t` — the 256 B region (D8) already leaves room for it — but no
+such field exists yet and none should be added speculatively.
+
+Host/target split addition: no new port. `boot_handshake_encode` and `fbl_port_noinit` are
+both reused as-is; the only new thing is a new call site (the M3 `ECUReset` handler) and the
+host test asserting `mode == FBL_BOOT_APP` after the sequence.
+
 ## Review history
 
 Design-reviewed before implementation (`docs/review/ADR-0007-0008-review.md`). Findings
@@ -313,6 +361,9 @@ actioned here: **B2** — D4 made explicit (sw-reset + `.noinit` programming-req
 hibernate-wake classified independently so it never increments); **B6** — backup-domain
 register map (D6) reserves FBL and App partitions up front. Counter increment is now
 single-sourced in D4 (the duplicate in ADR-0008 was removed — B1).
+
+The **M3 extension (D10)** was designed in discussion, not yet formally reviewed — pending
+the same review pass as ADR-0012–0015 before implementation.
 
 The **M2 extension (D7–D9)** was reviewed in `docs/review/ADR-0010-0011-review.md`. Findings
 actioned: **2** — fork `app_cm4.ld` into a repo-owned linker + a link-time `ASSERT`, so a BSP
