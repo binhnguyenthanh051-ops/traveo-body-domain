@@ -132,5 +132,29 @@ in M3 scope).
 
 ## Review history
 
-Design-reviewed in discussion before implementation (this session). No code exists yet;
-module skeletons and failing Unity tests are the next step per the M3 brief's rhythm.
+Design-reviewed in discussion before implementation (this session). Module skeletons +
+failing Unity tests, then implementation, then seam-by-seam FBL bring-up on real silicon.
+
+The D6 flash-operation interface (`hal_flash_if_t` bound to the app-image region,
+`node_a_gateway/bootloader/src/port_flash.c`) surfaced three silicon findings during M3
+Seam 6 bring-up — the design's "target-only, behind a port" boundary held, but the port's
+first draft made assumptions the compiler and then the chip falsified:
+
+- **S1** (silicon) — this part is the **ECT flash IP** (`CPUSS_FLASHC_ECT == 1` →
+  `CY_IP_MXFLASHC_VERSION_ECT`), whose API is `Cy_Flash_ProgramRow` + `Cy_Flash_EraseSector`.
+  `Cy_Flash_WriteRow`/`Cy_Flash_EraseRow` (the non-ECT pair the first draft used, when the
+  preprocessor couldn't be run to check) **do not exist** for ECT — caught at compile time.
+- **S2** (silicon) — code flash is **mixed sector geometry**: 30 large 32 KB sectors then 16
+  small 8 KB sectors, and the small sectors sit at the **top** of code flash — i.e. the top of
+  the app image region (`0x100F_0000`–`0x1011_0000`), not a don't-care area at the start as the
+  first draft assumed. A single fixed `sector_size` can't describe this; the port erases the
+  real sector at each address (`fbl_flash_sector_size()`), reports the coarse 32 KB granularity
+  as the caller-facing alignment unit (a 32 KB boundary is a valid sector boundary in both
+  regions), and `erase_range()` walks real sector sizes internally. **This confirms D6's
+  intent**: erase and program are genuinely different, non-uniform granularities, which the
+  download bookkeeping (D4) respects by erasing the whole region and programming row by row.
+- **S3** (silicon) — program/erase of main (code) flash is gated by a **write-safety register**
+  that defaults to disabled; the SROM returns `CY_FLASH_DRV_FLASH_SAFTEY_ENABLED` until
+  `Cy_Flashc_MainWriteEnable()` is called. The FBL lifts it (`fbl_flash_init()`) only on the
+  programming-mode path, never on the boot/jump path, so code-flash writes stay disabled
+  whenever control is handed to the app.
