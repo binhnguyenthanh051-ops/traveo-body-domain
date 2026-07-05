@@ -28,6 +28,33 @@ BOOT_TEST := shared/boot/tests/test_boot.c shared/boot/tests/boot_port_fake.c
 APP_INC      := -Inode_a_gateway/app/logic/include -Inode_a_gateway/app/include
 CAN_INC      := -Ishared/can/include
 
+# --- diag (M3): ISO-TP + UDS session/handlers (ADR-0012/0013/0014) ---
+DIAG_INC      := -Ishared/diag/include $(CAN_INC) -Ishared/hal/include
+ISOTP_SRC     := shared/diag/src/isotp.c
+ISOTP_TEST    := shared/diag/tests/test_isotp.c shared/diag/tests/can_hal_fake.c
+
+UDS_SESSION_SRC  := shared/diag/src/uds_session.c shared/diag/src/uds_session_control.c \
+                    shared/diag/src/uds_ecu_reset.c shared/diag/src/uds_security_access.c
+UDS_SESSION_TEST := shared/diag/tests/test_uds_session.c shared/diag/tests/isotp_fake.c
+
+UDS_SECURITY_SRC  := shared/diag/src/uds_security_access.c
+UDS_SECURITY_TEST := shared/diag/tests/test_uds_security_access.c
+
+UDS_DOWNLOAD_SRC  := shared/diag/src/uds_download.c
+UDS_DOWNLOAD_TEST := shared/diag/tests/test_uds_download.c shared/diag/tests/flash_fake.c
+
+# routine_control's "check programmed image" reuses shared/boot's
+# fbl_digest()/fbl_app_image_valid() directly (ADR-0012 D8) -- needs BOOT_INC
+# and boot.c's own port fake, since boot.c also defines fbl_run_boot() etc.
+# which pull in the rest of fbl_port_*.
+UDS_ROUTINE_SRC   := shared/diag/src/uds_routine_control.c $(BOOT_SRC) shared/boot/tests/boot_port_fake.c
+UDS_ROUTINE_TEST  := shared/diag/tests/test_uds_routine_control.c shared/diag/tests/flash_fake.c
+
+# --- sysmgr (M3): resource & lifecycle manager (ADR-0015) ---
+SYSMGR_INC   := -Ishared/sysmgr/include
+SYSMGR_SRC   := shared/sysmgr/src/sysmgr.c
+SYSMGR_TEST  := shared/sysmgr/tests/test_sysmgr.c
+
 BODYCTL_SRC  := node_a_gateway/app/logic/src/bodyctl.c
 BODYCTL_TEST := node_a_gateway/app/logic/tests/test_bodyctl.c
 
@@ -38,9 +65,13 @@ REPROG_SRC   := node_a_gateway/app/logic/src/reprogram.c shared/boot/src/boot.c 
                 node_a_gateway/app/logic/tests/app_port_fake.c
 REPROG_TEST  := node_a_gateway/app/logic/tests/test_reprogram.c
 
-.PHONY: test test_messages test_scheduler test_boot test_bodyctl test_reprogram clean lint
+.PHONY: test test_messages test_scheduler test_boot test_bodyctl test_reprogram \
+        test_isotp test_uds_session test_uds_security_access test_uds_download \
+        test_uds_routine_control test_sysmgr clean lint
 
-test: test_messages test_scheduler test_boot test_bodyctl test_reprogram
+test: test_messages test_scheduler test_boot test_bodyctl test_reprogram \
+      test_isotp test_uds_session test_uds_security_access test_uds_download \
+      test_uds_routine_control test_sysmgr
 
 test_messages: $(BUILD)/test_messages
 	@echo "== messages =="
@@ -62,6 +93,30 @@ test_reprogram: $(BUILD)/test_reprogram
 	@echo "== reprogram =="
 	@$(BUILD)/test_reprogram
 
+test_isotp: $(BUILD)/test_isotp
+	@echo "== isotp =="
+	@$(BUILD)/test_isotp
+
+test_uds_session: $(BUILD)/test_uds_session
+	@echo "== uds_session =="
+	@$(BUILD)/test_uds_session
+
+test_uds_security_access: $(BUILD)/test_uds_security_access
+	@echo "== uds_security_access =="
+	@$(BUILD)/test_uds_security_access
+
+test_uds_download: $(BUILD)/test_uds_download
+	@echo "== uds_download =="
+	@$(BUILD)/test_uds_download
+
+test_uds_routine_control: $(BUILD)/test_uds_routine_control
+	@echo "== uds_routine_control =="
+	@$(BUILD)/test_uds_routine_control
+
+test_sysmgr: $(BUILD)/test_sysmgr
+	@echo "== sysmgr =="
+	@$(BUILD)/test_sysmgr
+
 # Static analysis. Runs cppcheck over production C (not test harnesses).
 # With a licensed MISRA rule-texts file, enable the addon line below for MISRA C:2012.
 # cppcheck is installed in CI; locally, install it to run this target.
@@ -69,6 +124,7 @@ LINT_SRC := shared/messages/src shared/messages/include \
             shared/hal/include scheduler/src scheduler/include \
             shared/boot/src shared/boot/include \
             shared/can/src shared/can/include shared/diag/src shared/diag/include \
+            shared/sysmgr/src shared/sysmgr/include \
             shared/crypto/src shared/crypto/include shared/secoc/src shared/secoc/include \
             shared/eeprom_emu/src shared/eeprom_emu/include security/src security/include \
             node_a_gateway/app/logic/src node_a_gateway/app/logic/include \
@@ -78,7 +134,8 @@ lint:
 	cppcheck --error-exitcode=1 --enable=warning,style,portability \
 	         --std=c17 --inline-suppr --quiet \
 	         -I shared/messages/include -I shared/hal/include -I scheduler/include \
-	         -I shared/boot/include -I shared/can/include \
+	         -I shared/boot/include -I shared/can/include -I shared/diag/include \
+	         -I shared/sysmgr/include \
 	         -I node_a_gateway/app/logic/include -I node_a_gateway/app/include \
 	         $(LINT_SRC)
 	@echo "(MISRA addon: add '--addon=misra.json' once the licensed rule-texts file is in place)"
@@ -97,6 +154,24 @@ $(BUILD)/test_bodyctl: $(BODYCTL_SRC) $(BODYCTL_TEST) $(UNITY_SRC) | $(BUILD)
 
 $(BUILD)/test_reprogram: $(REPROG_SRC) $(REPROG_TEST) $(UNITY_SRC) | $(BUILD)
 	$(CC) $(CFLAGS) $(UNITY_INC) $(BOOT_INC) $(APP_INC) $(UNITY_SRC) $(REPROG_SRC) $(REPROG_TEST) -o $@
+
+$(BUILD)/test_isotp: $(ISOTP_SRC) $(ISOTP_TEST) $(UNITY_SRC) | $(BUILD)
+	$(CC) $(CFLAGS) $(UNITY_INC) $(DIAG_INC) $(UNITY_SRC) $(ISOTP_SRC) $(ISOTP_TEST) -o $@
+
+$(BUILD)/test_uds_session: $(UDS_SESSION_SRC) $(UDS_SESSION_TEST) $(UNITY_SRC) | $(BUILD)
+	$(CC) $(CFLAGS) $(UNITY_INC) $(DIAG_INC) $(UNITY_SRC) $(UDS_SESSION_SRC) $(UDS_SESSION_TEST) -o $@
+
+$(BUILD)/test_uds_security_access: $(UDS_SECURITY_SRC) $(UDS_SECURITY_TEST) $(UNITY_SRC) | $(BUILD)
+	$(CC) $(CFLAGS) $(UNITY_INC) $(DIAG_INC) $(UNITY_SRC) $(UDS_SECURITY_SRC) $(UDS_SECURITY_TEST) -o $@
+
+$(BUILD)/test_uds_download: $(UDS_DOWNLOAD_SRC) $(UDS_DOWNLOAD_TEST) $(UNITY_SRC) | $(BUILD)
+	$(CC) $(CFLAGS) $(UNITY_INC) $(DIAG_INC) $(UNITY_SRC) $(UDS_DOWNLOAD_SRC) $(UDS_DOWNLOAD_TEST) -o $@
+
+$(BUILD)/test_uds_routine_control: $(UDS_ROUTINE_SRC) $(UDS_ROUTINE_TEST) $(UNITY_SRC) | $(BUILD)
+	$(CC) $(CFLAGS) $(UNITY_INC) $(DIAG_INC) $(BOOT_INC) $(UNITY_SRC) $(UDS_ROUTINE_SRC) $(UDS_ROUTINE_TEST) -o $@
+
+$(BUILD)/test_sysmgr: $(SYSMGR_SRC) $(SYSMGR_TEST) $(UNITY_SRC) | $(BUILD)
+	$(CC) $(CFLAGS) $(UNITY_INC) $(SYSMGR_INC) $(UNITY_SRC) $(SYSMGR_SRC) $(SYSMGR_TEST) -o $@
 
 $(BUILD):
 	@mkdir -p $(BUILD)

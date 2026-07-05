@@ -1,15 +1,18 @@
 /*
- * port_prog.c — programming-mode entry + system reset (target).  STUB.
+ * port_prog.c — programming-mode entry + system reset (target).
  *
  * Terminal actions not tied to a specific hardware block:
- *   - enter_programming_mode: where the FBL goes when it must NOT boot the app.
- *     M1 = stay resident (blink a heartbeat LED); M3 fills in UDS services.
- *   - system_reset: a Cortex-M system reset (app uses it after a programming
- *     request; ADR-0007 D1).
+ *   - enter_programming_mode: where the FBL goes when it must NOT boot the
+ *     app. M3 Seam 4: drives the real UDS session (fbl_diag.c), replacing
+ *     the Seam 1/2 bring-up aids (LED-only heartbeat, then the isotp echo).
+ *   - system_reset: a Cortex-M system reset (the app uses it after a
+ *     programming request, ADR-0007 D1; the FBL uses it after ECUReset,
+ *     ADR-0007 D10).
  */
 #include "fbl_port.h"
+#include "fbl_diag.h"   /* M3 Seam 4: the real UDS session */
 #include "cybsp.h"      /* target-only */
-#include "cy_pdl.h"     /* target-only: Cy_GPIO_*, Cy_SysLib_Delay */
+#include "cy_pdl.h"     /* target-only: Cy_GPIO_*, Cy_SysLib_Delay, NVIC_SystemReset */
 
 /*
  * This Empty-App BSP has NO user LED configured in the Device Configurator, so
@@ -39,6 +42,8 @@
 
 void fbl_port_enter_programming_mode(void)
 {
+    fbl_diag_init();
+
 #if defined(FBL_LED_PORT)
     /* Configure the LED as a strong-drive output directly (works whether or not
      * the BSP configured it), then blink it as the "in bootloader" heartbeat. */
@@ -46,6 +51,7 @@ void fbl_port_enter_programming_mode(void)
                          CY_GPIO_DM_STRONG_IN_OFF, 0U, HSIOM_SEL_GPIO);
     for (;;)
     {
+        fbl_diag_tick(fbl_port_now_ms());
         Cy_GPIO_Inv(FBL_LED_PORT, FBL_LED_PIN);
         Cy_SysLib_Delay(250U);   /* ms — fast blink = "in bootloader" */
     }
@@ -53,17 +59,12 @@ void fbl_port_enter_programming_mode(void)
     /* No LED pin known yet (see (A)/(B) above). Stay resident. */
     for (;;)
     {
-        /* idle in the bootloader */
+        fbl_diag_tick(fbl_port_now_ms());
     }
 #endif
 }
 
 void fbl_port_system_reset(void)
 {
-    /* TODO(board): NVIC_SystemReset() (SCB AIRCR SYSRESETREQ) via the CMSIS
-     * core header. Must not return. */
-    for (;;)
-    {
-        /* placeholder until the CMSIS reset call is wired in */
-    }
+    NVIC_SystemReset();   /* CMSIS core; requests SYSRESETREQ, does not return */
 }

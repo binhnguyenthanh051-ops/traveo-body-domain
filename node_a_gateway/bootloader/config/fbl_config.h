@@ -15,7 +15,14 @@
 #define FBL_BOOTLOOP_THRESHOLD  3U         /* counter > N => stay in FBL */
 
 /* FBL-only (not used by the portable core): the diagnostic CAN ID the knock
- * frame arrives on; port_can.c polls for it. Verify against ADR-0002. */
-#define FBL_KNOCK_CAN_ID        0x7E0U
+ * frame (and later, real UDS requests) arrives on; port_can.c polls for it.
+ * Updated for M3 to the Node A diagnostic request ID reserved in ADR-0002's
+ * M3 extension (0x700-0x7FF band) -- was a placeholder 0x7E0 under M1, when
+ * no diagnostic band existed yet. */
+#define FBL_KNOCK_CAN_ID        0x7A0U
+
+/* M3 Seam 2: the Node A diagnostic response ID (ADR-0002 M3 extension) --
+ * every frame isotp.c transmits (SF/FF/CF/FC) goes out under this ID. */
+#define FBL_DIAG_RESPONSE_ID    0x7A8U
 
 #endif /* FBL_CONFIG_H */
