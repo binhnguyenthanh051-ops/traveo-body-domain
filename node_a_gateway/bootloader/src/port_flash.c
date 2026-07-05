@@ -89,6 +89,31 @@ static bool in_app_region(uint32_t addr, uint32_t len)
     return (addr - FBL_APP_FLASH_BASE) <= (FBL_APP_FLASH_SIZE - len);
 }
 
+/* A blocking flash program/erase busies the code-flash macro; fetching an
+ * instruction from that macro while it is busy is a read-while-write
+ * violation -> HardFault (iBusErr). SysTick firing mid-operation and vectoring
+ * to its flash-resident handler triggered exactly this during Seam 7 bring-up
+ * (the fault frame showed iBusErr + sysTickAct). Run each blocking flash call
+ * with interrupts masked so no ISR fetches from flash while the macro is busy;
+ * Cy_SysLib_Enter/ExitCriticalSection saves and restores the prior PRIMASK.
+ * The blocking op is short (a row program / sector erase) and the PC is
+ * waiting for our response during it, so no CAN RX is missed. */
+static cy_en_flashdrv_status_t flash_program_row_masked(uint32_t addr, const uint32_t *data)
+{
+    uint32_t saved = Cy_SysLib_EnterCriticalSection();
+    cy_en_flashdrv_status_t st = Cy_Flash_ProgramRow(addr, data);
+    Cy_SysLib_ExitCriticalSection(saved);
+    return st;
+}
+
+static cy_en_flashdrv_status_t flash_erase_sector_masked(uint32_t addr)
+{
+    uint32_t saved = Cy_SysLib_EnterCriticalSection();
+    cy_en_flashdrv_status_t st = Cy_Flash_EraseSector(addr);
+    Cy_SysLib_ExitCriticalSection(saved);
+    return st;
+}
+
 static int hal_read(uint32_t addr, uint8_t *dst, size_t len)
 {
     if (!in_app_region(addr, (uint32_t)len)) { return -1; }
@@ -110,7 +135,7 @@ static int hal_write(uint32_t addr, const uint8_t *src, size_t len)
          * src directly. */
         uint32_t row[FLASH_PROGRAM_ROW_SIZE / 4U];
         (void)memcpy(row, &src[off], FLASH_PROGRAM_ROW_SIZE);
-        g_flash_raw_program_status = (uint32_t)Cy_Flash_ProgramRow(addr + off, row);
+        g_flash_raw_program_status = (uint32_t)flash_program_row_masked(addr + off, row);
         if (g_flash_raw_program_status != CY_FLASH_DRV_SUCCESS) { return -1; }
     }
 
@@ -127,7 +152,7 @@ static int hal_erase_sector(uint32_t sector_addr)
     if (!in_app_region(sector_addr, ssz)) { return -1; }
     if ((sector_addr % ssz) != 0U) { return -1; }
 
-    g_flash_raw_erase_status = (uint32_t)Cy_Flash_EraseSector(sector_addr);
+    g_flash_raw_erase_status = (uint32_t)flash_erase_sector_masked(sector_addr);
     Cy_SysLib_ClearFlashCacheAndBuffer();
     return (g_flash_raw_erase_status == CY_FLASH_DRV_SUCCESS) ? 0 : -1;
 }
@@ -148,7 +173,7 @@ static int hal_erase_range(uint32_t addr, uint32_t len)
     {
         uint32_t ssz = fbl_flash_sector_size(pos);
         if ((end - pos) < ssz) { return -1; }   /* range not sector-aligned */
-        if (Cy_Flash_EraseSector(pos) != CY_FLASH_DRV_SUCCESS) { return -1; }
+        if (flash_erase_sector_masked(pos) != CY_FLASH_DRV_SUCCESS) { return -1; }
         pos += ssz;
     }
 

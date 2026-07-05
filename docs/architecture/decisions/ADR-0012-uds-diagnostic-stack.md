@@ -158,3 +158,32 @@ first draft made assumptions the compiler and then the chip falsified:
   `Cy_Flashc_MainWriteEnable()` is called. The FBL lifts it (`fbl_flash_init()`) only on the
   programming-mode path, never on the boot/jump path, so code-flash writes stay disabled
   whenever control is handed to the app.
+
+The full end-to-end download (Seam 7 — the milestone deliverable: PC tool → the whole UDS
+programming sequence → the FBL verifies and jumps to the new app) surfaced two more findings
+in the FBL *runtime* the stack executes in, both about the D2 super-loop rather than the
+diagnostic logic (which was host-tested and unchanged):
+
+- **S4** (silicon) — a blocking flash program/erase busies the code-flash macro, and
+  **fetching an instruction from that macro while it is busy is a read-while-write violation
+  → HardFault** (the fault frame showed `iBusErr` + `sysTickAct`). The synchronous flash-op
+  path runs from SROM/ROM, so it is safe; the trigger was **SysTick firing mid-operation and
+  vectoring to its flash-resident handler**. Fixed by masking interrupts
+  (`Cy_SysLib_Enter/ExitCriticalSection`) around each blocking flash call in `port_flash.c`.
+  Only surfaced in Seam 7, not Seam 6's isolated flash test, because Seam 7's target
+  (`0x1004_0000`, adjacent to the FBL's own code) is in the same/neighbouring sector group
+  as the code being fetched; Seam 6's target (the top small sector) was far away.
+- **S5** (silicon) — the programming-mode super-loop's LED heartbeat used a blocking
+  `Cy_SysLib_Delay(250)`, which **starved `isotp_poll()` to once per 250 ms**. A multi-frame
+  `transferData` block bursts ~30+ consecutive frames far faster than that, and the CAN RX
+  FIFO is only 8 deep, so it overflowed mid-block and reassembly never completed
+  (requestDownload succeeded, then the first 2 KB block timed out). Fixed by making the loop
+  tight — poll every iteration, drive the heartbeat off the millisecond clock instead of a
+  blocking delay. The classic "never block in the super-loop" bootloader rule, and a concrete
+  vindication of D2's poll-based-transport choice: the fix is purely *how often* the existing
+  poll runs, no structural change.
+
+*(Two host-tool bugs also turned up here and were fixed in `host_tools/uds_flash/` rather
+than the firmware: a response-index off-by-one reading the routineControl check-image status,
+and closing the CAN bus before the no-response `ECUReset` frame transmitted — see ADR-0007
+D10a for the latter, which also masked the boot-loop-counter interaction until fixed.)*

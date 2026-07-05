@@ -115,14 +115,28 @@ void fbl_port_enter_programming_mode(void)
 
 #if defined(FBL_LED_PORT)
     /* Configure the LED as a strong-drive output directly (works whether or not
-     * the BSP configured it), then blink it as the "in bootloader" heartbeat. */
+     * the BSP configured it), then blink it as the "in bootloader" heartbeat.
+     *
+     * The loop MUST poll fbl_diag_tick() (i.e. ISO-TP) every iteration with no
+     * blocking delay: a multi-frame transferData block bursts ~30+ consecutive
+     * frames much faster than any human-visible blink period, and the CAN RX
+     * FIFO is only 8 deep -- a blocking Cy_SysLib_Delay() here starves the poll
+     * and overflows the FIFO mid-download (silicon-verified during Seam 7:
+     * requestDownload succeeded, then the first 2 KB block timed out). So the
+     * heartbeat is driven off the millisecond clock, not a delay -- a classic
+     * "never block in the super-loop" bootloader rule. */
     Cy_GPIO_Pin_FastInit(FBL_LED_PORT, FBL_LED_PIN,
                          CY_GPIO_DM_STRONG_IN_OFF, 0U, HSIOM_SEL_GPIO);
+    uint32_t last_blink_ms = fbl_port_now_ms();
     for (;;)
     {
         fbl_diag_tick(fbl_port_now_ms());
-        Cy_GPIO_Inv(FBL_LED_PORT, FBL_LED_PIN);
-        Cy_SysLib_Delay(250U);   /* ms — fast blink = "in bootloader" */
+        uint32_t now = fbl_port_now_ms();
+        if ((now - last_blink_ms) >= 250U)   /* ms — fast blink = "in bootloader" */
+        {
+            Cy_GPIO_Inv(FBL_LED_PORT, FBL_LED_PIN);
+            last_blink_ms = now;
+        }
     }
 #else
     /* No LED pin known yet (see (A)/(B) above). Stay resident. */

@@ -25,11 +25,15 @@ void uds_routine_control_init(const hal_flash_if_t *flash,
 static uds_result_t do_erase(const uint8_t *req, size_t req_len,
                               uint8_t *resp, size_t resp_cap, size_t *resp_len)
 {
-    if (req_len < 9U) { return UDS_NRC_REQUEST_OUT_OF_RANGE; }
+    /* [routineControlType(1)][routineId(2)][addr(4)][len(4)] -- len is 32-bit:
+     * a 16-bit length maxes out at 64 KB, but the app region needs whole
+     * 32 KB sectors covering an ~80 KB+ image, i.e. >64 KB in one request. */
+    if (req_len < 11U) { return UDS_NRC_REQUEST_OUT_OF_RANGE; }
 
     uint32_t addr = ((uint32_t)req[3] << 24) | ((uint32_t)req[4] << 16) |
                     ((uint32_t)req[5] << 8)  |  (uint32_t)req[6];
-    uint32_t len  = ((uint32_t)req[7] << 8) | (uint32_t)req[8];
+    uint32_t len  = ((uint32_t)req[7] << 24) | ((uint32_t)req[8] << 16) |
+                    ((uint32_t)req[9] << 8)  |  (uint32_t)req[10];
 
     int rc;
     if (g_flash->erase_range != NULL)
