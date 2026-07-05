@@ -165,3 +165,33 @@ made an explicit sizing constraint (D2); **S2** (silicon) — the TRAVEO CM4 **N
 `NVIC_EnableIRQ` takes the **mux channel**, not the bare IRQn — the bare form gives "init OK, no
 RX" (D3); **S3** (silicon) — RX FIFO 0 must have a non-zero element count or every accepted frame
 is dropped (D2; see `docs/briefs/M2-bringup_log.md`).
+
+The FBL's M3 Seam 1 CAN bring-up (`node_a_gateway/bootloader/src/port_can.c` — polled, not
+ISR; ADR-0012 D2) exercises the same RX/TX mechanics D3/D4 describe for the App's ISR-driven
+variant from a different entry point, and surfaced two further silicon findings there:
+
+- **S4** (silicon) — `Cy_CANFD_GetFIFOTop()` only returns valid data when
+  `RXFTOP_CTL.F0TPE` ("RX FIFO top-pointer logic") is enabled for that FIFO. With it
+  **disabled** — the Device Configurator default for both this project and the App's,
+  confirmed identical — `GetFIFOTop()` still returns `CY_CANFD_SUCCESS`, but with an
+  all-zero payload, rather than failing loudly. The polled RX path must call
+  `Cy_CANFD_ExtractMsgFromRXBuffer()` instead: it branches on `F0TPE` internally and, when
+  top-pointer mode is off, computes the real element address (`Cy_CANFD_CalcRxFifoAdrs` +
+  `Cy_CANFD_GetRxBuffer`) and acknowledges via `RXF0A` directly. `Cy_CANFD_IrqHandler` (the
+  App's ISR path) already goes through this same correct dispatch internally, which is why
+  M2 never hit this.
+- **S5** (silicon) — with a single dedicated TX buffer (D4), issuing a second
+  `Cy_CANFD_UpdateAndTransmitMsgBuffer()` before the first request's `TXBRP` (TX Buffer
+  Request Pending) bit clears silently drops or corrupts the earlier frame. M2's one-frame
+  echo never sent two frames back-to-back, so this never surfaced there; ISO-TP's
+  consecutive-frame burst (ADR-0013) does. Fixed by polling `TXBRP` clear (bounded to 10 ms)
+  before reusing the buffer.
+
+  **Same mechanism, a second triggering scenario (M3 Seam 4):** `Cy_CANFD_UpdateAndTransmitMsgBuffer()`
+  only *requests* a transmission — it returns before the frame has actually left the buffer,
+  same as above. ECUReset's positive response (`isotp_send()`, inside `uds_session_tick()`)
+  was followed immediately by `fbl_port_system_reset()`, which could cut that response's
+  transmission short before it ever reached the bus — not a second send racing the first
+  this time, but an external action (the reset) not waiting for the first at all. Same
+  `TXBRP`-polling wait, reused rather than re-derived: exposed as `fbl_can_wait_tx_complete()`
+  (`fbl_can.h`), called by `fbl_diag.c` right before the reset.
