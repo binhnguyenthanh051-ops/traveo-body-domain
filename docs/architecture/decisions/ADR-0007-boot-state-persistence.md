@@ -354,6 +354,34 @@ Host/target split addition: no new port. `boot_handshake_encode` and `fbl_port_n
 both reused as-is; the only new thing is a new call site (the M3 `ECUReset` handler) and the
 host test asserting `mode == FBL_BOOT_APP` after the sequence.
 
+### D10a. ECUReset must also clear the boot-loop counter (Seam 7 correction)
+
+D10 as first written cleared only the `.noinit` programming-request. On-board Seam 7 testing
+found that insufficient, and the reason is a genuine interaction between D10 and D4:
+
+- D10 clears `.noinit` to `FBL_BOOT_APP` **before** the software reset, so the post-reset
+  boot decision does not stay resident on the programming-request (ADR-0008 D1 step 1) and
+  can instead reach the app-validity check and jump.
+- But D4 recognises "a deliberate reflash is not a crash" **by that same
+  programming-request** — and D10 just erased it. So the boot after `ECUReset` classifies the
+  event as *"software reset without a programming-request → increment the counter"* (D4),
+  counting a deliberate, tester-commanded reset as if it were a crash. Repeated
+  download+reset cycles climb the counter until it trips the boot-loop fallback (ADR-0008 D1
+  step 2), trapping a *valid, freshly-flashed* app in the FBL until a power cycle clears it.
+
+Fix: the `ECUReset` sequence (`fbl_diag.c`) also clears the BREG boot-loop counter
+(`fbl_port_backup_write(FBL_BREG_COUNTER_IDX, 0)`) before the reset. An `ECUReset` is
+deliberate by definition, so this is exactly D4's "deliberate reflash → clear" intent,
+applied where the `.noinit` signal can no longer carry it. After the reset the counter's
+own D4 increment lands at 1 (< `N`), so the boot decision proceeds to the jump. The counter
+clear cannot be driven from the `.noinit` request here (that must read `FBL_BOOT_APP` to
+allow the jump), which is why it is a direct BREG write rather than reusing the D4 path.
+
+*(Distinct from the actual Seam 7 symptom that first hid this: the PC tool was closing the
+CAN bus before the no-response `ECUReset` frame transmitted, so the reset never happened at
+all — a host-tool bug. Once that was fixed and `ECUReset` actually reset the ECU, this D4/D10
+counter interaction was the remaining reason a valid app stayed resident.)*
+
 ## Review history
 
 Design-reviewed before implementation (`docs/review/ADR-0007-0008-review.md`). Findings

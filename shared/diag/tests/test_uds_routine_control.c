@@ -78,13 +78,14 @@ void tearDown(void) {}
 
 static uds_result_t call_erase(uint32_t addr, uint32_t len, uint8_t *resp, size_t *resp_len)
 {
-    uint8_t req[9];
+    uint8_t req[11];
     req[0] = 0x01U;   /* routineControlType: start */
     req[1] = (uint8_t)(UDS_ROUTINE_ERASE_MEMORY >> 8);
     req[2] = (uint8_t)(UDS_ROUTINE_ERASE_MEMORY);
     req[3] = (uint8_t)(addr >> 24); req[4] = (uint8_t)(addr >> 16);
     req[5] = (uint8_t)(addr >> 8);  req[6] = (uint8_t)(addr);
-    req[7] = (uint8_t)(len >> 8);   req[8] = (uint8_t)(len);   /* len truncated to 16 bits -- fine for these test sizes */
+    req[7] = (uint8_t)(len >> 24);  req[8] = (uint8_t)(len >> 16);
+    req[9] = (uint8_t)(len >> 8);   req[10] = (uint8_t)(len);   /* 32-bit length */
     return uds_routine_control_handler()->handle(req, sizeof req, resp, 16U, resp_len);
 }
 

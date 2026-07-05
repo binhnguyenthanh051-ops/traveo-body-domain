@@ -99,7 +99,9 @@ SOURCES=../../shared/boot/src/boot.c \
         ../../shared/diag/src/uds_session.c \
         ../../shared/diag/src/uds_session_control.c \
         ../../shared/diag/src/uds_ecu_reset.c \
-        ../../shared/diag/src/uds_security_access.c
+        ../../shared/diag/src/uds_security_access.c \
+        ../../shared/diag/src/uds_download.c \
+        ../../shared/diag/src/uds_routine_control.c
 
 # Use MTB's generated startup + linker for now (our reference startup_fbl.c /
 # linker/fbl.ld are folded in later per BRINGUP.md Sec.C). fbl_main.c + port_*.c

@@ -196,7 +196,7 @@ Design is whole; build is layered. Each milestone is publishable.
 | **M0** | Repo + host CI + MISRA (done). Architecture doc + ADRs (this). |
 | **M1 — FBL MVP** | **(done — tagged `m1-bootloader`.)** FBL boots, reads no-init handshake, jumps to a minimal app (VTOR/MSP). ROM secure boot configured. *No reprogramming yet.* |
 | **M2 — App on FreeRTOS** | **(done.)** App on CM4F FreeRTOS (heap-forbidden static tasks); CANFD echo verified in internal loopback **and** on the real bus (VN1610); the App→FBL `.noinit` reprogram closes the deferred M1 handshake thread. Watchdog reset-state assumption stated; full integration → M6. |
-| **M3 — Reprogramming** | UDS programming services in the FBL; PC-side flash tool drives a download. |
+| **M3 — Reprogramming** | **(done.)** Layered UDS/ISO-TP diagnostic stack in the FBL (ADR-0012–0015): ISO-TP transport, session + seed/key security access, requestDownload/transferData/transferExit, routineControl erase + CRC verify, ECUReset. Target flash port (ECT, mixed-geometry) + `sysmgr`. Full download proven on real hardware: PC flash tool (`host_tools/uds_flash`) reflashes the app over CAN, the FBL verifies and jumps to it. |
 | **M4 — App secure boot** | FBL verifies app signature before jump; image manifest + key handling. |
 | **M5 — Second node + SecOC** | Node B app online; authenticated control messages A↔B. |
 | **M6 — Resilience** | Fault injection, safe-state, threat-model write-up. |

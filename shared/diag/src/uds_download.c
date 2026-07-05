@@ -35,7 +35,12 @@ static uds_result_t request_download_handle(const uint8_t *req, size_t req_len,
     g_state = UDS_DOWNLOAD_ACTIVE;
 
     if (resp_cap < 2U) { return UDS_NRC_GENERAL_REJECT; }
-    uint16_t max_block = 512U;
+    /* maxNumberOfBlockLength reported to the client: a program-row multiple
+     * (so blocks stay flash-row-aligned) that fits comfortably inside one
+     * ISO-TP message (ISOTP_MAX_PAYLOAD). The FBL does not hard-enforce it --
+     * transfer_data_handle accepts any block that keeps within g_total_len
+     * and writes row-aligned -- but a well-behaved client honours it. */
+    uint16_t max_block = 2048U;
     resp[0] = (uint8_t)(max_block >> 8);
     resp[1] = (uint8_t)(max_block);
     *resp_len = 2U;
