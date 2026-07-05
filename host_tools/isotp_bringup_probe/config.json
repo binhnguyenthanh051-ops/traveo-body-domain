@@ -1,0 +1,23 @@
+{
+  "interface": {
+    "backend": "vector",
+    "channel": 0,
+    "app_name": "python-can",
+    "serial": null
+  },
+  "bus": {
+    "can_fd": true,
+    "nominal_bitrate": 500000,
+    "data_bitrate": 2000000,
+    "bitrate_switch": true
+  },
+  "test": {
+    "request_id": "0x7A0",
+    "response_id": "0x7A8",
+    "timeout_s": 2.0,
+    "messages": [
+      "hello",
+      "this is a longer message that will not fit in a single ISO-TP frame and needs first-frame plus consecutive-frame segmentation to get across the bus and back again"
+    ]
+  }
+}

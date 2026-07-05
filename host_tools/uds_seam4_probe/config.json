@@ -12,9 +12,8 @@
     "bitrate_switch": true
   },
   "test": {
-    "tx_id": "0x7A0",
-    "count": 10,
-    "timeout_s": 1.0,
-    "interval_s": 0.2
+    "request_id": "0x7A0",
+    "response_id": "0x7A8",
+    "timeout_s": 2.0
   }
 }

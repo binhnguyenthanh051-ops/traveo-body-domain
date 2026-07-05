@@ -94,7 +94,12 @@ DISABLE_COMPONENTS=
 # tree for source code and builds it. The SOURCES variable can be used to
 # manually add source code to the build process from a location not searched
 # by default, or otherwise not found by the build system.
-SOURCES=../../shared/boot/src/boot.c
+SOURCES=../../shared/boot/src/boot.c \
+        ../../shared/diag/src/isotp.c \
+        ../../shared/diag/src/uds_session.c \
+        ../../shared/diag/src/uds_session_control.c \
+        ../../shared/diag/src/uds_ecu_reset.c \
+        ../../shared/diag/src/uds_security_access.c
 
 # Use MTB's generated startup + linker for now (our reference startup_fbl.c /
 # linker/fbl.ld are folded in later per BRINGUP.md Sec.C). fbl_main.c + port_*.c
@@ -103,7 +108,7 @@ CY_IGNORE=src/startup_fbl.c linker
 
 # Like SOURCES, but for include directories. Value should be paths to
 # directories (without a leading -I).
-INCLUDES=../../shared/boot/include ../../shared/hal/include config
+INCLUDES=../../shared/boot/include ../../shared/hal/include ../../shared/can/include ../../shared/diag/include config
 
 # Add additional defines to the build process (without a leading -D).
 DEFINES=
