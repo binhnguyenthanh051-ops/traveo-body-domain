@@ -166,7 +166,7 @@ made an explicit sizing constraint (D2); **S2** (silicon) — the TRAVEO CM4 **N
 RX" (D3); **S3** (silicon) — RX FIFO 0 must have a non-zero element count or every accepted frame
 is dropped (D2; see `docs/briefs/M2-bringup_log.md`).
 
-The FBL's M3 Seam 1 CAN bring-up (`node_a_gateway/bootloader/src/port_can.c` — polled, not
+The FBL's M3 Seam 1 CAN bring-up (`node_a_gateway/bootloader/proj_cm4/src/port_can.c` — polled, not
 ISR; ADR-0012 D2) exercises the same RX/TX mechanics D3/D4 describe for the App's ISR-driven
 variant from a different entry point, and surfaced two further silicon findings there:
 

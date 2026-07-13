@@ -1,0 +1,262 @@
+################################################################################
+# \file Makefile
+# \version 1.0
+#
+# \brief
+# Top-level application make file.
+#
+################################################################################
+# \copyright
+# (c) 2018-2026, Infineon Technologies AG, or an affiliate of Infineon
+# Technologies AG.  SPDX-License-Identifier: Apache-2.0
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#     http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+################################################################################
+
+
+################################################################################
+# Basic Configuration
+################################################################################
+
+# Type of ModusToolbox Makefile Options include:
+#
+# COMBINED    -- Top Level Makefile usually for single standalone application
+# APPLICATION -- Top Level Makefile usually for multi project application
+# PROJECT     -- Project Makefile under Application
+#
+# M4 Seam 0 (ADR-0017 D4): split from a COMBINED single-core project into a
+# two-PROJECT APPLICATION (this = the CM4 FBL project, sibling ../proj_cm0p =
+# the crypto-service CM0+ project) so shared/crypto's M0+-side dispatch loop
+# has a real home instead of a vendor prebuilt. See ../../../docs/briefs/
+# M4-bringup-plan.md Seam 0. UNVALIDATED without a real ModusToolbox
+# install -- run `make getlibs && make build` here before trusting it.
+MTB_TYPE=PROJECT
+
+# Which core this PROJECT Makefile builds (required in multi-project apps;
+# COMBINED/single-project builds omit this). Must match a name in the BSP's
+# DEVICE_..._CORES list (bsps/.../bsp.mk: CORE_NAME_CM0P_0 CORE_NAME_CM4_0).
+CORE=CM4
+CORE_NAME=CM4_0
+
+# Target board/hardware (BSP).
+# To change the target, it is recommended to use the Library manager
+# ('make library-manager' from command line), which will also update Eclipse IDE launch
+# configurations.
+TARGET=CYTVII-B-E-1M-SK
+
+# Name of application (used to derive name of final linked file).
+#
+# If APPNAME is edited, ensure to update or regenerate launch
+# configurations for your IDE.
+APPNAME=gateway_fbl
+
+# Name of toolchain to use. Options include:
+#
+# GCC_ARM -- GCC provided with ModusToolbox software
+# ARM     -- ARM Compiler (must be installed separately)
+# IAR     -- IAR Compiler (must be installed separately)
+#
+# See also: CY_COMPILER_PATH below
+TOOLCHAIN=GCC_ARM
+
+# Default build configuration. Options include:
+#
+# Debug -- build with minimal optimizations, focus on debugging.
+# Release -- build with full optimizations
+# Custom -- build with custom configuration, set the optimization flag in CFLAGS
+#
+# If CONFIG is manually edited, ensure to update or regenerate launch configurations
+# for your IDE.
+CONFIG=Debug
+
+# If set to "true" or "1", display full command-lines when building.
+VERBOSE=
+
+
+################################################################################
+# Advanced Configuration
+################################################################################
+
+# Enable optional code that is ordinarily disabled by default.
+#
+# Available components depend on the specific targeted hardware and firmware
+# in use. In general, if you have
+#
+#    COMPONENTS=foo bar
+#
+# ... then code in directories named COMPONENT_foo and COMPONENT_bar will be
+# added to the build
+#
+COMPONENTS=
+
+# Like COMPONENTS, but disable optional code that was enabled by default.
+#
+# CM0P_SLEEP is the vendor's prebuilt CM0+ image, normally linked into this
+# project's .cy_m0p_image section (bsp.mk: BSP_COMPONENTS=CM0P_SLEEP). With the
+# M4 Seam-0 split, ../proj_cm0p builds and flashes a REAL, separate CM0+ image
+# into that same reserved flash region (fbl_cm4.ld's FLASH_CM0P_SIZE window,
+# ORIGIN(flash)..+0x20000) -- so the vendor prebuilt must NOT also be linked in
+# here, or the two would collide. Nothing else in fbl_cm4.ld needs to change:
+# with CM0P_SLEEP disabled, .cy_m0p_image is simply empty in this project's
+# ELF, and CM4 .text still starts at ORIGIN(flash) + FLASH_CM0P_SIZE exactly
+# as before (verify with `make build` once MTB tools are installed).
+DISABLE_COMPONENTS=CM0P_SLEEP
+
+# By default the build system automatically looks in the Makefile's directory
+# tree for source code and builds it. The SOURCES variable can be used to
+# manually add source code to the build process from a location not searched
+# by default, or otherwise not found by the build system.
+SOURCES=../../../shared/boot/src/boot.c \
+        ../../../shared/diag/src/isotp.c \
+        ../../../shared/diag/src/uds_session.c \
+        ../../../shared/diag/src/uds_session_control.c \
+        ../../../shared/diag/src/uds_ecu_reset.c \
+        ../../../shared/diag/src/uds_security_access.c \
+        ../../../shared/diag/src/uds_download.c \
+        ../../../shared/diag/src/uds_routine_control.c \
+        ../../../shared/crypto/src/ipc_mailbox.c \
+        ../../../shared/crypto/src/crypto_msg.c \
+        ../../../shared/crypto/src/crypto_service.c
+
+# M4 Seam 1: the host-tested IPC transport (ipc_mailbox.c), driven by
+# src/port_crypto.c's Cy_IPC_Drv binding. Seam 2: crypto_msg.c (envelope
+# framing) for the HASH bring-up. Seam 3: crypto_service.c — the real FBL-side
+# verify client (crypto_verify_image), tested standalone via
+# fbl_crypto_bringup_verify(); Seam 4 wires it into the boot decision.
+
+# Use MTB's generated startup + linker for now (our reference startup_fbl.c /
+# linker/fbl.ld are folded in later per BRINGUP.md Sec.C). fbl_main.c + port_*.c
+# under src/ are auto-discovered.
+CY_IGNORE=src/startup_fbl.c linker
+
+# Like SOURCES, but for include directories. Value should be paths to
+# directories (without a leading -I). shared/crypto/include carries ipc_mailbox.h
+# (the transport interface) + ipc_mailbox_map.h (the shared mailbox layout).
+INCLUDES=../../../shared/boot/include ../../../shared/hal/include ../../../shared/can/include \
+          ../../../shared/diag/include ../../../shared/crypto/include config
+
+# Add additional defines to the build process (without a leading -D).
+# M4 Seam 5 (ADR-0020 D6): uncomment to build the CM4-side TCB-isolation fault
+# demo (src/fbl_tcb_probe.c). OFF by default so the FBL image is unchanged; flip
+# on for the bench (pair with proj_cm0p's FBL_M4_SEAM5_PROT to see walls-up vs
+# walls-down). Overrides HardFault_Handler while defined.
+# DEFINES=FBL_M4_SEAM5_PROBE
+DEFINES=
+
+# Select softfp or hardfp floating point. Default is softfp.
+VFP_SELECT=
+
+# Additional / custom C compiler flags.
+#
+# NOTE: Includes and defines should use the INCLUDES and DEFINES variable
+# above.
+CFLAGS=-include config/fbl_config.h
+
+# Additional / custom C++ compiler flags.
+#
+# NOTE: Includes and defines should use the INCLUDES and DEFINES variable
+# above.
+CXXFLAGS=
+
+# Additional / custom assembler flags.
+#
+# NOTE: Includes and defines should use the INCLUDES and DEFINES variable
+# above.
+ASFLAGS=
+
+# Additional / custom linker flags.
+# Add the shared linker-fragment dir so `INCLUDE noinit.ld` in fbl_cm4.ld
+# resolves (ADR-0007 D8 — the single-source .noinit pin shared with the app).
+# On Windows, the GNU linker is a native executable, so pass it a native-style
+# path rather than a Cygwin `/cygdrive/...` path.
+NOINIT_LD_DIR=$(abspath ../../../shared/boot/linker)
+ifeq ($(OS),Windows_NT)
+NOINIT_LD_DIR:=$(shell cygpath -m '$(NOINIT_LD_DIR)')
+endif
+LDFLAGS=-L$(NOINIT_LD_DIR)
+
+# Additional / custom libraries to link in to the application.
+LDLIBS=
+
+# Path to the linker script to use (if empty, use the default linker script).
+# Repo-owned fork of the BSP CM4 linker, pinning .noinit at the address the app
+# agrees on (ADR-0007 D8). Survives BSP regeneration.
+LINKER_SCRIPT=linker/fbl_cm4.ld
+
+# Custom pre-build commands to run.
+PREBUILD=
+
+# Custom post-build commands to run.
+POSTBUILD=
+
+
+################################################################################
+# Paths
+################################################################################
+
+# Relative path to the project directory (default is the Makefile's directory).
+#
+# This controls where automatic source code discovery looks for code.
+CY_APP_PATH=
+
+# Relative path to the shared repo location.
+#
+# All .mtb files have the format, <URI>#<COMMIT>#<LOCATION>. If the <LOCATION> field
+# begins with $$ASSET_REPO$$, then the repo is deposited in the path specified by
+# the CY_GETLIBS_SHARED_PATH variable. The default location is one directory level
+# above the current app directory.
+# This is used with CY_GETLIBS_SHARED_NAME variable, which specifies the directory name.
+#
+# One level deeper than the old COMBINED project (now under proj_cm4/), so one
+# more ../ to reach the same repo-root mtb_shared/ that ../proj_cm0p also uses
+# -- both projects resolve libraries into the SAME physical directory, no
+# duplicate downloads. (verify: `make getlibs` here resolves into ../../../mtb_shared)
+CY_GETLIBS_SHARED_PATH=../../../
+
+# Directory name of the shared repo location.
+#
+CY_GETLIBS_SHARED_NAME=mtb_shared
+
+# Absolute path to the compiler's "bin" directory. The variable name depends on the
+# toolchain used for the build. Refer to the ModusToolbox user guide to get the correct
+# variable name for the toolchain used in your build.
+#
+# The default depends on the selected TOOLCHAIN (GCC_ARM uses the ModusToolbox
+# software provided compiler by default).
+# CY_COMPILER_GCC_ARM_DIR=
+
+
+# Locate ModusToolbox helper tools folders in default installation
+# locations for Windows, Linux, and macOS.
+CY_WIN_HOME=$(subst \,/,$(USERPROFILE))
+CY_TOOLS_PATHS ?= $(wildcard \
+    $(CY_WIN_HOME)/ModusToolbox/tools_* \
+    $(HOME)/ModusToolbox/tools_* \
+    /Applications/ModusToolbox/tools_*)
+
+# If you install ModusToolbox software in a custom location, add the path to its
+# "tools_X.Y" folder (where X and Y are the version number of the tools
+# folder). Make sure you use forward slashes.
+CY_TOOLS_PATHS+=
+
+# Default to the newest installed tools folder, or the users override (if it's
+# found).
+CY_TOOLS_DIR=$(lastword $(sort $(wildcard $(CY_TOOLS_PATHS))))
+
+ifeq ($(CY_TOOLS_DIR),)
+$(error Unable to find any of the available CY_TOOLS_PATHS -- $(CY_TOOLS_PATHS). On Windows, use forward slashes.)
+endif
+
+$(info Tools Directory: $(CY_TOOLS_DIR))
+
+include $(CY_TOOLS_DIR)/make/start.mk

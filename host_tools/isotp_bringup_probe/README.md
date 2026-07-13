@@ -2,7 +2,7 @@
 
 Bench tool to verify the FBL's ISO-TP transport on the real bus (M3 Seam 2). Sends a
 message to the diagnostic request ID and confirms the FBL's bring-up echo
-(`run_isotp_bringup_echo`, `node_a_gateway/bootloader/src/port_prog.c`) comes back
+(`run_isotp_bringup_echo`, `node_a_gateway/bootloader/proj_cm4/src/port_prog.c`) comes back
 correctly on the response ID -- proving reassembly and segmentation both directions.
 
 **Not standard ISO-TP.** This project's transport uses a deliberately simplified PCI

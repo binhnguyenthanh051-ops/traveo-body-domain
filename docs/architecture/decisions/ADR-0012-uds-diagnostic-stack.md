@@ -136,7 +136,7 @@ Design-reviewed in discussion before implementation (this session). Module skele
 failing Unity tests, then implementation, then seam-by-seam FBL bring-up on real silicon.
 
 The D6 flash-operation interface (`hal_flash_if_t` bound to the app-image region,
-`node_a_gateway/bootloader/src/port_flash.c`) surfaced three silicon findings during M3
+`node_a_gateway/bootloader/proj_cm4/src/port_flash.c`) surfaced three silicon findings during M3
 Seam 6 bring-up — the design's "target-only, behind a port" boundary held, but the port's
 first draft made assumptions the compiler and then the chip falsified:
 

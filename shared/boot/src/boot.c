@@ -10,6 +10,15 @@
 #include "fbl_port.h"
 #include <string.h>
 
+#if FBL_DIGEST_ALGO == FBL_DIGEST_SHA256
+/* M4: image authenticity is delegated to the M0+ crypto service (ADR-0016/
+ * 0017). This is portable, host-testable code (shared/crypto) that reaches
+ * hardware only through the injected ipc_port_if_t — so boot.c stays free of
+ * vendor headers (ADR-0001). The port is bound at the composition root
+ * (fbl_main -> crypto_service_init) before the first fbl_app_image_valid(). */
+#include "crypto_service.h"
+#endif
+
 /* --------------------------------------------------------------------
  * CRC-32 (IEEE, reflected poly 0xEDB88320) — used for both the handshake
  * integrity field and the M1 image digest.
@@ -153,9 +162,9 @@ bool fbl_app_image_valid(const uint8_t *base, uint32_t region_len)
         return false;
     }
 
-    /* Region must hold header + at least the integrity trailer. */
+    /* Region must hold header + at least the (full) integrity trailer. */
     uint32_t min_len = FBL_APP_HEADER_OFFSET +
-                       (uint32_t)sizeof(fbl_app_header_t) + FBL_DIGEST_SIZE;
+                       (uint32_t)sizeof(fbl_app_header_t) + FBL_TRAILER_SIZE;
     if (region_len < min_len)
     {
         return false;
@@ -174,18 +183,39 @@ bool fbl_app_image_valid(const uint8_t *base, uint32_t region_len)
     {
         return false;
     }
-    if (image_len > (region_len - FBL_DIGEST_SIZE))
+    if (image_len > (region_len - FBL_TRAILER_SIZE))
     {
         return false;
     }
 
-    /* Digest over [base, base+image_len) vs the excluded trailer (B4). */
+    /* Integrity/authenticity over [base, base+image_len) vs the excluded
+     * trailer (B4). The call site is UNCHANGED across M1->M4 (ADR-0012 D6);
+     * only what sits behind it here switches on FBL_DIGEST_ALGO. */
+#if FBL_DIGEST_ALGO == FBL_DIGEST_CRC32
     uint8_t digest[FBL_DIGEST_SIZE];
     (void)fbl_digest(base, image_len, digest);
     if (memcmp(digest, &base[image_len], FBL_DIGEST_SIZE) != 0)
     {
         return false;
     }
+#else /* FBL_DIGEST_SHA256 — delegate to the M0+ (ADR-0016 D2/D5, ADR-0017 D1) */
+    /* key_id is the last trailer field, after hash[32] + signature[64]. */
+    uint32_t key_id;
+    (void)memcpy(&key_id,
+                 &base[image_len + FBL_DIGEST_SIZE + FBL_SIG_SIZE],
+                 sizeof key_id);
+    /* The M0+ hashes the real flash body itself and checks the signature. Any
+     * non-VALID verdict — INVALID (wrong/absent sig) or ERROR (M0+ dead/
+     * timeout/malformed) — is "do not trust" (ADR-0016 D5), never a jump.
+     * base is a flash address here; the pointer->u32 conversion is the address
+     * the cross-core service needs (deviation from the core's no-int/ptr habit,
+     * inherent to the RPC — the host fake never dereferences it). */
+    if (crypto_verify_image((uint32_t)(uintptr_t)base, image_len, key_id)
+            != CRYPTO_VERDICT_VALID)
+    {
+        return false;
+    }
+#endif
 
     /* Vector-table sanity (B8). */
     uint32_t msp;

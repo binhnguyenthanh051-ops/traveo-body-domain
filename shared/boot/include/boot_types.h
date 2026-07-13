@@ -62,13 +62,24 @@
 #define FBL_DIGEST_ALGO    FBL_DIGEST_CRC32
 #endif
 
+/* The EXCLUDED trailer at [app_base + image_len ..] (ADR-0008 D3 / ADR-0019 D4):
+ *   CRC32  : digest[4]                                  -> trailer = 4 B
+ *   SHA-256: hash[32] + signature[64] + key_id[4]       -> trailer = 100 B
+ * FBL_DIGEST_SIZE is the hash/digest field; FBL_TRAILER_SIZE is the whole
+ * excluded region the bounds checks must reserve (they differ for SHA-256). */
 #if   FBL_DIGEST_ALGO == FBL_DIGEST_CRC32
 #define FBL_DIGEST_SIZE    4U
+#define FBL_SIG_SIZE       0U
+#define FBL_KEY_ID_SIZE    0U
 #elif FBL_DIGEST_ALGO == FBL_DIGEST_SHA256
 #define FBL_DIGEST_SIZE    32U
+#define FBL_SIG_SIZE       64U    /* ECDSA P-256 signature, r||s (ADR-0019 D4) */
+#define FBL_KEY_ID_SIZE    4U     /* key_id selector (ADR-0019 D3) */
 #else
 #error "FBL_DIGEST_ALGO must be FBL_DIGEST_CRC32 or FBL_DIGEST_SHA256"
 #endif
+
+#define FBL_TRAILER_SIZE   (FBL_DIGEST_SIZE + FBL_SIG_SIZE + FBL_KEY_ID_SIZE)
 
 /* --------------------------------------------------------------------
  * Reset cause (raw, from the port) and its classification

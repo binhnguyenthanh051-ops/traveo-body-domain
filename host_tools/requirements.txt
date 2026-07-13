@@ -1,3 +1,7 @@
-# Add as host tooling grows, e.g.:
-# python-can>=4.0
-# cantools>=39
+# Host tooling dependencies.
+python-can>=4.0        # uds_flash / CAN bring-up probes
+cantools>=39           # (optional) CAN DB decoding for probes
+
+# M4 secure boot (ADR-0019): the app-image signing tool + its round-trip test.
+cryptography>=42       # ECDSA P-256 signing in host_tools/sign_image.py
+pytest>=8              # host_tools/tests

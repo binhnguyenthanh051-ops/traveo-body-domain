@@ -13,7 +13,11 @@ Same interface, two backends — link-time selected (ADR-0001).
 **Decides → `shared/boot`. Touches the chip → here.** Nothing in this directory's logic
 should live in the core; nothing in the core should include a vendor header.
 
-## Target file layout (`node_a_gateway/bootloader/`)
+## Target file layout (`node_a_gateway/bootloader/proj_cm4/`)
+
+(Since M4 Seam 0, the FBL lives under `proj_cm4/` — a sibling `proj_cm0p/` holds the
+crypto-service CM0+ image, ADR-0017 D4. Paths below are relative to `proj_cm4/`, content
+unchanged by that split.)
 
 ```
 config/   fbl_config.h        T_knock, boot-loop N, region addresses, CAN knock ID, FBL_DIGEST_ALGO

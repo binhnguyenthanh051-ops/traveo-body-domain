@@ -86,7 +86,7 @@ is corrected here rather than carried into the ADR.
 
 Design-reviewed in discussion (ADR-0012's companion), then corrected against silicon during
 M3 Seam 2 bring-up (the FBL's first real ISO-TP round trip over the CAN bus, echoing a
-message back through `node_a_gateway/bootloader/src/port_prog.c`'s bring-up loop). Finding
+message back through `node_a_gateway/bootloader/proj_cm4/src/port_prog.c`'s bring-up loop). Finding
 actioned:
 
 - **S1** (silicon) — CAN FD's DLC only represents specific lengths (0–8, then

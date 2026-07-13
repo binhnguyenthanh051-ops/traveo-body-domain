@@ -12,8 +12,9 @@ standard ISO 15765-2/14229, so a generic UDS tester won't interoperate. The
 seed/key transform and the routine/download request layouts are the
 project's own (see shared/diag/include/*).
 
-The image is stamped with the FBL's header + CRC32 trailer (ADR-0008 D3)
-using host_tools/fbl_image_stamp.py's stamp_image(), then padded up to the
+The image handed in is ALREADY stamped by the build (M4: SHA-256 header +
+hash/signature/key_id trailer, via host_tools/sign_image.py). This tool
+downloads it verbatim -- it does NOT re-stamp -- and only pads up to the
 512-byte flash program-row so every transferData block is row-aligned.
 
 Usage:
@@ -29,10 +30,6 @@ import time
 from pathlib import Path
 
 import can  # python-can >= 4.0
-
-# Reuse the exact stamping the FBL's boot check expects.
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from fbl_image_stamp import stamp_image  # noqa: E402
 
 DEFAULT_CONFIG = Path(__file__).with_name("config.json")
 
@@ -102,10 +99,14 @@ def extract_app_body(mem: dict[int, int], app_base: int) -> bytes:
     return bytes(mem.get(app_base + i, 0xFF) for i in range(top - app_base + 1))
 
 
-def build_download_image(hex_path: Path, app_base: int, header_offset: int) -> bytes:
-    body = extract_app_body(parse_intel_hex(hex_path), app_base)
-    stamped = stamp_image(body, header_offset)      # header @offset + CRC32 trailer
-    pad = (-len(stamped)) % FLASH_ROW               # up to a whole program row
+def build_download_image(hex_path: Path, app_base: int) -> bytes:
+    """The app hex is ALREADY stamped by the build (M4: SHA-256 header at
+    FBL_APP_HEADER_OFFSET + hash/signature/key_id trailer, from sign_image.py).
+    Download it verbatim -- re-stamping here would clobber that header
+    (image_len -> full length) and overwrite the signature trailer. Pad only,
+    up to a whole flash program row so every transferData block is row-aligned."""
+    stamped = extract_app_body(parse_intel_hex(hex_path), app_base)
+    pad = (-len(stamped)) % FLASH_ROW
     return stamped + b"\xff" * pad
 
 
@@ -240,7 +241,7 @@ def flash(client: UdsClient, image: bytes, app_base: int, large_sector: int) -> 
     status = chk[4] if len(chk) >= 5 else 0xFF
     if status != 0x00:
         raise RuntimeError(f"image check failed (status 0x{status:02X})")
-    print("      image CRC OK")
+    print("      image verify OK (SHA-256 + signature)")
 
     print("  [8] ECUReset (0x11 01) -- FBL resets, re-verifies, jumps to the app")
     client.request(bytes([SID_ECU_RESET, 0x01]), expect_response=False)
@@ -274,11 +275,10 @@ def main() -> int:
 
     cfg = json.loads(args.config.read_text(encoding="utf-8"))
     app_base = parse_int(cfg["image"]["app_base"])
-    header_offset = parse_int(cfg["image"].get("header_offset", 0x100))
     large_sector = parse_int(cfg["image"].get("large_sector_size", 0x8000))
 
     print(f"building download image from {args.hex} ...")
-    image = build_download_image(args.hex, app_base, header_offset)
+    image = build_download_image(args.hex, app_base)
 
     try:
         bus = build_bus(cfg)
