@@ -46,6 +46,16 @@ ENTRY(Reset_Handler)
  * The build adds `-L shared/boot/linker` so this resolves. */
 INCLUDE noinit.ld
 
+/* CM4<->CM0+ crypto mailbox (M4 Seam 1, ADR-0018 D5). A pinned region directly
+ * below .noinit in CM4's RAM partition: reserved here so CM4 .data/.bss/stack
+ * avoid it (the `ram` region below ends at _ipc_mailbox_start, not _noinit_start).
+ * Only THIS linker reserves it — the CM0+ image reaches it by absolute address
+ * (its linker allocates only the 0x0800_0000..8000 tenant). Derived off
+ * _noinit_start so the two stay adjacent; MUST equal IPC_MAILBOX_ADDR in
+ * shared/crypto/include/ipc_mailbox_map.h (0x0801_F500). */
+_ipc_mailbox_size  = 0x200;                          /* 512 B; ipc_mailbox_shared_t is ~136 B */
+_ipc_mailbox_start = _noinit_start - _ipc_mailbox_size;
+
 /* The size of the stack section at the end of CM4 SRAM */
 STACK_SIZE = 0x1000;
 
@@ -72,7 +82,7 @@ MEMORY
      * Your changes must be aligned with the corresponding memory regions for CM0+ core in 'xx_cm0plus.ld',
      * where 'xx' is the device group; for example, 'cyb06xx7_cm0plus.ld'.
      */
-    ram               (rwx)   : ORIGIN = 0x08008000, LENGTH = 0x17700  /* M2-3: ends at _noinit_start; the 2 KB system area above .noinit stays reserved */
+    ram               (rwx)   : ORIGIN = 0x08008000, LENGTH = 0x17500  /* M4 Seam 1: shrunk 0x200 so it ends at _ipc_mailbox_start (mailbox + .noinit sit above; 2 KB system area still reserved) */
     flash             (rx)    : ORIGIN = 0x10000000, LENGTH = 0x110000
 
     /* The following regions define device specific memory regions and must not be changed. */
@@ -280,6 +290,16 @@ SECTIONS
       KEEP(*(.noinit))
     } > ram
 
+    /* CM4<->CM0+ crypto mailbox (M4 Seam 1, ADR-0018 D5). Pinned NOLOAD reserve
+    *  at the absolute shared address, directly below .fbl_handshake. Accessed by
+    *  both cores via IPC_MAILBOX_ADDR (absolute pointer), not a linker-attributed
+    *  variable — this section just reserves the space and documents it. */
+    .ipc_mailbox _ipc_mailbox_start (NOLOAD) :
+    {
+      _ipc_mailbox_base = . ;
+      . = . + _ipc_mailbox_size ;
+    }
+
     /* Shared App<->FBL handshake — its OWN section, pinned at the absolute shared
     *  address (ADR-0007 D8) so its location is independent of how much .noinit the
     *  BSP/libraries pull in. Must match app_cm4.ld (both INCLUDE noinit.ld); NOLOAD
@@ -387,10 +407,15 @@ SECTIONS
 
 }
 
-/* Cross-image guards (ADR-0007 D8): CM4 RAM must end exactly at the pinned
- * .noinit base, which must match the app (both INCLUDE noinit.ld). */
-ASSERT(ORIGIN(ram) + LENGTH(ram) == _noinit_start,
-       "FBL CM4 RAM must end at .noinit base — sync fbl_cm4.ld with noinit.ld")
+/* Cross-image guards: CM4 RAM must end exactly at the pinned crypto mailbox
+ * base (M4 Seam 1), which sits directly below the .noinit base (ADR-0007 D8).
+ * The mailbox + .noinit both stay above the allocatable `ram`. */
+ASSERT(ORIGIN(ram) + LENGTH(ram) == _ipc_mailbox_start,
+       "FBL CM4 RAM must end at the crypto-mailbox base — sync fbl_cm4.ld ram LENGTH with _ipc_mailbox_size")
+ASSERT(_ipc_mailbox_start + _ipc_mailbox_size == _noinit_start,
+       "crypto mailbox must sit directly below .noinit (sync _ipc_mailbox_size with noinit.ld)")
+ASSERT(ADDR(.ipc_mailbox) == _ipc_mailbox_start,
+       "crypto mailbox not pinned at _ipc_mailbox_start — must equal IPC_MAILBOX_ADDR in ipc_mailbox_map.h (0x0801F500)")
 ASSERT(ADDR(.fbl_handshake) == _noinit_start,
        "FBL handshake not pinned at _noinit_start (noinit.ld)")
 

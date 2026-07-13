@@ -3,19 +3,35 @@
 # \version 1.0
 #
 # \brief
-# Top-level application make file.
+# Top-level APPLICATION Makefile — M4 Seam 0 (ADR-0017 D4 / docs/briefs/
+# M4-bringup-plan.md). Was a single COMBINED project (gateway_fbl) through
+# M1–M3; split here into two PROJECTs so the crypto-service CM0+ image
+# (proj_cm0p) is a real, buildable sibling of the FBL (proj_cm4) instead of
+# the vendor's linked-in COMPONENT_CM0P_SLEEP prebuilt. `make build`/`make
+# program` at THIS level build/flash both; each project's own Makefile still
+# works standalone from within its own directory.
+#
+# Validated on MTB 3.8 (2026-07-06): both projects `make build` clean —
+# proj_cm4 (CM4 FBL) and proj_cm0p (CM0+) compile + link with MTB_DISABLED_
+# COMPONENTS=CM0P_SLEEP, so the vendor CM0+ prebuilt is excluded and proj_cm0p
+# fills .cy_m0p_image instead. The initial "older build flow" break was a
+# missing CY_GETLIBS_SHARED_PATH here (set below); getlibs then generates the
+# per-project libs/mtb.mk offline from the already-locked mtb_shared assets
+# (its later non-zero exit is only the blocked online-manifest refresh, not a
+# build blocker). STILL PENDING: on-board flash + the Seam-0 no-regression
+# check (board boots the app as it did at end of M3) — see M4-bringup-plan.md.
 #
 ################################################################################
 # \copyright
 # (c) 2018-2026, Infineon Technologies AG, or an affiliate of Infineon
 # Technologies AG.  SPDX-License-Identifier: Apache-2.0
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,191 +39,36 @@
 # limitations under the License.
 ################################################################################
 
+MTB_TYPE=APPLICATION
 
-################################################################################
-# Basic Configuration
-################################################################################
+# Explicit project list (see the UNVALIDATED note above). Order matters for
+# `make program` on some MTB recipes (CM0+ flashed before CM4 is conventional,
+# since the CM4 region sits right after it in the same code flash) — kept in
+# that order defensively; confirm against the installed recipe-make-cat1a.
+MTB_PROJECTS=proj_cm0p proj_cm4
 
-# Type of ModusToolbox Makefile Options include:
-#
-# COMBINED    -- Top Level Makefile usually for single standalone application
-# APPLICATION -- Top Level Makefile usually for multi project application
-# PROJECT     -- Project Makefile under Application
-#
-MTB_TYPE=COMBINED
-
-# Target board/hardware (BSP).
-# To change the target, it is recommended to use the Library manager
-# ('make library-manager' from command line), which will also update Eclipse IDE launch
-# configurations.
+# Keep the application root aligned with both child projects so MTB can resolve
+# the BSP and build recipe before it recurses into proj_cm0p/proj_cm4.
 TARGET=CYTVII-B-E-1M-SK
-
-# Name of application (used to derive name of final linked file).
-#
-# If APPNAME is edited, ensure to update or regenerate launch
-# configurations for your IDE.
-APPNAME=gateway_fbl
-
-# Name of toolchain to use. Options include:
-#
-# GCC_ARM -- GCC provided with ModusToolbox software
-# ARM     -- ARM Compiler (must be installed separately)
-# IAR     -- IAR Compiler (must be installed separately)
-#
-# See also: CY_COMPILER_PATH below
 TOOLCHAIN=GCC_ARM
-
-# Default build configuration. Options include:
-#
-# Debug -- build with minimal optimizations, focus on debugging.
-# Release -- build with full optimizations
-# Custom -- build with custom configuration, set the optimization flag in CFLAGS
-#
-# If CONFIG is manually edited, ensure to update or regenerate launch configurations
-# for your IDE.
 CONFIG=Debug
 
-# If set to "true" or "1", display full command-lines when building.
 VERBOSE=
 
-
-################################################################################
-# Advanced Configuration
-################################################################################
-
-# Enable optional code that is ordinarily disabled by default.
-#
-# Available components depend on the specific targeted hardware and firmware
-# in use. In general, if you have
-#
-#    COMPONENTS=foo bar
-#
-# ... then code in directories named COMPONENT_foo and COMPONENT_bar will be
-# added to the build
-#
-COMPONENTS=
-
-# Like COMPONENTS, but disable optional code that was enabled by default.
-DISABLE_COMPONENTS=
-
-# By default the build system automatically looks in the Makefile's directory
-# tree for source code and builds it. The SOURCES variable can be used to
-# manually add source code to the build process from a location not searched
-# by default, or otherwise not found by the build system.
-SOURCES=../../shared/boot/src/boot.c \
-        ../../shared/diag/src/isotp.c \
-        ../../shared/diag/src/uds_session.c \
-        ../../shared/diag/src/uds_session_control.c \
-        ../../shared/diag/src/uds_ecu_reset.c \
-        ../../shared/diag/src/uds_security_access.c \
-        ../../shared/diag/src/uds_download.c \
-        ../../shared/diag/src/uds_routine_control.c
-
-# Use MTB's generated startup + linker for now (our reference startup_fbl.c /
-# linker/fbl.ld are folded in later per BRINGUP.md Sec.C). fbl_main.c + port_*.c
-# under src/ are auto-discovered.
-CY_IGNORE=src/startup_fbl.c linker
-
-# Like SOURCES, but for include directories. Value should be paths to
-# directories (without a leading -I).
-INCLUDES=../../shared/boot/include ../../shared/hal/include ../../shared/can/include ../../shared/diag/include config
-
-# Add additional defines to the build process (without a leading -D).
-DEFINES=
-
-# Select softfp or hardfp floating point. Default is softfp.
-VFP_SELECT=
-
-# Additional / custom C compiler flags.
-#
-# NOTE: Includes and defines should use the INCLUDES and DEFINES variable
-# above.
-CFLAGS=-include config/fbl_config.h
-
-# Additional / custom C++ compiler flags.
-#
-# NOTE: Includes and defines should use the INCLUDES and DEFINES variable
-# above.
-CXXFLAGS=
-
-# Additional / custom assembler flags.
-#
-# NOTE: Includes and defines should use the INCLUDES and DEFINES variable
-# above.
-ASFLAGS=
-
-# Additional / custom linker flags.
-# Add the shared linker-fragment dir so `INCLUDE noinit.ld` in fbl_cm4.ld
-# resolves (ADR-0007 D8 — the single-source .noinit pin shared with the app).
-# On Windows, the GNU linker is a native executable, so pass it a native-style
-# path rather than a Cygwin `/cygdrive/...` path.
-NOINIT_LD_DIR=$(abspath ../../shared/boot/linker)
-ifeq ($(OS),Windows_NT)
-NOINIT_LD_DIR:=$(shell cygpath -m '$(NOINIT_LD_DIR)')
-endif
-LDFLAGS=-L$(NOINIT_LD_DIR)
-
-# Additional / custom libraries to link in to the application.
-LDLIBS=
-
-# Path to the linker script to use (if empty, use the default linker script).
-# Repo-owned fork of the BSP CM4 linker, pinning .noinit at the address the app
-# agrees on (ADR-0007 D8). Survives BSP regeneration.
-LINKER_SCRIPT=linker/fbl_cm4.ld
-
-# Custom pre-build commands to run.
-PREBUILD=
-
-# Custom post-build commands to run.
-POSTBUILD=
-
-
-################################################################################
-# Paths
-################################################################################
-
-# Relative path to the project directory (default is the Makefile's directory).
-#
-# This controls where automatic source code discovery looks for code.
-CY_APP_PATH=
-
-# Relative path to the shared repo location.
-#
-# All .mtb files have the format, <URI>#<COMMIT>#<LOCATION>. If the <LOCATION> field
-# begins with $$ASSET_REPO$$, then the repo is deposited in the path specified by
-# the CY_GETLIBS_SHARED_PATH variable. The default location is one directory level
-# above the current app directory.
-# This is used with CY_GETLIBS_SHARED_NAME variable, which specifies the directory name.
+# Required by current MTB build flow detection in start.mk. This application
+# root sits at the same depth as node_a_gateway/app, so it resolves the shared
+# repo into the same repo-root mtb_shared/ directory.
 CY_GETLIBS_SHARED_PATH=../../
-
-# Directory name of the shared repo location.
-#
 CY_GETLIBS_SHARED_NAME=mtb_shared
 
-# Absolute path to the compiler's "bin" directory. The variable name depends on the
-# toolchain used for the build. Refer to the ModusToolbox user guide to get the correct
-# variable name for the toolchain used in your build.
-#
-# The default depends on the selected TOOLCHAIN (GCC_ARM uses the ModusToolbox
-# software provided compiler by default).
-# CY_COMPILER_GCC_ARM_DIR=
-
-
-# Locate ModusToolbox helper tools folders in default installation
-# locations for Windows, Linux, and macOS.
 CY_WIN_HOME=$(subst \,/,$(USERPROFILE))
 CY_TOOLS_PATHS ?= $(wildcard \
     $(CY_WIN_HOME)/ModusToolbox/tools_* \
     $(HOME)/ModusToolbox/tools_* \
     /Applications/ModusToolbox/tools_*)
 
-# If you install ModusToolbox software in a custom location, add the path to its
-# "tools_X.Y" folder (where X and Y are the version number of the tools
-# folder). Make sure you use forward slashes.
 CY_TOOLS_PATHS+=
 
-# Default to the newest installed tools folder, or the users override (if it's
-# found).
 CY_TOOLS_DIR=$(lastword $(sort $(wildcard $(CY_TOOLS_PATHS))))
 
 ifeq ($(CY_TOOLS_DIR),)
@@ -216,4 +77,4 @@ endif
 
 $(info Tools Directory: $(CY_TOOLS_DIR))
 
-include $(CY_TOOLS_DIR)/make/start.mk
+include $(CY_TOOLS_DIR)/make/application.mk

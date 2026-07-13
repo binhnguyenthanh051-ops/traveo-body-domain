@@ -8,7 +8,7 @@
 #define FBL_CONFIG_H
 
 /* Image integrity for M1 is CRC32; M4 switches this one line to SHA-256. */
-#define FBL_DIGEST_ALGO         FBL_DIGEST_CRC32
+#define FBL_DIGEST_ALGO         FBL_DIGEST_SHA256
 
 /* Boot policy tunables (ADR-0008). */
 #define FBL_KNOCK_WINDOW_MS     2000U      /* dev cold-boot knock window */
