@@ -88,9 +88,13 @@ SOURCES=../../../shared/crypto/src/crypto_dispatch.c \
 INCLUDES=../../../shared/crypto/include \
          ../../../shared/prot/include
 
-# M4 Seam 5: uncomment to raise the TCB-isolation walls (ADR-0020). Kept OFF by
-# default so the committed image matches Seam 4; flip it on for the bench demo.
-# DEFINES=FBL_M4_SEAM5_PROT
+# Bench toggles (all OFF by default so the committed image matches Seam 4):
+#   FBL_M4_SEAM5_PROT   — raise the TCB-isolation walls (ADR-0020).
+#   FBL_M4_SEAM6_DEAD   — CM0+ plays dead (never services crypto) -> CM4 verify
+#                         times out -> stay-in-FBL (ADR-0016 D5).
+#   FBL_M4_SEAM6_GARBAGE— CM0+ returns a corrupted reply -> decode reject ->
+#                         stay-in-FBL. (Use SEAM6_DEAD and SEAM6_GARBAGE one at a
+#                         time.) Example: DEFINES=FBL_M4_SEAM6_DEAD
 DEFINES=
 VFP_SELECT=
 CFLAGS=
