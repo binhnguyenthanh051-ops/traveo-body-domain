@@ -447,14 +447,17 @@ ADR-0017 "why offload" more than a design-session assertion.
 **Goal:** the property every host test already pins down (ADR-0016 D5) — prove it under an actual
 non-responding second core, not just a fake that returns nothing.
 
-- Halt the CM0+ before it services a request (debugger halt, or don't start it) and confirm the
-  FBL's verify call times out within `CRYPTO_VERIFY_TIMEOUT_MS` and falls to "stay in FBL" —
-  bounded wait, no hang, matching Seam 3's timing note from ADR-0017 D2.
-- Corrupt the mailbox response deliberately (write garbage into the shared region after notify)
-  and confirm `crypto_msg_decode`'s rejection on real memory behaves identically to the host fake.
+Fault injected via two compile-time CM0+ hooks (the CM0+ can't be debugger-halted, and it must run
+to release the CM4, so "don't start it" isn't available) — both default-off, in `main_cm0p.c`:
+- `FBL_M4_SEAM6_DEAD` — CM0+ releases the CM4 then never services the mailbox → CM4 verify polls
+  out to `CRYPTO_VERIFY_TIMEOUT_MS` (1 s) → `IPC_TIMEOUT` → `CRYPTO_VERDICT_ERROR` → stay in FBL.
+- `FBL_M4_SEAM6_GARBAGE` — CM0+ corrupts a byte of the encoded reply → `crypto_msg_decode` rejects
+  → `ERROR` → stay in FBL.
 
-**Exit:** a real dead-M0+ scenario reproduces the same fail-safe the Unity tests already proved
-against a fake — the last link between "host-tested" and "actually safe on this board."
+**Status: DONE.** Bench-confirmed on silicon: the *same good app* jumps with a working verifier,
+and is **refused** (FBL enters programming mode, never `fbl_port_jump_to_app`) under both faults —
+`DEAD` showing the visible ~1 s timeout, `GARBAGE` rejecting immediately. Same fail-safe the Unity
+tests prove against a fake — the last "host-tested → safe on the board" link closed.
 
 ---
 

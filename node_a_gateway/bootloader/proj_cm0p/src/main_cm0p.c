@@ -89,6 +89,16 @@ static void service_mailbox_once(void)
                               CRYPTO_MAX_PAYLOAD,
                               &resp_len);
         IPC_MAILBOX->len = (uint32_t)resp_len;
+#ifdef FBL_M4_SEAM6_GARBAGE
+        /* Seam 6 fault injection (bench, ADR-0016 D5): corrupt the encoded reply
+         * so the CM4's crypto_msg_decode rejects it -> CRYPTO_VERDICT_ERROR ->
+         * the FBL stays in FBL, never jumping to the unverified app. Proves the
+         * "lying M0+" fail-safe on real silicon, not just the host fake. */
+        if (resp_len > 0U)
+        {
+            ((volatile uint8_t *)(uintptr_t)IPC_MAILBOX->payload)[0] ^= 0xFFU;
+        }
+#endif
         __DMB();                                     /* len lands before status */
         IPC_MAILBOX->status = (uint32_t)IPC_MBX_RESPONSE;
     }
@@ -215,6 +225,18 @@ int main(void)
      * the cause. No wake source here, so crypto verify will time out — fine for
      * the erase test (the unsigned app is rejected anyway). Revert to 0 after. */
     (void)cm0p_wait_for_request;   /* keep referenced (no -Wunused) while sleeping */
+    (void)service_mailbox_once;
+    for (;;)
+    {
+        __WFI();
+    }
+#elif defined(FBL_M4_SEAM6_DEAD)
+    /* Seam 6 fault injection (bench, ADR-0016 D5): the CM0+ released the CM4 but
+     * now plays DEAD — it never services the mailbox. The CM4's verify then polls
+     * out to CRYPTO_VERIFY_TIMEOUT_MS (1 s), gets IPC_TIMEOUT -> CRYPTO_VERDICT_
+     * ERROR -> the FBL stays in FBL (enters programming mode, never jumps to the
+     * unverified app). Proves the "dead M0+" fail-safe on real silicon. */
+    (void)cm0p_wait_for_request;
     (void)service_mailbox_once;
     for (;;)
     {
