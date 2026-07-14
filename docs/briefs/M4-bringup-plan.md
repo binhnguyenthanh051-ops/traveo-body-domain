@@ -410,44 +410,37 @@ parser cannot read/corrupt/operate the key or the CRYPTO engine — the *bus fab
 independent of CM4's own code. (The pubkey isn't secret, so Boundary A's substance is *integrity*
 / write-deny; read-deny is the observable demo + the M5 capability — ADR-0020.)
 
-- **Boundary A — key SMPU (ADR-0020 D3):** a single SMPU deny struct over the CM0+ image flash
-  (`0x1000_0000..0x1002_0000`, the compiled-in `crypto_pubkey_dev`) denies all non-zero PCs (so
-  CM4's PC2); CM0+ passes by the PC0 bypass. Region geometry from the host-tested `shared/prot`
-  helper.
-- **Boundary B — crypto PPU (ADR-0020 D4):** the six *fixed* CRYPTO PPUs
-  (`PPU_FX_CRYPTO_{MAIN,CRYPTO,BOOT,KEY0,KEY1,BUF}`), `pcMask=NONE` — CM4 (PC2) denied, CM0+ in via
-  the PC0-unrestricted rule.
-- **PC split + lock (ADR-0020 D2/D5, revised per TRM §6.3):** PC0/PC1 are hardware-special
-  CM0+-only contexts, so **CM0+ stays in PC0** (secure/unrestricted) and only **CM4 is moved to
-  ordinary PC2** in `main_cm0p.c` **before `Cy_SysEnableCM4`**; CM4's mask excludes PC0, and its
-  MSx_CTL is secure-CPU-owned so it can't re-add PC0. Master sub-structs locked (`pcMask=NONE`) so
-  only the PC0 secure CPU reconfigures. The FBL *and* the app inherit the CM4 PC → M5-ready.
+- **Boundary A — key SMPU (ADR-0020 D3):** one SMPU struct in **match mode** over the CM0+ image
+  flash (`0x1000_0000..0x1002_0000`, the compiled-in `crypto_pubkey_dev`) that matches **only the
+  CM4's PC** and denies it; the CM0+ (a different PC) falls through untouched. Region geometry from
+  the host-tested `shared/prot` helper.
+- **PC split (ADR-0020 D2):** on silicon both CPUs boot in **PC2** (the DAP is PC0). So the CM0+ is
+  left in PC2 and only the **CM4 is moved to ordinary PC3** in `main_cm0p.c` **before
+  `Cy_SysEnableCM4`**. The FBL *and* the app inherit the CM4 PC → M5-ready.
+- **Boundary B — crypto PPU (ADR-0020 D4) + D5 lock:** *design-only, default-off* — redundant with
+  Boundary A (CM4 never touches CRYPTO), deferred to M5. See ADR-0020 "Scope as built".
 - **Demo (ADR-0020 D6):** `proj_cm4/src/fbl_tcb_probe.c` (debug-build-only, `FBL_M4_SEAM5_PROBE`)
   reads a key byte + a CRYPTO register → BusFault/HardFault on CM4, caught by its
   `HardFault_Handler` (inspect `g_tcb_probe`, incl. `BFAR` = faulting address) over OpenOCD. Reads,
   not writes — a PPU-violating write can be AHB-buffered and OK'd (TRM). **Not** an `mdw` read —
   the DAP is PC0 and bypasses the wall (that's why our dumps have always worked).
-- **(verify in TRM/board)** *Resolved this session from the TRM/PDL:* PC plan (CM0+ PC0 / CM4 PC2),
-  fixed PPUs cover CRYPTO, Door-1 active-PC clamp, single-deny-struct. *Remaining bench check:*
-  Door 2 — a CM4 (non-secure) write to `PROT_SMPU_MS14_CTL` to re-add PC0 is refused.
+**Status: DONE (Boundary A).** On silicon both CPUs run in PC2 (the DAP is PC0); the final wall is
+an **SMPU in match mode** that denies only the CM4's PC (moved to PC3), CM0+ untouched in PC2. Host
+slice `shared/prot/prot_region.{h,c}` + `test_prot_region` green; CM0+ config
+`proj_cm0p/src/prot_config_cm0p.{c,h}` (`FBL_M4_SEAM5_PROT`) + CM4 fault-demo
+`proj_cm4/src/fbl_tcb_probe.{c,h}` (`FBL_M4_SEAM5_PROBE`). **Boundary B (CRYPTO PPU) and the D5
+master-lock are design-only** (default-off flags) — redundant defense-in-depth, deferred to M5;
+see ADR-0020 "Scope as built".
 
-**Status:** ADR-0020 accepted + TRM-reviewed. Host slice landed — `shared/prot/prot_region.{h,c}`
-+ `test_prot_region` (8/8 green). **Scaffolds landed (behind compile guards, build unchanged):**
-CM0+ `Cy_Prot_*` config `proj_cm0p/src/prot_config_cm0p.{c,h}` (`FBL_M4_SEAM5_PROT`) and CM4
-fault-demo `proj_cm4/src/fbl_tcb_probe.{c,h}` (`FBL_M4_SEAM5_PROBE`). **Pending:** the bench proof.
-
-**Bench matrix (both projects flashed):**
-| Build | proj_cm0p | proj_cm4 | Expected |
+**Bench proof (reproduced):**
+| Build | proj_cm0p | proj_cm4 | Result |
 |---|---|---|---|
-| Baseline | walls OFF | probe ON | probe runs clean: `g_tcb_probe.stage==9`, key/crypto values read |
-| Walled | walls ON | probe ON | probe faults on the key read: `stage==2` unreached, `faulted`, `BFAR==0x1000_0000` |
-| PPU-only | walls ON | probe ON (skip key read) | faults on CRYPTO read: `BFAR==0x4010_0000` |
-| Regression | walls ON | probe OFF | normal boot: CM0+ still verifies + app jumps (walls cost the real path nothing) |
-| Lock (Door 2) | walls ON | probe ON, raw `MS14_CTL` write | write refused / `PC_MASK` unchanged — CM4 can't re-open PC0 |
+| Baseline (control) | walls OFF | probe ON | ✅ key read succeeds — `stage==9` |
+| Walled | walls ON | probe ON | ✅ key read **faults** — `faulted`, `CFSR` PRECISERR, `BFAR==0x1000_0000` |
 
-**Exit:** a documented, reproduced denial — CM4 code cannot reach the key or the crypto engine
-(faults), while CM0+ still can and boot-verify still passes. This is the finding that makes "why
-offload" more than a design-session assertion.
+**Exit (met for Boundary A):** a reproduced denial — CM4 code cannot reach the key (bus fault),
+while the CM0+ still verifies and the FBL boots. The delta between the two rows is what makes
+ADR-0017 "why offload" more than a design-session assertion.
 
 ## Seam 6 — fault injection: kill the M0+ and confirm the fail-safe
 

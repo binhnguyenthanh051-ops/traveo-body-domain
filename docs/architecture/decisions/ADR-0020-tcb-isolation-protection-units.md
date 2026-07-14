@@ -1,6 +1,26 @@
 # ADR-0020: TCB isolation — enforcing the CM0+ crypto boundary with protection units (M4 Seam 5)
 
-**Status:** accepted · **Date:** 2026-07-10
+**Status:** accepted · **Date:** 2026-07-10 · **Scope revised on the bench**
+
+## Scope as built (M4)
+
+The TCB-isolation claim is carried by **Boundary A alone**, and it is **proven on silicon**:
+an SMPU denies the untrusted CM4 (moved to an ordinary protection context) access to the CM0+
+image flash that holds the public key; a CM4-side read of that region takes a bus fault, verified
+against a walls-off negative control where the same read succeeds. That is the mechanism ADR-0017
+reason #2 asserted, now demonstrated.
+
+**Boundary B (PPU over the CRYPTO block) and D5 (locking the walls against CM4) are kept
+design-only** — implemented behind default-off flags (`PROT_WALL_CRYPTO`, `PROT_LOCK_MASTER` in
+`proj_cm0p/src/prot_config_cm0p.c`) but **not** part of the demonstrated result. Rationale: the CM4
+never touches the CRYPTO block directly — all crypto crosses the IPC mailbox to the CM0+ — and the
+only persistent secret (the key) is already walled by Boundary A, so a CRYPTO wall is redundant
+defense-in-depth for M4. It earns its place at **M5**, whose runtime MAC key would live in the
+engine. The design detail in D2–D6 below is retained as the reasoning for that future work; where
+it describes the CM4 core-MPU rejection (D1) and the SMPU (D3), it is what was built.
+
+*(Not chased further on the bench: the fixed-PPU per-PC att model and the master-struct lock both
+have silicon quirks that were disproportionate to walling a resource the CM4 cannot reach anyway.)*
 
 ## Context
 
@@ -114,7 +134,7 @@ for the M5 *secret* MAC key. The wall mechanism here is identical either way; on
 `{base,len}` changes, which is exactly what the host-tested helper already parametrises. Deferred
 as out-of-scope for Seam 5 (would pull in a key-provisioning path); revisit at M5.
 
-### D4. Boundary B — PPU over the CRYPTO peripheral MMIO
+### D4. Boundary B — PPU over the CRYPTO peripheral MMIO *(DEFERRED — design-only, see Scope)*
 
 A PPU over the CRYPTO register block allows only the CM0+ PC; a CM4 register access faults. CM4
 never touches CRYPTO directly (all crypto crosses the IPC mailbox to CM0+, ADR-0017/0018), so
@@ -129,7 +149,7 @@ this is free to the FBL/app.
   so no programmable-PPU address math is required for Boundary B. *(Still bench-verify that a fixed
   slave att with `pcMask = CM0+ only` denies a CM4-PC access.)*
 
-### D5. Lock the units against the untrusted core — the step that makes it a boundary
+### D5. Lock the units against the untrusted core *(DEFERRED — design-only, see Scope)*
 
 Each SMPU/PPU pair has a *master* sub-struct guarding its own configuration. These are locked to
 the **CM0+ PC** so CM4 cannot disable or rewrite the walls, and CM4 must be unable to re-enter
@@ -248,3 +268,11 @@ owner chose this (recommended) over "both cores in ordinary PCs." (2) **D3 simpl
 deny struct (CM0+'s PC0 bypass removes the need for a deny-background + allow pair). Door 1 (active-
 PC clamp) confirmed sealed by hardware; Door 2 (mask register) sealed by the secure/non-secure
 split — one bench check left. `prot_config_cm0p.c` scaffold updated to match.
+
+**Bench outcome + scope decision (same session).** On silicon both CPUs actually run in **PC2**
+(the DAP is the PC0 our dumps used), so the final arrangement is **CM0+ left in PC2, CM4 moved to
+PC3**, and Boundary A is an **SMPU in match mode** that denies only the CM4's PC (the CM0+ falls
+through). That wall is **proven** — a CM4 read of the key region faults, with a clean walls-off
+negative control. The CRYPTO PPU (D4) and the master-struct lock (D5) hit device-specific quirks
+and were **descoped to design-only** (default-off flags) as redundant defense-in-depth — see
+"Scope as built" at the top. Seam 5 closed on Boundary A.
