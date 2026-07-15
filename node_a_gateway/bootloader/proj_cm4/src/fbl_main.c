@@ -18,11 +18,10 @@
 #include "crypto_service.h"  /* M4 Seam 4: crypto_service_init (bind the port) */
 #endif
 
-/* M4 Seam-3 bench: flip to 1 AFTER generating src/test_signed_image.h with
- * host_tools/make_test_image.py. Verifies a good / tampered / wrong-key image
- * on-board. Set back to 0 (or delete the block) once Seam 3 is signed off. */
-#define FBL_M4_SEAM3_BRINGUP  0
-#if FBL_M4_SEAM3_BRINGUP
+/* Crypto bring-up checks (Seam 2 hash + Seam 3 verify) are retained behind
+ * FBL_CRYPTO_BRINGUP (default 0 in fbl_crypto.h; M4 is proven). Enabling the
+ * Seam-3 verify also needs src/test_signed_image.h from make_test_image.py. */
+#if FBL_CRYPTO_BRINGUP
 #include "test_signed_image.h"
 #endif
 
@@ -68,12 +67,12 @@ int main(void)
      * the boot decision (ADR-0015 D6: no escalation needed here either). */
     fbl_can_init();
 
-    /* --- M4 bring-up scaffolding (TEMPORARY — not part of the boot decision).
-     * Toggle at the bench; light the LED / breakpoint on the result. Seam 2
-     * proved fbl_crypto_bringup_hash() true; Seam 3 uses bringup_verify() on a
-     * signed blob at a SCRATCH address. Remove once the seams are signed off. */
+    /* M4 crypto bring-up checks — retained behind FBL_CRYPTO_BRINGUP (default
+     * off, M4 proven); not part of the boot decision. */
+#if FBL_CRYPTO_BRINGUP
     volatile bool crypto_ok = fbl_crypto_bringup_hash();   /* Seam 2: HW SHA-256 round trip */
     (void)crypto_ok;
+#endif
 
     /* M4 Seam 5 (ADR-0020 D6): prove the CM0+ walls from the CM4 side. The CM0+
      * raised them before releasing this core, so with FBL_M4_SEAM5_PROBE the two
@@ -82,7 +81,7 @@ int main(void)
      * rest of the scaffolding at seam sign-off. */
     fbl_tcb_probe();
 
-#if FBL_M4_SEAM3_BRINGUP
+#if FBL_CRYPTO_BRINGUP
     /* Seam 3: verify three images embedded in this FBL's flash. Set a
      * breakpoint on seam3_pass and inspect the verdicts (VALID=1, INVALID=0,
      * ERROR=2), or drive the LED from seam3_pass. */

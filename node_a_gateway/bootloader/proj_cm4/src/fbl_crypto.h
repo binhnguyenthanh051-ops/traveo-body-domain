@@ -18,6 +18,14 @@
 void                  fbl_crypto_port_init(void);
 const ipc_port_if_t  *fbl_crypto_port(void);
 
+/* The Seam 2/3 crypto bring-up helpers below are retained for reference but NOT
+ * compiled by default (M4 is proven). Define FBL_CRYPTO_BRINGUP=1 (e.g. via the
+ * Makefile DEFINES) to build them back in for a fresh bench check. */
+#ifndef FBL_CRYPTO_BRINGUP
+#define FBL_CRYPTO_BRINGUP  0
+#endif
+
+#if FBL_CRYPTO_BRINGUP
 /* Seam-2 bring-up: ask the CM0+ to SHA-256 the NIST "abc" vector over the real
  * mailbox + HW crypto path, and check the digest matches the known answer.
  * Returns true on an exact match. (The Seam-1 fbl_crypto_bringup_echo() was
@@ -32,5 +40,6 @@ bool                  fbl_crypto_bringup_hash(void);
  * Returns the raw verdict so the bench can tell VALID / INVALID / ERROR apart. */
 crypto_verdict_t      fbl_crypto_bringup_verify(uint32_t base, uint32_t len,
                                                 uint32_t key_id);
+#endif /* FBL_CRYPTO_BRINGUP */
 
 #endif /* FBL_CRYPTO_H */

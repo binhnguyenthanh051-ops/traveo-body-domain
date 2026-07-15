@@ -14,10 +14,9 @@
  * interrupt; the notify ISR (letting the CM0+ sleep between requests) is a
  * later refinement.
  *
- * UNVALIDATED without hardware — the cybsp_init() bring-up call, the crypto
- * block enable/SHA sequence, and cross-core mailbox access are bench checks
- * (see the Makefile note and the bring-up plan). The CM4 vector-table address
- * was the S0-1 bench finding — now the absolute 0x1002_0000.
+ * Proven on silicon through M4 (SHA-256 + ECDSA verify, cross-core mailbox, the
+ * S0-3 RAM idle and S0-4 SROM-syscall fixes). The Seam-5 TCB walls and the
+ * Seam-6 fault-injection hooks are behind default-off flags (see the Makefile).
  */
 #include "cy_pdl.h"
 #include "cybsp.h"
@@ -39,12 +38,6 @@ void cm0p_crypto_service_init(void);
  * immediate HardFault/lockup (M4 Seam-0 bring-up finding). Must be 1024-byte
  * aligned; 0x1002_0000 is. Kept named so it stays grep-able against the linker. */
 #define CM4_VECTOR_TABLE_ADDR   0x10020000UL
-
-/* S0-3 diagnostic (now 0 = real service): the WFI sleep test showed the CM0+
- * being active wasn't the erase problem — S0-4 (interrupts masked, so the flash
- * SROM IPC never serviced) was. Back to the normal mailbox service loop; the
- * flash IPC interrupt (now enabled) preempts it to run the SROM handler. */
-#define CM0P_ERASE_TEST_SLEEP   0
 
 /* Spin waiting for a request — FROM RAM, not flash (M4 Seam-0 finding S0-3).
  *
@@ -104,55 +97,6 @@ static void service_mailbox_once(void)
     }
 }
 
-/* ------------------------------------------------------------------
- * TEMP S0-4 DIAGNOSTIC — the CM0+ writes its state to a FIXED shared-SRAM
- * address so the CM4's OpenOCD session can read it (no CM0+ debug needed):
- *
- *     > mdw 0x0801F600 8
- *
- * The 8 words at 0x0801F600, in order:
- *   +0x00 progress : how far init got (1 cybsp, 2 crypto, 3 irq, 4 loop)
- *   +0x04 alive    : increments every loop pass -> CM0+ alive & looping
- *   +0x08 faulted  : 0xDEADF00D -> the CM0+ crashed (can't service SROM)
- *   +0x0C vtor     : SCB->VTOR (want RAM 0x0800_xxxx)
- *   +0x10 primask  : PRIMASK after __enable_irq (want 0)
- *   +0x14 iser0    : NVIC ISER[0]; bits 0 and 1 set => NvicMux0/1 (SROM) enabled
- *   +0x18 irq0_vec : active vector[16] = NvicMux0 handler (want a ROM addr, low)
- *   +0x1C irq1_vec : active vector[17] = NvicMux1 handler (want a ROM addr, low)
- *
- * 0x0801F600 sits in the mailbox region fbl_cm4.ld reserves (0x0801F500..+0x200),
- * past the ~136-byte mailbox — free scratch both cores can reach.
- * ------------------------------------------------------------------ */
-#define CM0P_DBG_ADDR   0x0801F600UL
-typedef struct {
-    volatile uint32_t progress;
-    volatile uint32_t alive;
-    volatile uint32_t faulted;
-    volatile uint32_t vtor;
-    volatile uint32_t primask;
-    volatile uint32_t iser0;
-    volatile uint32_t irq0_vec;
-    volatile uint32_t irq1_vec;
-} cm0p_dbg_t;
-#define CM0P_DBG   ((volatile cm0p_dbg_t *)CM0P_DBG_ADDR)
-
-/* Override the weak fault handler so a CM0+ crash is visible (and stops here). */
-void HardFault_Handler(void)
-{
-    CM0P_DBG->faulted = 0xDEADF00DU;
-    for (;;) { /* trapped */ }
-}
-
-static void dbg_capture_state(void)
-{
-    const volatile uint32_t *vt = (const volatile uint32_t *)SCB->VTOR;
-    CM0P_DBG->vtor     = SCB->VTOR;
-    CM0P_DBG->primask  = __get_PRIMASK();
-    CM0P_DBG->iser0    = NVIC->ISER[0];
-    CM0P_DBG->irq0_vec = vt[16];   /* IRQ0 = NvicMux0 (SROM) */
-    CM0P_DBG->irq1_vec = vt[17];   /* IRQ1 = NvicMux1 (SROM) */
-}
-
 /* S0-4 FIX: the BSP's PrepareSystemCallInfrastructure() (in SystemInit) never
  * ran on our custom CM0+ (dump showed IRQ0/1 vectors still in flash, NvicMux0/1
  * disabled). Replicate it: point the CM0+'s IRQ0/IRQ1 vectors at the SROM's own
@@ -185,16 +129,11 @@ int main(void)
      * running user code... the CM0+ if available and not running a prebuilt
      * image" (cybsp.c ~line 124), which after this seam is exactly this
      * image, not the vendor prebuilt. */
-    /* Zero the debug scratch first (its region is NOLOAD = garbage at boot). */
-    CM0P_DBG->progress = 0U; CM0P_DBG->alive = 0U; CM0P_DBG->faulted = 0U;
-
     (void)cybsp_init();
-    CM0P_DBG->progress = 1U;
 
     /* Enable the HW Crypto block + bind the op table BEFORE the CM4 starts, so
      * the service is ready by the time the FBL issues its first request. */
     cm0p_crypto_service_init();
-    CM0P_DBG->progress = 2U;
 
     /* S0-4: the CM4's flash erase/program is an SROM system call serviced by the
      * CM0+ via NvicMux0/1. The BSP's PrepareSystemCallInfrastructure() that wires
@@ -204,8 +143,6 @@ int main(void)
      * the CM4 hangs forever in Cy_Srom_CallApi's `IsLockAcquired(syscall)` wait. */
     cm0p_setup_srom_syscalls();
     __enable_irq();
-    dbg_capture_state();       /* VTOR / PRIMASK / NVIC / SROM vectors, post-enable */
-    CM0P_DBG->progress = 3U;
 
     /* M4 Seam 5 (ADR-0020 D2): raise the TCB-isolation walls (SMPU over the key
      * flash, PPUs over CRYPTO) and assign the CM0+/CM4 protection contexts
@@ -215,22 +152,8 @@ int main(void)
 
     /* Release the CM4 core to start executing the FBL at its vector table. */
     Cy_SysEnableCM4(CM4_VECTOR_TABLE_ADDR);
-    CM0P_DBG->progress = 4U;
 
-#if CM0P_ERASE_TEST_SLEEP
-    /* TEMP S0-3 DIAGNOSTIC: sleep like the vendor prebuilt did — definitively
-     * off the flash bus (no fetch, no optimizer/ramfunc uncertainty). If the
-     * CM4 erase now COMPLETES, the CM0+ was the cause and the real fix is a
-     * RAM-resident idle + notify-ISR wake. If it STILL hangs, the CM0+ is NOT
-     * the cause. No wake source here, so crypto verify will time out — fine for
-     * the erase test (the unsigned app is rejected anyway). Revert to 0 after. */
-    (void)cm0p_wait_for_request;   /* keep referenced (no -Wunused) while sleeping */
-    (void)service_mailbox_once;
-    for (;;)
-    {
-        __WFI();
-    }
-#elif defined(FBL_M4_SEAM6_DEAD)
+#if defined(FBL_M4_SEAM6_DEAD)
     /* Seam 6 fault injection (bench, ADR-0016 D5): the CM0+ released the CM4 but
      * now plays DEAD — it never services the mailbox. The CM4's verify then polls
      * out to CRYPTO_VERIFY_TIMEOUT_MS (1 s), gets IPC_TIMEOUT -> CRYPTO_VERDICT_
