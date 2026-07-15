@@ -43,6 +43,13 @@ ipc_status_t ipc_transact(const ipc_port_if_t *port,
     while (!port->response_ready())
     {
         uint32_t now = port->now_ms();
+        /* now_ms() is a running clock, so `now` and `start` are samples taken at
+         * different times and differ. cppcheck models now_ms() as pure (now==start)
+         * and raises two false positives on the next line — the bogus zero then
+         * also trips its unsigned-<-zero check. Suppress both; the unsigned
+         * (now - start) wrap-safe compare is intended. */
+        /* cppcheck-suppress duplicateExpression */
+        /* cppcheck-suppress unsignedLessThanZero */
         if ((now - start) >= timeout_ms)
         {
             port->sema_release();
