@@ -55,3 +55,17 @@ if [ -n "$PROJECT" ]; then
 fi
 
 make "$MAKE_TARGET"
+
+# The MTB application recipe merges the CM0+ (HSM) + CM4 (FBL) project hexes into
+# build/app_combined.hex -- that name is hardcoded in recipe-make-cat1a (vendor,
+# under the gitignored mtb_shared/), so it can't be renamed at the recipe level.
+# Publish a clearer copy, fbl_combined.hex, for flashing/reference. Only at the
+# app root (PROJECT empty), where both projects are merged; skipped for clean/
+# getlibs (no hex) and for scoped cm4/cm0p builds (no combined image).
+if [ -z "$PROJECT" ]; then
+    COMBINED="$BOOTLOADER/build/app_combined.hex"
+    if [ -f "$COMBINED" ]; then
+        cp -f "$COMBINED" "$BOOTLOADER/build/fbl_combined.hex"
+        echo "Merged FBL+HSM image: node_a_gateway/bootloader/build/fbl_combined.hex"
+    fi
+fi

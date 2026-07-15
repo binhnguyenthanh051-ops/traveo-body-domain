@@ -12,10 +12,8 @@
  * The Crypto block is a CPUSS sub-block on CYT2B7 (CPUSS_CRYPTO_PRESENT=1,
  * CRYPTO_V2), owned by the CM0+ (ADR-0017), enabled once here.
  *
- * UNVALIDATED on silicon — Seam-3 bench checks: (1) ECC input BYTE ORDER (see
- * do_verify_image); (2) the Crypto block reading directly from flash for the
- * SHA (Seam 2 hashed RAM fine; flash is memory-mapped, expected to work —
- * confirm, and if not, CY_REMAP_ADDRESS_FOR_CRYPTO the flash pointer).
+ * Proven on silicon (Seam 3/4): the ECC input byte order (see do_verify_image,
+ * S3-2) and the Crypto block hashing directly from memory-mapped flash both work.
  */
 #include "crypto_dispatch.h"
 #include "crypto_keystore.h"
@@ -64,26 +62,6 @@ static void reverse32(uint8_t *dst, const uint8_t *src)
 /* -------------------------------------------------------------------
  * CRYPTO_OP_VERIFY_IMAGE — two-stage verify over a flash range (Seam 3)
  * ----------------------------------------------------------------- */
-/* TEMP S0-4 verify debug at a fixed shared-SRAM address — read from the CM4's
- * OpenOCD after a failed check-image:  mdw 0x0801F640 24
- *   +0x00 base  +0x04 len  +0x08 sha_status(0=ok)  +0x0C stage1_match(1=ok)
- *   +0x10 ecc_status(0=ok)  +0x14 stat(1=valid sig)  +0x18 verdict
- *   +0x1C (pad)  +0x20 computed[32]  +0x40 stored[32] */
-#define VDBG_ADDR   0x0801F640UL
-typedef struct {
-    volatile uint32_t base;
-    volatile uint32_t len;
-    volatile uint32_t sha_status;
-    volatile uint32_t stage1_match;
-    volatile uint32_t ecc_status;
-    volatile uint32_t stat;
-    volatile uint32_t verdict;
-    volatile uint32_t pad;
-    volatile uint8_t  computed[32];
-    volatile uint8_t  stored[32];
-} verify_dbg_t;
-#define VDBG   ((volatile verify_dbg_t *)VDBG_ADDR)
-
 static crypto_verdict_t do_verify_image(uint32_t base, uint32_t len,
                                         const uint8_t *pubkey_xy)
 {
@@ -92,30 +70,21 @@ static crypto_verdict_t do_verify_image(uint32_t base, uint32_t len,
     const uint8_t *stored_hash = &trailer[TRAILER_HASH_OFF];   /* [0..32)  */
     const uint8_t *sig         = &trailer[TRAILER_SIG_OFF];    /* [32..96) r||s */
 
-    VDBG->base = base;
-    VDBG->len  = len;
-
     /* Hash the REAL flash body (ADR-0017 D1). */
     uint8_t digest[CY_CRYPTO_SHA256_DIGEST_SIZE];
     cy_en_crypto_status_t sha_st = Cy_Crypto_Core_Sha(CRYPTO, body, len, digest,
                                                       CY_CRYPTO_MODE_SHA256);
-    VDBG->sha_status = (uint32_t)sha_st;
     if (sha_st != CY_CRYPTO_SUCCESS)
     {
-        VDBG->verdict = (uint32_t)CRYPTO_VERDICT_ERROR;
         return CRYPTO_VERDICT_ERROR;
     }
-
-    for (uint32_t i = 0U; i < 32U; ++i) { VDBG->computed[i] = digest[i]; VDBG->stored[i] = stored_hash[i]; }
 
     /* Stage 1 (integrity, ADR-0016 D2): the flash body must hash to the stored
      * value — localizes "corrupt/incomplete image" from "wrong signature".
      * (Bench-confirmed working: a tampered body correctly mismatches here.) */
     int m = memcmp(digest, stored_hash, sizeof digest);
-    VDBG->stage1_match = (m == 0) ? 1U : 0U;
     if (m != 0)
     {
-        VDBG->verdict = (uint32_t)CRYPTO_VERDICT_INVALID;
         return CRYPTO_VERDICT_INVALID;
     }
 
@@ -147,16 +116,11 @@ static crypto_verdict_t do_verify_image(uint32_t base, uint32_t len,
     cy_en_crypto_status_t ecc_st = Cy_Crypto_Core_ECC_VerifyHash(CRYPTO, sig_le, digest,
                                                                 (uint32_t)sizeof digest, &stat,
                                                                 &key);
-    VDBG->ecc_status = (uint32_t)ecc_st;
-    VDBG->stat = (uint32_t)stat;
     if (ecc_st != CY_CRYPTO_SUCCESS)
     {
-        VDBG->verdict = (uint32_t)CRYPTO_VERDICT_ERROR;
         return CRYPTO_VERDICT_ERROR;
     }
-    crypto_verdict_t v = (stat == 1U) ? CRYPTO_VERDICT_VALID : CRYPTO_VERDICT_INVALID;
-    VDBG->verdict = (uint32_t)v;
-    return v;
+    return (stat == 1U) ? CRYPTO_VERDICT_VALID : CRYPTO_VERDICT_INVALID;
 }
 
 static bool verify_handler(const crypto_msg_t *req, crypto_msg_t *resp)

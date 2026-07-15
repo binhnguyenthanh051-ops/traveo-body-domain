@@ -98,6 +98,7 @@ const ipc_port_if_t *fbl_crypto_port(void)
  * a real request, so nothing is lost. (History: proven true on silicon before
  * the Seam-2 swap; see M4-bringup-plan.md Seam 1.) */
 
+#if FBL_CRYPTO_BRINGUP
 bool fbl_crypto_bringup_hash(void)
 {
     fbl_crypto_port_init();
@@ -161,3 +162,4 @@ crypto_verdict_t fbl_crypto_bringup_verify(uint32_t base, uint32_t len, uint32_t
      * ADR-0016 D5); a mismatched/tampered image comes back INVALID. */
     return crypto_verify_image(base, len, key_id);
 }
+#endif /* FBL_CRYPTO_BRINGUP */
