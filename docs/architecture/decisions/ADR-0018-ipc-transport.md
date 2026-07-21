@@ -130,3 +130,62 @@ it just makes the length an explicit part of the seam instead of implied. No cha
 protocol shape or D3/D4. The host tests (`test_ipc_mailbox`, `test_crypto_verify`) pin it down;
 the real channel/semaphore/notify wiring remains a bring-up seam, findings appended here as in
 ADR-0013.
+
+## M5 addendum — mailbox cache coherency on Node B (Cortex-M7)
+
+*Added 2026-07-21 for M5. This ADR was written for Node A (CYT2B7, Cortex-M4), whose cores have
+**no data cache** (CLAUDE.md): a write to the shared-RAM mailbox by one core is immediately visible
+in SRAM to the other, so D1/D2/D5 silently assumed "written to the mailbox" == "visible to the other
+core." M5 brings up **Node B on CYT4BF (Body High), whose application core is a Cortex-M7 with an L1
+D-cache.** That assumption no longer holds on Node B:*
+
+- *A CM7 write to the mailbox — or to the `response_ready`-style signalling flag — may sit in the M7
+  write-back D-cache and never reach the SRAM the CM0+ reads.*
+- *A CM7 read of the mailbox may return a **stale cached line** instead of what the CM0+ just wrote.*
+
+*The D2 protocol is correct as a **sequence**; it now also needs the underlying memory to be coherent
+across the two cores. Node A (M4, cacheless) is unaffected and unchanged.*
+
+### D6. On cached app cores the mailbox region is **non-cacheable, configured via the M7 MPU**
+
+On any node whose application core has a data cache (Node B / CM7), the shared-RAM mailbox region
+**and the cross-core signalling flags** live in a region the **M7 MPU marks Non-cacheable** (Normal
+memory, Non-cacheable, Shareable), set once at CM7 startup. **No per-transaction cache maintenance.**
+
+- **Why set-once, not maintain-everywhere.** The alternative — explicit `SCB_CleanDCache_by_Addr()`
+  before `notify()` and `SCB_InvalidateDCache_by_Addr()` before reading the response, wrapped around
+  every `ipc_transact` — is correct but **fragile**: every current and future caller must remember
+  it, and one path that forgets reintroduces an intermittent, hard-to-reproduce coherency bug — the
+  exact "works in bring-up, fails later" failure mode D2 was written to prevent. It also carries
+  cache-line hazards (invalidate acts on whole 32-byte lines; the region must be line-aligned and
+  line-padded or a neighbouring variable is clobbered). Marking the region non-cacheable makes
+  coherency **structural** — the transport code stays byte-identical to Node A's and no caller can
+  get it wrong.
+- **The cost is negligible here.** The mailbox is small and touched **once per CAN command**
+  (single-outstanding, ADR-0017 D2). Losing cacheability on a rarely-touched region costs nothing
+  measurable — unlike making a hot data buffer non-cacheable, which this explicitly is not.
+- **Scope is one region, not the D-cache.** The M7 data cache stays **enabled**; only the mailbox
+  (+ flags) is non-cacheable. Every other SRAM region — stacks, heap, task/state data, CAN buffers
+  that are not shared cross-core — remains **cacheable** and keeps full M7 performance. That is the
+  whole reason to carve a single MPU region rather than run the M7 with its cache off:
+  non-cacheable is the narrow exception, cacheable SRAM is the default.
+- **This refines D5; it does not change D2/D3.** The acquire→write→notify→await→read→release protocol
+  and the single-outstanding buffer discipline are untouched. D5's "mailbox placement is a linker
+  concern" gains a per-node **memory-attribute** requirement: on a cached core the linker region
+  carries a Non-cacheable MPU attribute.
+
+**Alternative considered — explicit cache maintenance per transact.** Rejected as the primary
+mechanism for the fragility above; retained as the **documented fallback** if a future design needs
+the mailbox cacheable for performance (it does not today).
+
+**To verify on Node B bring-up:** the CYT4BF M7 uses the ARMv7-M PMSAv7 MPU (power-of-two region
+size, ≥ 32 B, base aligned to size). The mailbox + flags must fit one such region with correct
+alignment/padding, and the Non-cacheable/Shareable attribute must be confirmed to make CM7↔CM0+
+writes mutually visible (a "M0+ never sees the request" symptom is the tell if it is mis-set).
+
+### Host/target split (unchanged)
+
+Cacheability is a **target-only** memory-map property. Host tests bind a plain-buffer fake mailbox
+(no cache), so the entire host-tested protocol logic is identical across both nodes. **D6 is verified
+on silicon** (Node B bring-up log), not host-testable — a target/`@design-only` item, not a
+`@test`-able unit.
