@@ -12,13 +12,27 @@ read by humans (and quoted in blog posts) as much as it is run.
 
 ## Hardware facts (do not guess these)
 
+The two nodes are **different TRAVEO™ T2G parts** — do not assume Node B == Node A.
+
+**Node A — Gateway:**
 - Board: `CYTVII-B-E-1M-SK`, MCU `CYT2B7` (TRAVEO™ T2G Body Entry).
 - Cores: 160 MHz Arm Cortex-M4F (primary) + 100 MHz Arm Cortex-M0+ (peripheral/security).
   This is **asymmetric** dual-core, NOT symmetric multicore.
 - Memory: 1 MB code flash, 96 KB work flash, 128 KB SRAM.
 - No data/instruction cache on these cores (cache discussion is design-essay only).
-- Both cores have an MPU. IPC uses hardware semaphores.
-- Toolchain: Infineon ModusToolbox for firmware. GCC for host-side tests.
+
+**Node B — Actuator (from M5):**
+- Board: `KIT_T2G-B-H_LITE` (TRAVEO™ T2G Body High Lite), MCU **CYT4BF** (**Body High**):
+  **8 MB code flash, 1 MB SRAM** (much larger than Node A). *(Exact orderable part suffix:
+  confirm from the kit BSP at bring-up.)*
+- App core: Arm **Cortex-M7** (CM7_0; CM7_1 unused) + 100 MHz Cortex-M0+ (security).
+- **CM7 has L1 I+D cache** — unlike Node A's M4. The cross-core IPC mailbox is therefore NOT
+  automatically coherent; it lives in an **MPU non-cacheable region** (ADR-0018 **D6**). Cache is a
+  *real* concern on Node B, not a design-essay aside.
+- Application only — **no FBL, no app secure boot** in M5.
+
+**Both nodes:** each core has an MPU; IPC uses hardware semaphores; both have CANFD + MXCRYPTO.
+Toolchain: Infineon ModusToolbox for firmware. GCC for host-side tests.
 
 ## System structure (read `docs/architecture/overview.md` for the full picture)
 
