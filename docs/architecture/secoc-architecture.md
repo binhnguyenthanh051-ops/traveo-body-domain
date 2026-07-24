@@ -36,8 +36,8 @@ is a **different silicon family** and needs its own bring-up (§3, §4).
 | Security core | Cortex-M0+ @ 100 MHz | Cortex-M0+ @ 100 MHz |
 | **Cache** | **none** (M4 has no L1 cache) | **CM7 has L1 I+D cache** → mailbox is MPU non-cacheable (ADR-0018 D6, §6.1) |
 | Flash / SRAM | 1 MB / 128 KB | **8 MB / 1 MB** |
-| CANFD | yes (MXCRYPTO present) | yes (`MXTTCANFD_S40E`) |
-| HW crypto | MXCRYPTO (AES/SHA/ECC) | ⚠ **no `MXCRYPTO` in `CYT4BF8CDS` IPBLOCKS** — verify; else SW CMAC (§7.2) |
+| CANFD | yes | yes (`MXTTCANFD_S40E`) |
+| HW crypto | MXCRYPTO (AES/SHA/ECC) | MXCRYPTO (`CY_IP_MXCRYPTO` in `cyt4bf8cds.h`; PDL Crypto Core **V2** CMAC) |
 | Images | 3 (CM0+ crypto, CM4 FBL, CM4 app) | 2 (CM0+ crypto, CM7 app) — **no FBL, no app secure boot** |
 
 **Why this matters for the design, not just bring-up:** the host-testable `shared/` layer (secoc,
@@ -272,16 +272,16 @@ Transmitted = Authentic-PDU ∥ Freshness(full 4 B) ∥ MAC[0..8)      (~13 B he
 CAN FD's 64-byte frame lets payload + freshness + MAC ride in **one** frame — no secondary MAC PDU,
 no on-bus freshness truncation/reconstruction (the Classic-CAN SecOC headaches).
 
-**MAC primitive (provisional — pending HW-crypto verify):** AES-CMAC, computed on the M0+, kept a
-**vetted implementation** either way (ADR-0006 — no hand-rolled subkey/padding). **Open finding:**
-the `CYT4BF8CDS` `IPBLOCKS` list in the BSP `bsp.mk` shows **no `MXCRYPTO`** block, so the Node A
-plan of PDL-native `Cy_Crypto_Core_Cmac` may not apply here. Two cases, decided at bring-up:
-(a) the part *does* have a crypto block the PDL exposes → use `Cy_Crypto_Core_Cmac`; (b) it does
-not → **mbedTLS `mbedtls_cipher_cmac` (software, on the M0+)** becomes the primary. Either way the
-offload architecture is unchanged — the secret key stays in the M0+ TCB and CMAC is computed there;
-only "HW-accelerated" vs "software" changes. On-silicon correctness proven against **NIST SP 800-38B
-known-answer vectors**; back end is target-only (ADR-0017 layer 4), faked on host. To be finalized
-as **ADR-0021 D1** once the crypto block is confirmed.
+**MAC primitive (resolved — HW CMAC available):** AES-CMAC computed on the M0+ via the PDL's
+**Crypto Core V2 CMAC** (`Cy_Crypto_Core_V2_Cmac`) — a vetted implementation, no hand-rolled
+subkey/padding (ADR-0006). **Verified:** Node B's device header `cyt4bf8cds.h` defines
+`CY_IP_MXCRYPTO` and the PDL ships the CMAC v2 driver, so the earlier `bsp.mk` `IPBLOCKS` omission
+was a false alarm — Node B has an MXCRYPTO block (final CYT4BF-datasheet cross-check is a low-risk
+formality). mbedTLS `mbedtls_cipher_cmac` stays the documented software fallback but is no longer
+expected. The offload architecture is unchanged regardless — the secret key stays in the M0+ TCB and
+CMAC is computed there. On-silicon correctness proven against **NIST SP 800-38B known-answer
+vectors**; back end is target-only (ADR-0017 layer 4), faked on host. To be formalized as
+**ADR-0021 D1**.
 
 ### 7.3 Freshness scheme — per-ID counter, shared per-boot epoch (D3 + D4)
 
