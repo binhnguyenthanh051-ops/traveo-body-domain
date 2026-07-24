@@ -36,7 +36,8 @@ is a **different silicon family** and needs its own bring-up (§3, §4).
 | Security core | Cortex-M0+ @ 100 MHz | Cortex-M0+ @ 100 MHz |
 | **Cache** | **none** (M4 has no L1 cache) | **CM7 has L1 I+D cache** → mailbox is MPU non-cacheable (ADR-0018 D6, §6.1) |
 | Flash / SRAM | 1 MB / 128 KB | **8 MB / 1 MB** |
-| CANFD, MXCRYPTO | yes | yes — MAC = **PDL-native AES-CMAC** (§7.2) |
+| CANFD | yes (MXCRYPTO present) | yes (`MXTTCANFD_S40E`) |
+| HW crypto | MXCRYPTO (AES/SHA/ECC) | ⚠ **no `MXCRYPTO` in `CYT4BF8CDS` IPBLOCKS** — verify; else SW CMAC (§7.2) |
 | Images | 3 (CM0+ crypto, CM4 FBL, CM4 app) | 2 (CM0+ crypto, CM7 app) — **no FBL, no app secure boot** |
 
 **Why this matters for the design, not just bring-up:** the host-testable `shared/` layer (secoc,
@@ -155,41 +156,56 @@ on a part the project has never built for.
 
 ---
 
-## 5. Node B folder restructure (do before bring-up)
+## 5. Node B folder structure (multi-core MTB app — as built)
 
-Node B today is a flat skeleton (`node_b_actuator/app/{src,config}`) that assumed one core sharing
-Node A's board. Body High Lite is a different device with its own BSP and **two** images, so Node B
-becomes a **multi-core MTB workspace** — structurally like Node A's `bootloader/` (which is itself a
-`proj_cm0p` + `proj_cm4` multi-core app), but semantically it is the whole node, not a bootloader.
+Body High Lite is a different device (**`CYT4BF8CDS`**, recipe **`cat1c`**) with its own BSP and
+**two** images, so Node B is a **multi-core MTB application** — structurally like Node A's
+`bootloader/` (a `proj_cm0p` + `proj_cm4` multi-core app), but semantically it is the whole node,
+not a bootloader. Started from the MTB FreeRTOS-Blinky example for `KIT_T2G-B-H_LITE`; the Blinky
+became `proj_cm7`, and a sibling `proj_cm0p` holds the crypto server.
 
-**Target layout:**
+**Layout:**
 
 ```
-node_b_actuator/
-├── Makefile                 # multi-core app root (mirrors node_a_gateway/bootloader/Makefile)
-├── bsps/
-│   └── TARGET_KIT_T2G-B-H_LITE/     # NEW BSP for the Body High Lite kit
-├── deps/  libs/             # MTB deps; share repo-root mtb_shared/ (CY_GETLIBS_SHARED_*)
-├── proj_cm0p/               # security core: MAC crypto server + AES secret + starts CM7_0
-│   ├── Makefile             # SOURCES += ../../shared/crypto/src/{ipc_mailbox,crypto_msg,
-│   │                        #   crypto_dispatch,crypto_keystore}.c ; embeds into CM7 .cy_m0p_image
-│   ├── config/  src/
-└── proj_cm7/                # actuator app (CM7_0), FreeRTOS
-    ├── Makefile             # COMPONENTS=FREERTOS ; SOURCES += ../../shared/{messages,secoc,
-    │                        #   crypto/{ipc_mailbox,crypto_msg,crypto_service}}/src/*.c
-    ├── config/ (FreeRTOSConfig.h)  include/  logic/  src/  linker/
+node_b_actuator/                         # = the multi-core APPLICATION root
+├── Makefile                             # MTB_TYPE=APPLICATION; MTB_PROJECTS=proj_cm0p proj_cm7
+├── bsps/TARGET_APP_KIT_T2G-B-H_LITE/    # ONE shared BSP (COMPONENT_CM0P + COMPONENT_CM7)
+├── proj_cm0p/                           # CM0+ security core (CORE=CM0P / CM0P_0)
+│   ├── Makefile                         # PROJECT; DISABLE_COMPONENTS=XMC7x_CM0P_SLEEP;
+│   │                                    #   SOURCES += ../../shared/crypto/src/{crypto_dispatch,
+│   │                                    #   crypto_msg,crypto_keystore}.c  (NO ipc_mailbox.c —
+│   │                                    #   the CM0+ is the mailbox SERVER); fills flash_cm0p
+│   └── src/                             # main_cm0p.c (start CM7 + dispatch loop), CMAC back end
+└── proj_cm7/                            # CM7_0 actuator app (CORE=CM7 / CM7_0), FreeRTOS
+    ├── Makefile                         # PROJECT; COMPONENTS=FREERTOS RTOS_AWARE;
+    │                                    #   DISABLE_COMPONENTS=XMC7x_CM0P_SLEEP; SOURCES (per seam)
+    │                                    #   += ../../shared/{messages,secoc}/src/*.c +
+    │                                    #   ../../shared/crypto/src/{ipc_mailbox,crypto_msg,
+    │                                    #   crypto_service}.c  (client → includes ipc_mailbox.c)
+    ├── config/ (FreeRTOSConfig.h)  src/  ...
 ```
 
-Notes that keep it consistent with the existing wiring:
-- **`shared/` is referenced by relative `SOURCES=`/`INCLUDES=` paths**, same mechanism as Node A —
-  from `node_b_actuator/proj_cm7/` that is `../../shared/...` (2 levels to repo root, like
-  `node_a_gateway/app/`), not the 3-level `../../../shared/...` the Node A *bootloader* projects use.
-- **CM0+ image embeds into the CM7 image's `.cy_m0p_image`** at link (the same pattern Node A's
-  `proj_cm4` uses with `DISABLE_COMPONENTS=CM0P_SLEEP`), so the M0+ crypto server ships inside the
-  one Node B programming artifact.
-- The retired `node_b_actuator/app/` skeleton's intent (README/config) folds into `proj_cm7/`.
-- The **restructure is yours to execute at bring-up** — this doc only fixes the target shape so the
-  Makefiles, `shared/` paths, and the CM0+/CM7 split are agreed before you start.
+Notes:
+- **`shared/` via relative `SOURCES=`/`INCLUDES=`**, same mechanism as Node A — from
+  `node_b_actuator/proj_cm7/` that is `../../shared/...` (2 levels to repo root), and
+  `CY_GETLIBS_SHARED_PATH=../../` resolves the **single repo-root `mtb_shared/`** all variants share.
+- **Client vs server split** (mirrors Node A): the CM7 app is the mailbox **client** and links
+  `ipc_mailbox.c`; the CM0+ is the **server** and does *not* — it reads/writes the shared mailbox
+  region directly (ADR-0018).
+- **CM0+ image combine:** `DISABLE_COMPONENTS=XMC7x_CM0P_SLEEP` (the cat1c vendor prebuilt) on both
+  projects, so our `proj_cm0p` image fills the CM7 linker's `.cy_m0p_image` / `flash_cm0p` window —
+  the cat1c equivalent of Node A's `CM0P_SLEEP` mechanism.
+- **Libraries:** `mtb_shared/` is a **gitignored cache** regenerated by `make getlibs`; per-project
+  `deps/*.mtb` locators are the committed source of truth. Node B's newer versions
+  (`recipe-make-cat1c`, `mtb-hal-t2gbh8m`, `mtb-pdl-cat1 3.23.0`, …) coexist **alongside** Node A's
+  pinned versions in the one cache — Node A's proven versions are never upgraded.
+- **Node B needs its OWN mailbox map (IPC-seam artifact).** `shared/crypto/include/ipc_mailbox_map.h`
+  is Node-A-specific — its address `0x0801F500` sits in CYT2B7's 128 KB SRAM (pinned to
+  `fbl_cm4.ld`) and `IPC_CRYPTO_CHANNEL = 4` is CAT1A. Node B must author a fresh map: an address in
+  its 1 MB SRAM **reserved in both the `proj_cm0p` and `proj_cm7` linker scripts** (ADR-0018 D5),
+  living in the CM7 linker's existing **`ram_noncache`** region (`_base_SRAM_NON_CACHE`) to satisfy
+  the D6 non-cacheable requirement for free, with the correct **CAT1C** IPC channel. The Seam-1
+  `main_cm0p.c` therefore does **not** include the Node A map; the mailbox arrives at the crypto seam.
 
 ---
 
@@ -256,12 +272,16 @@ Transmitted = Authentic-PDU ∥ Freshness(full 4 B) ∥ MAC[0..8)      (~13 B he
 CAN FD's 64-byte frame lets payload + freshness + MAC ride in **one** frame — no secondary MAC PDU,
 no on-bus freshness truncation/reconstruction (the Classic-CAN SecOC headaches).
 
-**MAC primitive (resolved):** AES-CMAC via the crypto PDL's native `Cy_Crypto_Core_Cmac` — a vetted
-implementation, so **no hand-rolled CMAC subkey/padding construction** (ADR-0006). It is a
-target-only back end (ADR-0017 layer 4), faked on host; on-silicon correctness is proven against
-**NIST SP 800-38B known-answer vectors** at bring-up. Fallback if the Body High PDL does not expose
-CMAC: mbedTLS `mbedtls_cipher_cmac` (also vetted); a from-scratch SP 800-38B implementation is the
-last resort and would be gated by those test vectors. To be formalized as **ADR-0021 D1**.
+**MAC primitive (provisional — pending HW-crypto verify):** AES-CMAC, computed on the M0+, kept a
+**vetted implementation** either way (ADR-0006 — no hand-rolled subkey/padding). **Open finding:**
+the `CYT4BF8CDS` `IPBLOCKS` list in the BSP `bsp.mk` shows **no `MXCRYPTO`** block, so the Node A
+plan of PDL-native `Cy_Crypto_Core_Cmac` may not apply here. Two cases, decided at bring-up:
+(a) the part *does* have a crypto block the PDL exposes → use `Cy_Crypto_Core_Cmac`; (b) it does
+not → **mbedTLS `mbedtls_cipher_cmac` (software, on the M0+)** becomes the primary. Either way the
+offload architecture is unchanged — the secret key stays in the M0+ TCB and CMAC is computed there;
+only "HW-accelerated" vs "software" changes. On-silicon correctness proven against **NIST SP 800-38B
+known-answer vectors**; back end is target-only (ADR-0017 layer 4), faked on host. To be finalized
+as **ADR-0021 D1** once the crypto block is confirmed.
 
 ### 7.3 Freshness scheme — per-ID counter, shared per-boot epoch (D3 + D4)
 

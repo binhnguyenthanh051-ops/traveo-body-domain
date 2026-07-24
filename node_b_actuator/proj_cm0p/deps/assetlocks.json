@@ -1,0 +1,38 @@
+[
+    {
+        "asset-name": "cat1cm0p",
+        "locked-commit": "release-v1.11.0"
+    },
+    {
+        "asset-name": "cmsis",
+        "locked-commit": "release-v6.1.0"
+    },
+    {
+        "asset-name": "core-lib",
+        "locked-commit": "release-v1.8.0"
+    },
+    {
+        "asset-name": "core-make",
+        "locked-commit": "release-v3.9.0"
+    },
+    {
+        "asset-name": "device-db",
+        "locked-commit": "release-v4.38.0"
+    },
+    {
+        "asset-name": "mtb-hal-t2gbh8m",
+        "locked-commit": "release-v1.0.0"
+    },
+    {
+        "asset-name": "mtb-pdl-cat1",
+        "locked-commit": "release-v3.23.0"
+    },
+    {
+        "asset-name": "recipe-make-cat1c",
+        "locked-commit": "release-v1.7.0"
+    },
+    {
+        "asset-name": "syspm-callbacks-t2gbh8m",
+        "locked-commit": "release-v1.0.0"
+    }
+]
