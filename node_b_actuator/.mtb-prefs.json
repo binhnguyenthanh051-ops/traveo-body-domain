@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "settings": {
+    "mtb-tools-version": "3.8.0.18384",
+    "toolchain-version-GCC_ARM": "14.2.1.265"
+  }
+}
