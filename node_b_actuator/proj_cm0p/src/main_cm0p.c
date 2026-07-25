@@ -15,7 +15,7 @@
  * cm0plus_code_flash_reserve (0x8_0000, 512K) — must equal _base_CODE_FLASH_CM7_0
  * in the BSP's COMPONENT_CM7 linker.ld. */
 #define CM7_0_VECTOR_TABLE_ADDR   0x10080000UL
-#define CM7_0_CORE_INDEX          0U
+#define CM7_0_CORE_INDEX          CORE_CM7_0
 
 int main(void)
 {
