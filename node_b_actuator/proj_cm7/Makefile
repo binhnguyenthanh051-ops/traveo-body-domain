@@ -106,7 +106,7 @@ SOURCES=
 
 # Like SOURCES, but for include directories. Value should be paths to
 # directories (without a leading -I).
-INCLUDES=
+INCLUDES=../../shared/can/include
 
 # Add additional defines to the build process (without a leading -D).
 DEFINES=
