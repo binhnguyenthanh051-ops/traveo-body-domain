@@ -63,16 +63,17 @@
 #define LOG_RING_CAP            2048U
 
 /* -------------------------------------------------------------------
- * Ring storage
+ * Ring storage — ONE ring, image-private RAM.
  *
- * Two rings, one per producing core (log_drain walks both). The SECURITY ring
- * has no producer in this image yet — the CM0+ side lands in a later step, at
- * which point this array moves to the shared region the boot handshake already
- * uses. Until then it stays empty, and drain skips it in O(1).
+ * The security core does not log (ADR-0023 D4): per ADR-0021 D1 the SecOC
+ * verdict is decided on THIS core, so no contract event originates on the CM0+.
+ * A shared ring out of the core holding the AES secret would be TCB surface
+ * with no evidence in return. Consequence: same-core producer and consumer, so
+ * no shared-memory placement and no cache maintenance.
  * ----------------------------------------------------------------- */
-static uint8_t           s_ring[LOG_CORE_COUNT][LOG_RING_CAP];
-static volatile uint32_t s_head[LOG_CORE_COUNT];
-static volatile uint32_t s_tail[LOG_CORE_COUNT];
+static uint8_t           s_ring[LOG_RING_CAP];
+static volatile uint32_t s_head;
+static volatile uint32_t s_tail;
 
 static bool s_sink_ready = false;
 
@@ -80,25 +81,24 @@ static bool s_sink_ready = false;
  * Ring / barrier
  * ----------------------------------------------------------------- */
 
-uint8_t *log_port_ring(log_core_t core)
+uint8_t *log_port_ring(void)
 {
-    return s_ring[core];
+    return s_ring;
 }
 
-size_t log_port_ring_cap(log_core_t core)
+size_t log_port_ring_cap(void)
 {
-    (void)core;
     return (size_t)LOG_RING_CAP;
 }
 
-volatile uint32_t *log_port_head(log_core_t core)
+volatile uint32_t *log_port_head(void)
 {
-    return &s_head[core];
+    return &s_head;
 }
 
-volatile uint32_t *log_port_tail(log_core_t core)
+volatile uint32_t *log_port_tail(void)
 {
-    return &s_tail[core];
+    return &s_tail;
 }
 
 void log_port_publish_barrier(void)

@@ -54,15 +54,25 @@
 #define LOG_SEQ_MASK        0x3FU
 #define LOG_CORE_MASK       0x03U
 
-/* Which core produced a record. Node A: CM4 / CM0+. Node B: CM7 / CM0+.
- * Named by ROLE, not by part, so one decoder table serves both nodes. */
+/* Which core produced a record -- a WIRE field, not a ring selector.
+ *
+ * Named by ROLE, not by part, so one decoder table serves both nodes.
+ *
+ * Only LOG_CORE_APP produces today. The security core (CM0+) deliberately does
+ * NOT log: per ADR-0021 D1 the MAC truncation and the constant-time compare
+ * happen in shared/secoc on the APP core, so the M0+ is a generic CMAC oracle
+ * that never learns whether a frame was accepted or rejected -- no contract
+ * event originates there. A shared-RAM ring out of the core that holds the AES
+ * secret (REQ-SECOC-011) would be TCB surface across the security boundary with
+ * no contract evidence in return, so it is not built (ADR-0023 D4).
+ *
+ * LOG_CORE_SECURITY stays defined because it costs two bits already reserved in
+ * the record and the decoder already renders it: if the decision is ever
+ * revisited, no wire-format change is needed. */
 typedef enum {
     LOG_CORE_APP      = 0,   /* CM4 (Node A) / CM7 (Node B) -- owns the UART */
-    LOG_CORE_SECURITY = 1    /* CM0+ on both nodes */
+    LOG_CORE_SECURITY = 1    /* CM0+ -- reserved, no producer */
 } log_core_t;
-
-/* Number of producing cores == number of rings the drain walks. */
-#define LOG_CORE_COUNT      2U
 
 /* -------------------------------------------------------------------
  * Event-ID classes (ADR-0023 D6)

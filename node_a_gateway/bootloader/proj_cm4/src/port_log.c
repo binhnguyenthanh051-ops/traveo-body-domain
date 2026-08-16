@@ -46,18 +46,18 @@
 /* Smaller than the app's: the FBL logs a handful of records, not a stream. */
 #define LOG_RING_CAP            512U
 
-static uint8_t           s_ring[LOG_CORE_COUNT][LOG_RING_CAP];
-static volatile uint32_t s_head[LOG_CORE_COUNT];
-static volatile uint32_t s_tail[LOG_CORE_COUNT];
+static uint8_t           s_ring[LOG_RING_CAP];
+static volatile uint32_t s_head;
+static volatile uint32_t s_tail;
 
 static bool s_sink_ready = false;
 
 /* ---- ring / barrier ----------------------------------------------- */
 
-uint8_t *log_port_ring(log_core_t core)          { return s_ring[core]; }
-size_t   log_port_ring_cap(log_core_t core)      { (void)core; return (size_t)LOG_RING_CAP; }
-volatile uint32_t *log_port_head(log_core_t core){ return &s_head[core]; }
-volatile uint32_t *log_port_tail(log_core_t core){ return &s_tail[core]; }
+uint8_t *log_port_ring(void)          { return s_ring; }
+size_t   log_port_ring_cap(void)      { return (size_t)LOG_RING_CAP; }
+volatile uint32_t *log_port_head(void){ return &s_head; }
+volatile uint32_t *log_port_tail(void){ return &s_tail; }
 
 void log_port_publish_barrier(void)              { __DMB(); }
 
