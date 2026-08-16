@@ -1,5 +1,5 @@
 /*
- * log_task.c — Node A APP log drain task (ADR-0023 D10, REQ-LOG-014).
+ * log_task.c — Node B CM7 log drain task (ADR-0023 D10, REQ-LOG-014).
  *
  * Output is CYCLIC, not immediate: log_evt() enqueues and returns, and this
  * task moves bytes to the UART. Immediate output would make the producer wait
@@ -16,15 +16,19 @@
  */
 #include "FreeRTOS.h"
 #include "task.h"
-#include "tasks.h"
 #include "tb_log.h"
 #include "log_types.h"
 
-/* Lowest priority in the set: logging must never delay CAN, the app FSM, or
- * health. If this task is starved, producers degrade to dropping (counted, and
- * reported via LOG_EVT_OVERFLOW) and nothing stalls. */
-#define LOG_TASK_PRIO       APP_PRIO_LOG
-#define LOG_TASK_PERIOD_MS  APP_PERIOD_LOG_MS
+/* Lowest priority: logging must never delay CAN or the actuator FSM. If this
+ * task is starved, producers degrade to dropping (counted, and reported via
+ * LOG_EVT_OVERFLOW) and nothing stalls. tskIDLE_PRIORITY + 1 puts it level with
+ * the heartbeat and below everything that does work.
+ *
+ * The period must stay <= LOG_DRAIN_LATENCY_MS: it IS the published bound a BVT
+ * absence-assertion waits out before concluding an event never happened — and
+ * on THIS node those assertions are the SecOC replay/forgery tests. */
+#define LOG_TASK_PRIO       (tskIDLE_PRIORITY + 1U)
+#define LOG_TASK_PERIOD_MS  20U
 #define LOG_TASK_STACK      configMINIMAL_STACK_SIZE
 
 /* Bytes moved per wake. Bounds how long one drain can hold the core: at

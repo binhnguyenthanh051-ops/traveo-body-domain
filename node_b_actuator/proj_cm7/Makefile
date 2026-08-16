@@ -102,14 +102,38 @@ DISABLE_COMPONENTS=XMC7x_CM0P_SLEEP
 # tree for source code and builds it. The SOURCES variable can be used to
 # manually add source code to the build process from a location not searched
 # by default, or otherwise not found by the build system.
-SOURCES=
+# Crypto-offload CLIENT (ADR-0018 / ADR-0021): the app links the host-tested
+# transport + framing + MAC client. src/port_crypto.c (the ipc_port_if_t HW
+# binding + MPU non-cacheable setup) is auto-discovered under src/. The CM7 is
+# the mailbox CLIENT, so it DOES link ipc_mailbox.c (unlike the CM0+ server).
+SOURCES=../../shared/crypto/src/ipc_mailbox.c \
+        ../../shared/log/src/log.c \
+        ../../shared/crypto/src/crypto_msg.c \
+        ../../shared/crypto/src/crypto_service.c \
+        ../../shared/secoc/src/secoc.c \
+        ../../shared/secoc/src/secoc_freshness.c \
+        ../../shared/messages/src/body_msgs.c
 
 # Like SOURCES, but for include directories. Value should be paths to
-# directories (without a leading -I).
-INCLUDES=../../shared/can/include
+# directories (without a leading -I). ../ipc/include = Node B mailbox map;
+# ../../security/include = the PUBLIC SecOC key_id (no secret bytes — REQ-SECOC-011).
+INCLUDES=../ipc/include \
+         ../../shared/can/include \
+         ../../shared/crypto/include \
+         ../../shared/secoc/include \
+         ../../shared/messages/include \
+         ../../shared/log/include \
+         ../../security/include
+# ../ipc/include MUST come first because Node A and Node B both provide an
+# ipc_mailbox_map.h; the CM7 client must bind the Node B mailbox definition.
 
 # Add additional defines to the build process (without a leading -D).
 DEFINES=
+
+# Banner identity (ADR-0023). Distinguishes this node's stream from Node A's
+# when the BVT captures both consoles. Must come AFTER the plain `DEFINES=`
+# above, which would otherwise wipe it.
+DEFINES+=LOG_IMAGE_NAME=\"actuator\"
 
 # Select softfp or hardfp floating point. Default is softfp.
 VFP_SELECT=hardfp

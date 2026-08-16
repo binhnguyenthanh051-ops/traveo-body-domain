@@ -43,10 +43,12 @@ CORE_NAMES = {0: "app", 1: "sec"}
 # from events.csv (ADR-0023 D9).
 BOOT_EVT_ID = log_events.NAME_TO_ID.get("LOG_EVT_BOOT")
 
-# Argument meanings whose values are addresses: render hex, not decimal.
+# Argument meanings whose values are addresses or bitmasks: render hex.
 # "app_entry_addr=268697600" is technically correct and practically useless --
-# 0x10040000 is the number you actually compare against the linker map.
-_HEX_HINTS = ("addr", "base", "mask", "id")
+# 0x10040000 is the number you compare against the linker map. Likewise a reset
+# reason: 1073807376 says nothing, 0x40010010 decomposes on sight into
+# PORVDDD | XRES | SOFT against the PDL's CY_SYSLIB_RESET_* defines.
+_HEX_HINTS = ("addr", "base", "mask", "id", "reason", "cause", "flag", "status")
 
 
 def _fmt_arg(meaning: str, value: int) -> str:

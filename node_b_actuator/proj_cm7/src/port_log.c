@@ -1,26 +1,31 @@
 /*
- * port_log.c — Node A APP log port: SCB0 UART on the KitProg3 bridge
+ * port_log.c — Node B CM7 log port: SCB0 UART on the KitProg3 bridge
  * (ADR-0023 D8, REQ-LOG-011).
  *
- * Pin/instance mapping (confirmed against the PDL HSIOM table
- * gpio_tviibe1m_*.h, and identical on Node B):
+ * Mirrors node_a_gateway/app/src/port_log.c — same pins, same SCB, same
+ * family-portable clock setup — because the port shape is deliberately one
+ * shape for every image (cf. port_crypto.c, which mirrors the FBL's).
  *
- *      P0[0]  ->  SCB0 UART RX   (HSIOM P0_0_SCB0_UART_RX, target INPUT)
- *      P0[1]  ->  SCB0 UART TX   (HSIOM P0_1_SCB0_UART_TX, target OUTPUT)
+ *      P0[0]  ->  SCB0 UART RX   (CYBSP_DEBUG_UART_RX in this BSP, INPUT)
+ *      P0[1]  ->  SCB0 UART TX   (CYBSP_DEBUG_UART_TX, OUTPUT)
  *
- * WHY THIS IS CONFIGURED IN CODE AND NOT IN THE BSP
- * -------------------------------------------------
- * Node A's BSP configures no UART at all, and per .gitignore the whole
- * node_a_gateway/app/bsps/ tree is REGENERABLE and deliberately not committed
- * ("its only customisation ... is committed as app/linker/app_cm4.ld"). A UART
- * added there via Device Configurator is silently lost on the next BSP
- * regeneration — and the failure mode is a console that stops existing, which
- * is exactly when you need it. So the port owns its own hardware setup. Node B
- * (whose BSP *does* configure SCB0) is set up the same way on purpose, so one
- * port shape serves every image.
+ * Node B's BSP *does* configure SCB0 on these pins (unlike Node A's, which
+ * configures no UART at all). We configure it here anyway: one port
+ * implementation across all three images beats two, and it keeps this file
+ * independent of a BSP that the CM0+ — not this core — applies.
  *
- * The M4 has no cache, so the rings are ordinary RAM — no MPU non-cacheable
- * step (cf. port_crypto.c; that step is Node B's CM7 problem, ADR-0018 D6).
+ * NO SHARED MEMORY, NO MPU STEP. The ring is image-private and is written and
+ * drained by this core alone (ADR-0023 D4, revised): the security core does not
+ * log, because per ADR-0021 D1 the SecOC verdict is decided here on the CM7, so
+ * no contract event originates on the CM0+. That is why this file — unlike
+ * port_crypto.c, which must place the IPC mailbox in an MPU non-cacheable
+ * region (ADR-0018 D6) — needs no cache handling despite the CM7's L1 D-cache.
+ *
+ * ORDERING: fbl/app aside, this core reads 0 from the clock APIs until
+ * SystemCoreClockUpdate() has run (see main.c — the PDL's frequency bookkeeping
+ * is per-core and the CM7's globals start at 0). log_port_init() must be called
+ * after that, or log_uart_clock_init() correctly refuses and the sink stays
+ * silent.
  */
 #include "FreeRTOS.h"
 #include "task.h"
@@ -51,18 +56,18 @@
 #define LOG_UART_OVS_MIN        8UL
 #define LOG_UART_OVS_MAX        16UL
 
-/* Peripheral divider claimed for SCB0. Neither Node A image allocates an 8-bit
- * divider today, so index 0 is free — but it is a SHARED resource: if another
- * peripheral later takes 8-bit divider 0, change this, don't share it. */
+/* Peripheral divider claimed for SCB0. A SHARED resource: if the BSP or another
+ * peripheral on this node takes 8-bit divider 0, change this — do not share it.
+ * Verify against the BSP's own divider assignments at bring-up. */
 #define LOG_UART_DIV_TYPE       CY_SYSCLK_DIV_8_BIT
 #define LOG_UART_DIV_NUM        0U
 
 /* Worst tolerable baud error before framing gets unreliable, in per-mille. */
 #define LOG_BAUD_TOLERANCE_PM   20U     /* 2% */
 
-/* Ring capacity per core. MUST be a power of two — log.c masks rather than
- * divides. 2 KB = 128 records; tune from log_dropped() (REQ-LOG-006), not by
- * argument. */
+/* MUST be a power of two — log.c masks rather than divides. 2 KB = 128 records;
+ * tune from log_dropped() (REQ-LOG-006), not by argument. Node B has 1 MB SRAM,
+ * so there is no reason to be stingy here. */
 #define LOG_RING_CAP            2048U
 
 /* -------------------------------------------------------------------
@@ -395,8 +400,8 @@ void log_port_init(void)
 
     /* Announce the image start. Not decoration: log_init() zeroed the sequence
      * counter, and LOG_EVT_BOOT is how the host decoder knows a discontinuity
-     * is a RESTART rather than lost records. Without it every FBL->app handover
-     * and every power cycle reports a false "records LOST" — which, under
-     * REQ-LOG-007, fails a perfectly good BVT window. */
+     * is a RESTART rather than lost records — without it every power cycle
+     * reports a false "records LOST", which under REQ-LOG-007 fails a
+     * perfectly good BVT window. */
     log_evt(LOG_EVT_BOOT, (uint32_t)Cy_SysLib_GetResetReason(), 0U);
 }

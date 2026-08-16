@@ -13,7 +13,7 @@
  * @impl REQ-LOG-001   : no formatting on target -- fixed-size binary records
  * @impl REQ-LOG-011   : pure logic; all hardware behind log_port_*
  */
-#include "log.h"
+#include "tb_log.h"
 #include "log_port.h"
 
 #include <string.h>
