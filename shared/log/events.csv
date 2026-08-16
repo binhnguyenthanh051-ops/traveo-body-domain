@@ -1,0 +1,50 @@
+# Event registry -- THE single source of truth for log event IDs (ADR-0023 D9).
+#
+# Generates BOTH shared/log/include/log_events.h (C enum) and
+# host_tools/lib/log_events.py (decoder table). A checks/ script fails CI if
+# either generated file is stale. Hand-maintaining this list in two languages
+# guarantees eventual drift, and a drifted decoder produces confidently WRONG
+# test results -- the worst failure mode a merge gate can have.
+#
+# class:
+#   contract   id < 0x1000  -- part of the tested interface. BVT may assert on
+#                              it. Changing or removing one is a breaking
+#                              change and must update the tests in the SAME
+#                              commit.
+#   diagnostic id >= 0x1000 -- developer telemetry. No test may assert on it,
+#                              so it stays free to add, reword, or delete.
+#
+# arg0 is u32, arg1 is u16. "-" means unused (pass 0).
+#
+# id,name,class,arg0,arg1,description
+
+# --- 0x00xx boot -----------------------------------------------------------
+0x0001,LOG_EVT_BOOT,contract,reset_reason,image_id,Image started; first record after log_init
+0x0002,LOG_EVT_APP_JUMP,contract,app_entry_addr,-,FBL verified the app and is jumping (ADR-0008)
+0x0003,LOG_EVT_APP_REJECT,contract,fail_addr,reason,FBL refused to jump -- stays in FBL (fail-safe)
+0x0004,LOG_EVT_OVERFLOW,contract,dropped_count,-,Records lost since the last overflow report (D5)
+
+# --- 0x01xx SecOC (M5) -----------------------------------------------------
+# These four are the reason this channel exists. The replay/forgery tests
+# assert that the actuator HOLDS state -- a negative observation that also
+# passes if the node is dead or was never listening. The reject events are the
+# only positive evidence that the node saw the frame, verified it, and refused
+# it for the right reason (ADR-0023 Context).
+0x0101,LOG_EVT_SECOC_ACCEPT,contract,can_id,freshness_ctr,Secured frame accepted and actuated
+0x0102,LOG_EVT_SECOC_REJECT_MAC,contract,can_id,-,MAC comparison failed -- forged or corrupt frame
+0x0103,LOG_EVT_SECOC_REJECT_FRESHNESS,contract,can_id,rx_ctr,Freshness not ahead of stored -- replay
+0x0104,LOG_EVT_SECOC_RESYNC,contract,can_id,new_epoch,Receiver-reset resync completed (ADR-0021 D5)
+
+# --- 0x02xx crypto service -------------------------------------------------
+0x0201,LOG_EVT_CRYPTO_ERROR,contract,op,ipc_status,Crypto op produced ERROR (M0+ dead/timeout/malformed)
+0x0202,LOG_EVT_CRYPTO_MAC_MS,diagnostic,elapsed_us,-,MAC round-trip time -- timing only, never asserted
+
+# --- 0x03xx diag / UDS -----------------------------------------------------
+0x0301,LOG_EVT_UDS_SESSION,contract,new_session,-,Diagnostic session changed
+0x0302,LOG_EVT_UDS_SECURITY,contract,granted,attempt_no,SecurityAccess unlock result
+
+# --- 0x04xx app ------------------------------------------------------------
+0x0401,LOG_EVT_APP_ALIVE,contract,uptime_ms,-,Periodic liveness -- the BVT liveness test keys on this
+
+# --- 0x1000+ diagnostic ----------------------------------------------------
+0x1001,LOG_EVT_DBG_U32,diagnostic,value,tag,Ad-hoc developer value; delete freely

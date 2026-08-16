@@ -86,6 +86,38 @@ CRYPTO_VERIFY_SRC    := shared/crypto/src/crypto_service.c shared/crypto/src/ipc
                         shared/crypto/src/crypto_msg.c
 CRYPTO_VERIFY_TEST   := shared/crypto/tests/test_crypto_verify.c shared/crypto/tests/ipc_port_fake.c
 
+# MAC-op framing (ADR-0021 D7) + the AES-secret key type (D6). Links crypto_msg
+# (MAC helpers, currently stubbed => red) and the real keystore selection.
+CRYPTO_MAC_SRC   := shared/crypto/src/crypto_msg.c shared/crypto/src/crypto_keystore.c
+CRYPTO_MAC_TEST  := shared/crypto/tests/test_crypto_mac.c
+
+# --- secoc (M5): SecOC frame + freshness + resync (ADR-0021). Host-testable
+# core; the M0+ oracle and eeprom_emu backing are faked in tests/. secoc.c and
+# secoc_freshness.c are stubs now => the first four suites are red; the store
+# fake is the reference impl so test_freshness_store is green (pins the port). ---
+SECOC_INC   := -Ishared/secoc/include -Ishared/secoc/tests
+
+SECOC_SRC   := shared/secoc/src/secoc.c shared/secoc/tests/secoc_mac_fake.c
+SECOC_TEST  := shared/secoc/tests/test_secoc.c
+
+SECOC_FRESH_SRC  := shared/secoc/src/secoc_freshness.c shared/secoc/tests/secoc_freshness_store_fake.c
+SECOC_FRESH_TEST := shared/secoc/tests/test_secoc_freshness.c
+
+SECOC_RESYNC_SRC  := shared/secoc/src/secoc_freshness.c shared/secoc/tests/secoc_freshness_store_fake.c
+SECOC_RESYNC_TEST := shared/secoc/tests/test_secoc_resync.c
+
+FRESH_STORE_SRC  := shared/secoc/tests/secoc_freshness_store_fake.c
+FRESH_STORE_TEST := shared/secoc/tests/test_freshness_store.c
+
+# --- log (M5): target logging channel (ADR-0023, REQ-LOG-001..014). Structured
+# event records over UART, decoded on the host. log.c is a stub now => this
+# suite is red; it pins the contract before the body exists. The fake port IS
+# the reference behaviour of log_port.h, so tests can drive the UART, the clock
+# and the interrupt mask.
+LOG_INC   := -Ishared/log/include -Ishared/log/tests
+LOG_SRC   := shared/log/src/log.c
+LOG_TEST  := shared/log/tests/test_log.c shared/log/tests/log_port_fake.c
+
 # --- prot (M4 Seam 5): SMPU/PPU region-descriptor math (ADR-0020 D6). The one
 # host-testable slice of TCB isolation; enforcement itself is bench-only. ---
 PROT_INC     := -Ishared/prot/include
@@ -106,13 +138,17 @@ REPROG_TEST  := node_a_gateway/app/logic/tests/test_reprogram.c
         test_isotp test_uds_session test_uds_security_access test_uds_download \
         test_uds_routine_control test_sysmgr \
         test_crypto_msg test_ipc_mailbox test_crypto_dispatch test_crypto_keystore \
-        test_crypto_verify test_prot_region clean lint
+        test_crypto_verify test_crypto_mac test_prot_region \
+        test_secoc test_secoc_freshness test_secoc_resync test_freshness_store \
+        test_log clean lint
 
 test: test_messages test_scheduler test_boot test_boot_secure test_bodyctl test_reprogram \
       test_isotp test_uds_session test_uds_security_access test_uds_download \
       test_uds_routine_control test_sysmgr \
       test_crypto_msg test_ipc_mailbox test_crypto_dispatch test_crypto_keystore \
-      test_crypto_verify test_prot_region
+      test_crypto_verify test_crypto_mac test_prot_region \
+      test_secoc test_secoc_freshness test_secoc_resync test_freshness_store \
+      test_log
 
 test_messages: $(BUILD)/test_messages
 	@echo "== messages =="
@@ -182,6 +218,30 @@ test_crypto_verify: $(BUILD)/test_crypto_verify
 	@echo "== crypto_verify =="
 	@$(BUILD)/test_crypto_verify
 
+test_crypto_mac: $(BUILD)/test_crypto_mac
+	@echo "== crypto_mac (MAC-op framing + AES key type / M5) =="
+	@$(BUILD)/test_crypto_mac
+
+test_secoc: $(BUILD)/test_secoc
+	@echo "== secoc (secured frame / M5) =="
+	@$(BUILD)/test_secoc
+
+test_secoc_freshness: $(BUILD)/test_secoc_freshness
+	@echo "== secoc_freshness (per-ID counter + accept rule / M5) =="
+	@$(BUILD)/test_secoc_freshness
+
+test_secoc_resync: $(BUILD)/test_secoc_resync
+	@echo "== secoc_resync (receiver-reset resync / M5) =="
+	@$(BUILD)/test_secoc_resync
+
+test_freshness_store: $(BUILD)/test_freshness_store
+	@echo "== freshness_store (persistence port contract / M5) =="
+	@$(BUILD)/test_freshness_store
+
+test_log: $(BUILD)/test_log
+	@echo "== log (structured event channel / M5) =="
+	@$(BUILD)/test_log
+
 test_prot_region: $(BUILD)/test_prot_region
 	@echo "== prot_region (SMPU/PPU geometry / M4 Seam 5) =="
 	@$(BUILD)/test_prot_region
@@ -195,6 +255,7 @@ LINT_SRC := shared/messages/src shared/messages/include \
             shared/can/src shared/can/include shared/diag/src shared/diag/include \
             shared/sysmgr/src shared/sysmgr/include \
             shared/crypto/src shared/crypto/include shared/secoc/src shared/secoc/include \
+            shared/log/src shared/log/include \
             shared/prot/src shared/prot/include \
             shared/eeprom_emu/src shared/eeprom_emu/include security/src security/include \
             node_a_gateway/app/logic/src node_a_gateway/app/logic/include \
@@ -205,7 +266,7 @@ lint:
 	         --std=c17 --inline-suppr --quiet \
 	         -I shared/messages/include -I shared/hal/include -I scheduler/include \
 	         -I shared/boot/include -I shared/can/include -I shared/diag/include \
-	         -I shared/sysmgr/include -I shared/prot/include \
+	         -I shared/sysmgr/include -I shared/prot/include -I shared/log/include \
 	         -I node_a_gateway/app/logic/include -I node_a_gateway/app/include \
 	         $(LINT_SRC)
 	@echo "(MISRA addon: add '--addon=misra.json' once the licensed rule-texts file is in place)"
@@ -228,6 +289,9 @@ $(BUILD)/test_bodyctl: $(BODYCTL_SRC) $(BODYCTL_TEST) $(UNITY_SRC) | $(BUILD)
 
 $(BUILD)/test_reprogram: $(REPROG_SRC) $(REPROG_TEST) $(UNITY_SRC) | $(BUILD)
 	$(CC) $(CFLAGS) $(UNITY_INC) $(BOOT_INC) $(APP_INC) $(UNITY_SRC) $(REPROG_SRC) $(REPROG_TEST) -o $@
+
+$(BUILD)/test_log: $(LOG_SRC) $(LOG_TEST) $(UNITY_SRC) | $(BUILD)
+	$(CC) $(CFLAGS) $(UNITY_INC) $(LOG_INC) $(UNITY_SRC) $(LOG_SRC) $(LOG_TEST) -o $@
 
 $(BUILD)/test_prot_region: $(PROT_SRC) $(PROT_TEST) $(UNITY_SRC) | $(BUILD)
 	$(CC) $(CFLAGS) $(UNITY_INC) $(PROT_INC) $(UNITY_SRC) $(PROT_SRC) $(PROT_TEST) -o $@
@@ -264,6 +328,21 @@ $(BUILD)/test_crypto_keystore: $(CRYPTO_KEYSTORE_SRC) $(CRYPTO_KEYSTORE_TEST) $(
 
 $(BUILD)/test_crypto_verify: $(CRYPTO_VERIFY_SRC) $(CRYPTO_VERIFY_TEST) $(UNITY_SRC) | $(BUILD)
 	$(CC) $(CFLAGS) $(UNITY_INC) $(CRYPTO_INC) $(UNITY_SRC) $(CRYPTO_VERIFY_SRC) $(CRYPTO_VERIFY_TEST) -o $@
+
+$(BUILD)/test_crypto_mac: $(CRYPTO_MAC_SRC) $(CRYPTO_MAC_TEST) $(UNITY_SRC) | $(BUILD)
+	$(CC) $(CFLAGS) $(UNITY_INC) $(CRYPTO_INC) $(UNITY_SRC) $(CRYPTO_MAC_SRC) $(CRYPTO_MAC_TEST) -o $@
+
+$(BUILD)/test_secoc: $(SECOC_SRC) $(SECOC_TEST) $(UNITY_SRC) | $(BUILD)
+	$(CC) $(CFLAGS) $(UNITY_INC) $(SECOC_INC) $(UNITY_SRC) $(SECOC_SRC) $(SECOC_TEST) -o $@
+
+$(BUILD)/test_secoc_freshness: $(SECOC_FRESH_SRC) $(SECOC_FRESH_TEST) $(UNITY_SRC) | $(BUILD)
+	$(CC) $(CFLAGS) $(UNITY_INC) $(SECOC_INC) $(UNITY_SRC) $(SECOC_FRESH_SRC) $(SECOC_FRESH_TEST) -o $@
+
+$(BUILD)/test_secoc_resync: $(SECOC_RESYNC_SRC) $(SECOC_RESYNC_TEST) $(UNITY_SRC) | $(BUILD)
+	$(CC) $(CFLAGS) $(UNITY_INC) $(SECOC_INC) $(UNITY_SRC) $(SECOC_RESYNC_SRC) $(SECOC_RESYNC_TEST) -o $@
+
+$(BUILD)/test_freshness_store: $(FRESH_STORE_SRC) $(FRESH_STORE_TEST) $(UNITY_SRC) | $(BUILD)
+	$(CC) $(CFLAGS) $(UNITY_INC) $(SECOC_INC) $(UNITY_SRC) $(FRESH_STORE_SRC) $(FRESH_STORE_TEST) -o $@
 
 $(BUILD):
 	@mkdir -p $(BUILD)

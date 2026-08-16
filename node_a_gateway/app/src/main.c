@@ -16,6 +16,9 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "tasks.h"
+#include "port_crypto.h"   /* secoc_crypto_port_init — bind the M0+ offload */
+#include "port_log.h"      /* log_port_init — SCB0 UART sink (ADR-0023) */
+#include "secoc_app.h"     /* secoc_app_init — boot freshness contexts */
 
 /* App image base = the FBL's jump target (overview Sec.6 / ADR-0008). Used by a
  * cheap bring-up assert that the FBL set VTOR to us. */
@@ -57,7 +60,21 @@ int main(void)
 
     verify_handover();
 
+    /* Observability first (ADR-0023): bring the log sink up before anything
+     * that might have something to report. Emits the ASCII banner, which is
+     * also the bring-up proof that TX works in a plain terminal. Touches no
+     * FreeRTOS object, so it is safe this side of the scheduler. */
+    log_port_init();
+
+    /* Crypto-offload seam (M5, ADR-0021): bind the M0+ transport into
+     * crypto_service and boot the SecOC freshness contexts. No cache here (M4),
+     * so no MPU step (cf. Node B). No crypto is issued yet — the first MAC round
+     * trip happens from a task — so this is safe before the scheduler. */
+    secoc_crypto_port_init();
+    secoc_app_init();
+
     /* Create the static task set (ADR-0010 D5), then start scheduling. */
+    log_task_create();
     health_task_create();
     can_task_create();
     app_task_create();

@@ -94,7 +94,11 @@ DISABLE_COMPONENTS=
 # tree for source code and builds it. The SOURCES variable can be used to
 # manually add source code to the build process from a location not searched
 # by default, or otherwise not found by the build system.
-SOURCES=../../shared/messages/src/body_msgs.c ../../shared/boot/src/boot.c
+SOURCES=../../shared/messages/src/body_msgs.c ../../shared/boot/src/boot.c \
+        ../../shared/crypto/src/ipc_mailbox.c ../../shared/crypto/src/crypto_msg.c \
+        ../../shared/crypto/src/crypto_service.c \
+        ../../shared/secoc/src/secoc.c ../../shared/secoc/src/secoc_freshness.c \
+        ../../shared/log/src/log.c
 
 # Exclude host-only test sources and the pre-FreeRTOS bring-up stub main; the
 # target app entry lives in src/main.c.
@@ -103,7 +107,9 @@ CY_IGNORE=logic/tests src/app_main.c
 # Like SOURCES, but for include directories. Value should be paths to
 # directories (without a leading -I). Keep config first so the app's committed
 # FreeRTOSConfig.h wins over library templates.
-INCLUDES=./config ./include ./logic/include ../../shared/can/include ../../shared/messages/include ../../shared/boot/include ../../shared/hal/include
+INCLUDES=./config ./include ./logic/include ../../shared/can/include ../../shared/messages/include ../../shared/boot/include ../../shared/hal/include \
+         ../../shared/crypto/include ../../shared/secoc/include ../../security/include \
+         ../../shared/log/include
 
 # Add additional defines to the build process (without a leading -D).
 DEFINES=
