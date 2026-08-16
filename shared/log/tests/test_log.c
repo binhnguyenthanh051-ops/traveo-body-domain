@@ -108,7 +108,7 @@ void test_log_evt_does_not_write_to_the_sink(void)
     log_evt(0x0401U, 42U, 0U);
 
     TEST_ASSERT_EQUAL_UINT(0U, log_fake_sink_len());
-    TEST_ASSERT_EQUAL_UINT(LOG_REC_SIZE, log_fake_ring_used(LOG_CORE_APP));
+    TEST_ASSERT_EQUAL_UINT(LOG_REC_SIZE, log_fake_ring_used());
 }
 
 /* @test REQ-LOG-005 : one enqueue takes the lock exactly once, never nested.
@@ -162,10 +162,10 @@ void test_overflow_drops_newest_and_counts(void)
     for (i = 0U; i < fits; i++) {
         log_evt(0x0401U, i, 0U);
     }
-    TEST_ASSERT_EQUAL_UINT32(0U, log_dropped(LOG_CORE_APP));
+    TEST_ASSERT_EQUAL_UINT32(0U, log_dropped());
 
     log_evt(0x0401U, 0xFFFFU, 0U);   /* one too many */
-    TEST_ASSERT_EQUAL_UINT32(1U, log_dropped(LOG_CORE_APP));
+    TEST_ASSERT_EQUAL_UINT32(1U, log_dropped());
 }
 
 /* @test REQ-LOG-006 : the OLDEST records survive -- they explain the failure */
@@ -199,7 +199,7 @@ void test_overflow_event_is_emitted_with_the_lost_count(void)
     for (i = 0U; i < (fits + 2U); i++) {
         log_evt(0x0401U, i, 0U);
     }
-    TEST_ASSERT_EQUAL_UINT32(2U, log_dropped(LOG_CORE_APP));
+    TEST_ASSERT_EQUAL_UINT32(2U, log_dropped());
 
     (void)log_drain(0U);             /* space frees */
     log_evt(0x0401U, 999U, 0U);      /* next write reports the loss */
@@ -256,19 +256,6 @@ void test_record_spanning_the_ring_wrap_is_intact(void)
     TEST_ASSERT_EQUAL_HEX16(0x5566U,     rd16(&log_fake_sink()[LOG_OFF_ARG1]));
 }
 
-/* @test REQ-LOG-004 : one ring per core; producing on one leaves the other
- * untouched. Cross-core needs no lock precisely because of this. */
-void test_cores_have_independent_rings(void)
-{
-    log_evt(0x0401U, 1U, 0U);                    /* on LOG_CORE_APP */
-    TEST_ASSERT_EQUAL_UINT(0U, log_fake_ring_used(LOG_CORE_SECURITY));
-
-    log_init(LOG_CORE_SECURITY);
-    log_evt(0x0201U, 2U, 0U);
-    TEST_ASSERT_EQUAL_UINT(LOG_REC_SIZE, log_fake_ring_used(LOG_CORE_SECURITY));
-    TEST_ASSERT_EQUAL_UINT(LOG_REC_SIZE, log_fake_ring_used(LOG_CORE_APP));
-}
-
 /* ---- REQ-LOG-014: drain behaviour --------------------------------- */
 
 /* @test REQ-LOG-014 : a busy sink leaves bytes queued and says so */
@@ -282,7 +269,7 @@ void test_drain_reports_blocked_and_keeps_the_remainder(void)
     st = log_drain(0U);
     TEST_ASSERT_EQUAL(LOG_DRAIN_BLOCKED, st);
     TEST_ASSERT_EQUAL_UINT(4U, log_fake_sink_len());
-    TEST_ASSERT_EQUAL_UINT(LOG_REC_SIZE - 4U, log_fake_ring_used(LOG_CORE_APP));
+    TEST_ASSERT_EQUAL_UINT(LOG_REC_SIZE - 4U, log_fake_ring_used());
 }
 
 /* @test REQ-LOG-014 : max_bytes bounds one call so drain cannot hog the core */
@@ -327,7 +314,7 @@ void test_flush_drains_everything(void)
 
     TEST_ASSERT_TRUE(log_flush(100U));
     TEST_ASSERT_EQUAL_UINT(2U * LOG_REC_SIZE, log_fake_sink_len());
-    TEST_ASSERT_EQUAL_UINT(0U, log_fake_ring_used(LOG_CORE_APP));
+    TEST_ASSERT_EQUAL_UINT(0U, log_fake_ring_used());
 }
 
 /* @test REQ-LOG-015 : a dead sink AND a FROZEN CLOCK must still terminate.
@@ -345,7 +332,7 @@ void test_flush_terminates_with_a_dead_sink_and_frozen_clock(void)
     log_fake_set_sink_ready(false);
 
     TEST_ASSERT_FALSE(log_flush(10U));
-    TEST_ASSERT_EQUAL_UINT(LOG_REC_SIZE, log_fake_ring_used(LOG_CORE_APP));
+    TEST_ASSERT_EQUAL_UINT(LOG_REC_SIZE, log_fake_ring_used());
 }
 
 /* @test REQ-LOG-015 : with a running clock, the timeout is what bounds it */
@@ -356,7 +343,7 @@ void test_flush_times_out_when_the_clock_runs(void)
     log_fake_set_now_step(1U);       /* 1 ms per now_ms() call */
 
     TEST_ASSERT_FALSE(log_flush(5U));
-    TEST_ASSERT_EQUAL_UINT(LOG_REC_SIZE, log_fake_ring_used(LOG_CORE_APP));
+    TEST_ASSERT_EQUAL_UINT(LOG_REC_SIZE, log_fake_ring_used());
 }
 
 /* @test REQ-LOG-015 : nothing queued is a successful flush, not a timeout */
@@ -381,7 +368,7 @@ void test_flush_waits_for_the_sink_to_go_idle(void)
 
     TEST_ASSERT_FALSE_MESSAGE(log_flush(5U),
         "flush reported success while the UART was still transmitting");
-    TEST_ASSERT_EQUAL_UINT(0U, log_fake_ring_used(LOG_CORE_APP));   /* ring DID drain */
+    TEST_ASSERT_EQUAL_UINT(0U, log_fake_ring_used());   /* ring DID drain */
 
     /* Once the shifter empties, the same flush succeeds. */
     log_fake_set_sink_idle(true);
@@ -443,13 +430,13 @@ void test_log_text_is_truncated_at_the_bound(void)
  * shows up first -- and it underflows `head - tail`, which floods the sink. */
 void test_head_advances_monotonically(void)
 {
-    uint32_t prev = *log_port_head(LOG_CORE_APP);
+    uint32_t prev = *log_port_head();
     uint32_t i;
 
     for (i = 0U; i < 8U; i++) {
         uint32_t now;
         log_evt(0x0401U, i, 0U);
-        now = *log_port_head(LOG_CORE_APP);
+        now = *log_port_head();
         TEST_ASSERT_TRUE_MESSAGE(now >= prev, "ring head moved backwards");
         prev = now;
         (void)log_drain(0U);
@@ -478,7 +465,7 @@ void test_log_panic_bypasses_the_ring(void)
 {
     log_panic(0x0003U, 0x20001000U, 0x0007U);
 
-    TEST_ASSERT_EQUAL_UINT(0U, log_fake_ring_used(LOG_CORE_APP));
+    TEST_ASSERT_EQUAL_UINT(0U, log_fake_ring_used());
     TEST_ASSERT_EQUAL_UINT(0U, log_fake_sink_len());
     TEST_ASSERT_EQUAL_UINT(LOG_REC_SIZE, log_fake_panic_sink_len());
     TEST_ASSERT_EQUAL_HEX8(LOG_SYNC, log_fake_panic_sink()[LOG_OFF_SYNC]);
@@ -540,7 +527,6 @@ int main(void)
     RUN_TEST(test_sequence_number_advances_per_record_and_wraps);
 
     RUN_TEST(test_record_spanning_the_ring_wrap_is_intact);
-    RUN_TEST(test_cores_have_independent_rings);
 
     RUN_TEST(test_drain_reports_blocked_and_keeps_the_remainder);
     RUN_TEST(test_drain_respects_max_bytes);

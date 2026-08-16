@@ -12,9 +12,9 @@
 
 #define SINK_CAP    4096U
 
-static uint8_t           s_ring[LOG_CORE_COUNT][FAKE_RING_CAP];
-static volatile uint32_t s_head[LOG_CORE_COUNT];
-static volatile uint32_t s_tail[LOG_CORE_COUNT];
+static uint8_t           s_ring[FAKE_RING_CAP];
+static volatile uint32_t s_head;
+static volatile uint32_t s_tail;
 
 static uint8_t  s_sink[SINK_CAP];
 static size_t   s_sink_len;
@@ -37,8 +37,8 @@ static uint32_t s_barriers;
 void log_fake_reset(void)
 {
     memset(s_ring, 0, sizeof s_ring);
-    memset((void *)s_head, 0, sizeof s_head);
-    memset((void *)s_tail, 0, sizeof s_tail);
+    s_head = 0U;
+    s_tail = 0U;
     memset(s_sink, 0, sizeof s_sink);
     memset(s_panic_sink, 0, sizeof s_panic_sink);
     s_sink_len       = 0U;
@@ -78,20 +78,18 @@ uint32_t log_fake_lock_max_depth(void)  { return s_lock_max_depth; }
 uint32_t log_fake_lock_enter_count(void){ return s_lock_enter; }
 uint32_t log_fake_barrier_count(void)   { return s_barriers; }
 
-size_t log_fake_ring_used(log_core_t core)
+size_t log_fake_ring_used(void)
 {
-    uint32_t h = s_head[core];
-    uint32_t t = s_tail[core];
-    return (size_t)((h - t) & (FAKE_RING_CAP - 1U));
+    return (size_t)((s_head - s_tail) & (FAKE_RING_CAP - 1U));
 }
 
 /* ---- the port contract -------------------------------------------- */
 
-uint8_t *log_port_ring(log_core_t core)      { return s_ring[core]; }
-size_t   log_port_ring_cap(log_core_t core)  { (void)core; return FAKE_RING_CAP; }
+uint8_t *log_port_ring(void)      { return s_ring; }
+size_t   log_port_ring_cap(void)  { return FAKE_RING_CAP; }
 
-volatile uint32_t *log_port_head(log_core_t core) { return &s_head[core]; }
-volatile uint32_t *log_port_tail(log_core_t core) { return &s_tail[core]; }
+volatile uint32_t *log_port_head(void) { return &s_head; }
+volatile uint32_t *log_port_tail(void) { return &s_tail; }
 
 void log_port_publish_barrier(void) { s_barriers++; }
 

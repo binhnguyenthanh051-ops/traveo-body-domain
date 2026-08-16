@@ -3,11 +3,10 @@
 **Status:** proposed · **Date:** 2026-08-01
 
 > Owns the **observability channel** out of both nodes: the record format, the ring-buffer
-> seam, the cross-core routing, the failure policy, and — the part that makes this more than a
+> seam, the failure policy, and — the part that makes this more than a
 > `printf` — **the rule for when a log line may be used as a test assertion**. Consumed by the
-> hardware BVT bench (`docs/briefs/BVT-bench-brief.md`, ADR-0022 pending). Reuses the
-> non-cacheable shared-RAM placement established by ADR-0018 D6; it does **not** reuse the IPC
-> mailbox itself (D4). MISRA constraints per ADR-0003.
+> hardware BVT bench (`docs/briefs/BVT-bench-brief.md`, ADR-0022 pending). One ring per image
+> in image-private RAM — the security core does not log (D4, revised). MISRA per ADR-0003.
 >
 > The requirements it must satisfy are `REQ-LOG-001..014` in `docs/requirements/logging.md`;
 > `@impl`/`@test` tags link code and tests back to the `Dn` here. `REQ-LOG-009` is the
@@ -108,36 +107,49 @@ This resolves D1's tradeoff honestly rather than by assertion:
   channel.
 - **But text is never assertable** (D6). It is for humans; the events are for the gate.
 
-### D4. Cross-core transport: a **separate SPSC ring in shared RAM** — *not* the IPC mailbox
+### D4. **One ring per image, image-private RAM. The security core does not log.**
 
-Each producing core owns one lock-free single-producer/single-consumer **byte** ring in shared
-RAM. The UART-owning core (CM4 on Node A, CM7 on Node B) drains every ring.
+> **Revised 2026-08-16.** This decision originally specified one SPSC ring **per core** in the
+> MPU non-cacheable shared region, with the app core draining both. That is now **withdrawn**:
+> no ring is shared, and the CM0+ produces nothing.
+>
+> **Why.** Re-reading ADR-0021 D1: the M0+ is a *generic* "CMAC over these bytes → 16-byte tag"
+> oracle, and **truncation plus the constant-time compare happen in `shared/secoc` on the app
+> core**. The security core therefore never learns whether a frame was accepted or rejected —
+> so `SECOC_ACCEPT` / `REJECT_MAC` / `REJECT_FRESHNESS`, the events this whole channel was
+> built for, are **app-core events**. Not one contract event originates on the CM0+.
+>
+> That leaves a shared-RAM channel out of the core that holds the AES secret (`REQ-SECOC-011`)
+> buying only bring-up telemetry. It is TCB surface across the security boundary with no
+> contract evidence in return, and declining it needs no proof of exploitability — an
+> unnecessary channel out of a key-holding core is reason enough. The diagnostic value it would
+> have added is already covered from the app side: `crypto_verdict_t` distinguishes `ERROR`
+> from `INVALID` precisely so the caller can log which happened (ADR-0016 D2/D5), and
+> `LOG_EVT_CRYPTO_ERROR(op, ipc_status)` reports a dead, slow or lying M0+ — the M4 Seam 6
+> case. Anything deeper inside the CM0+ remains an OpenOCD question, as it is today.
+>
+> **What this deletes:** the second ring in every image (2 KB app, 512 B FBL), the shared-RAM
+> placement question, the MPU non-cacheable step — *including on Node B's CM7, where it would
+> have been the hard part* — and the cross-core timestamp-skew problem, which retires the
+> shared TCPWM time-base follow-up entirely. Cross-core ordering cannot be wrong if there is
+> only one core producing.
+>
+> `LOG_CORE_SECURITY` stays defined and the 2-bit core field stays in the record: it costs
+> nothing already-reserved, the decoder renders it, and revisiting this needs no wire-format
+> change.
 
-**The mailbox is the wrong carrier, and this corrects an earlier instinct to reuse it.** The
-IPC mailbox (ADR-0018 D3) is *synchronous and single-outstanding* by design: acquire the
-semaphore, send, block until the answer. Logging is asynchronous, one-way, fire-and-forget, and
-far more frequent. Putting log traffic through it would:
-
-- serialise log writes behind in-flight crypto RPCs, and vice versa — coupling logging latency
-  directly into **SecOC verify latency**, the number M5 exists to measure;
-- make the M0+ MAC path contend for the same semaphore it needs for its actual work;
-- give logging the mailbox's blocking failure modes, when D7 requires it never to block.
-
-What *is* reused is the thing worth reusing: **the memory placement.** The rings live in the
-same **MPU non-cacheable region** as the mailbox (ADR-0018 D6). On Node B the CM7's L1 D-cache
-makes a naively-placed shared buffer silently incoherent — that problem is already solved, and
-the log rings inherit the solution rather than rediscovering the bug.
+The image's single producer owns one lock-free byte ring in ordinary image-private RAM,
+drained by the same core that fills it.
 
 - **Byte-oriented, not record-oriented**, so an ASCII run (D3) and a 16-byte record share one
   ring. A producer reserves its full length atomically, fills, then publishes.
-- **Tradeoff:** two independent time bases. Each core stamps `ts_ms` from its own tick, so
-  cross-core ordering is approximate and skew is uncorrected in M5. The host decoder sorts
-  per-core and interleaves by timestamp, which is good enough to read a boot sequence but is
-  **not** a basis for cross-core timing claims. *(Follow-up: check the TRM for a free-running
-  counter readable from both cores; if one exists, stamping from it removes the caveat.)*
-- **Alternative rejected:** one shared ring with a multi-core lock. Needs a hardware semaphore
-  on the hot path, and a stalled core could then block the other's logging. Per-core SPSC rings
-  need no cross-core lock at all.
+- **A lock is still needed** — not for cross-core, but because a task and an ISR on the *same*
+  core both call `log_evt()` (D7).
+- **Alternative rejected (historical):** carrying log traffic over the IPC mailbox. Even when
+  the CM0+ was still expected to log, the mailbox was the wrong carrier: it is synchronous and
+  single-outstanding (ADR-0018 D3), so log traffic would have serialised behind in-flight
+  crypto RPCs and coupled logging latency directly into **SecOC verify latency** — the number
+  M5 exists to measure. Recorded because the reuse instinct is a natural one.
 
 ### D5. Overflow is **drop-newest, counted, and announced**
 
@@ -210,7 +222,7 @@ evidence named in Context — e.g. `SECOC_REJECT_FRESHNESS`, `SECOC_REJECT_MAC`,
 - `shared/log/src/log.c` — ring reservation, record encoding, CRC, sequence/overflow
   accounting, drain. **Pure logic, no vendor headers, host-tested with plain GCC.**
 - `log_port_*()` — UART TX, monotonic ms, interrupt mask/restore, and the ring storage
-  (which is target-specific: linker section + MPU non-cacheable region, D4). One link-time
+  (image-private RAM, D4). One link-time
   implementation per image, faked in `tests/` — the **port-singleton** shape from
   `docs/coding-standard.md`, matching `fbl_port_*` / `app_port_*`. There is exactly one logger
   per image, so this is not an `_if_t` vtable.
@@ -269,9 +281,9 @@ That last row is decisive: `log_panic()` needs a blocking polled write regardles
 DMA means maintaining *two* TX paths rather than one. Combined with 1 Mbps (see baud, below)
 being comfortable for polled output at our record rates, DMA buys little now.
 
-Cache-coherency, the usual DMA trap, is already neutralised — the rings live in the
-non-cacheable region (D4), so a DMA engine cannot read stale cached data. That placement
-decision pays twice.
+Cache-coherency, the usual DMA trap, would need handling if DMA is ever adopted: the ring is
+ordinary cacheable RAM since D4 was revised, so a DMA engine could read stale data. Worth
+noting now so it is not discovered mid-implementation.
 
 **`log_port_tx()`'s contract is already DMA-ready**, which is why this can be deferred safely: it
 is non-blocking and returns a *partial* accepted count, so a DMA implementation swaps in without
@@ -326,7 +338,14 @@ ceiling is documented headroom, not a target.
 
 *(Still to confirm: which SCB instance and pins each kit routes to the KitProg3 bridge.)*
 
-### Cross-core time base — **a TCPWM 32-bit counter**, and the per-core options rejected
+### Cross-core time base — **no longer needed** (retained for the record)
+
+> **Retired 2026-08-16 by the D4 revision.** With a single producing core per image there is no
+> cross-core ordering to correct, so the shared time base is moot. The analysis below is kept
+> because the question recurs (any future two-producer feature needs it) and because the
+> TRM legwork is done.
+
+<details><summary>Original analysis — TCPWM 32-bit counter</summary>
 
 The TRM (`docs/references/TraveoT2G_BodyControlEntry_TRM.pdf`, §25.3.1) settles D4's
 follow-up. Candidates, and why most fail:
@@ -356,7 +375,7 @@ Consequences to design for:
 - Exact register names for this part live in the separate **Registers** TRM (§25.2 note); the
   PDL (`Cy_TCPWM_Counter_*`) abstracts them and is what the port should use.
 
-Until this lands, `log_port_now_ms()` stays per-core and the skew caveat in D4 stands.
+</details>
 
 ## Open items
 

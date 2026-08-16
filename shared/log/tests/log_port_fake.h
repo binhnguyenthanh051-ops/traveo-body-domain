@@ -63,8 +63,8 @@ bool     log_fake_lock_balanced(void);
 uint32_t log_fake_lock_max_depth(void);
 uint32_t log_fake_lock_enter_count(void);
 
-/* Bytes currently queued in a core's ring (head - tail, mod capacity). */
-size_t log_fake_ring_used(log_core_t core);
+/* Bytes currently queued in the ring (head - tail, mod capacity). */
+size_t log_fake_ring_used(void);
 
 /* Publish barrier calls -- ordering must be explicit, not assumed. */
 uint32_t log_fake_barrier_count(void);

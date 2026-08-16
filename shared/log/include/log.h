@@ -105,7 +105,7 @@ log_drain_t log_drain(size_t max_bytes);
  */
 bool log_flush(uint32_t timeout_ms);
 
-/* Records dropped on this core since boot (ADR-0023 D5).
+/* Records dropped since boot (ADR-0023 D5).
  *
  * The BVT MUST treat a non-zero delta across a test window as a FAILED run,
  * not a passed one: several tests assert on the ABSENCE of an event, and a
@@ -113,7 +113,7 @@ bool log_flush(uint32_t timeout_ms);
  * suite that reports green from a window it knows was lossy is worse than one
  * that reports an error.
  */
-uint32_t log_dropped(log_core_t core);
+uint32_t log_dropped(void);
 
 /* Fault-handler path: bypasses the ring and writes the record with a blocking,
  * polled, interrupt-free UART write (ADR-0023 D7).

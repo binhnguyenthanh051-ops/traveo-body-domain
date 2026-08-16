@@ -20,30 +20,27 @@
 /* -------------------------------------------------------------------
  * Ring storage
  *
- * Target-specific because WHERE it lives is the whole point: the rings sit in
- * the same MPU NON-CACHEABLE shared-RAM region as the IPC mailbox (ADR-0018
- * D6, reused by ADR-0023 D4). On Node B the CM7's L1 D-cache makes a naively
- * placed shared buffer silently incoherent -- that problem is already solved
- * for the mailbox, and the log rings inherit the solution rather than
- * rediscovering the bug.
+ * Ordinary image-private RAM. The ring is written and read by the SAME core,
+ * so it needs no shared-memory placement, no MPU non-cacheable region and no
+ * cache maintenance -- on either node. That simplification is a direct
+ * consequence of the security core not logging (ADR-0023 D4).
  *
- * NOTE: the rings do NOT go through the IPC mailbox itself. The mailbox is
- * synchronous and single-outstanding (ADR-0018 D3); routing log traffic
- * through it would serialise logging behind crypto RPCs and couple logging
- * latency into SecOC verify latency. Same memory region, different structure.
+ * ONE ring per image, single-producer/single-consumer, byte-oriented (so an
+ * ASCII run and a 16-byte record can share it). Capacity MUST be a power of
+ * two -- log.c masks rather than divides.
  *
- * One ring per PRODUCING core, single-producer/single-consumer, byte-oriented
- * (so an ASCII run and a 16-byte record can share it). Capacity MUST be a
- * power of two -- log.c masks rather than divides.
+ * One, not one-per-core: the security core does not log (see log_core_t), so
+ * there is no cross-core ring and therefore no shared-RAM placement question
+ * and no cache-coherency step -- including on Node B's CM7.
  */
-uint8_t *log_port_ring(log_core_t core);
-size_t   log_port_ring_cap(log_core_t core);   /* power of two */
+uint8_t *log_port_ring(void);
+size_t   log_port_ring_cap(void);   /* power of two */
 
-/* Head/tail cells, also in the shared non-cacheable region. Split out so the
- * fake can expose them to tests and so the target implementation controls
- * their placement and alignment. Producer owns head, consumer owns tail. */
-volatile uint32_t *log_port_head(log_core_t core);
-volatile uint32_t *log_port_tail(log_core_t core);
+/* Head/tail cells. Split out so the fake can expose them to tests and so the
+ * target implementation controls placement and alignment. Producer owns head,
+ * consumer owns tail. */
+volatile uint32_t *log_port_head(void);
+volatile uint32_t *log_port_tail(void);
 
 /* Publish/observe barrier around the head/tail handoff. On target these are
  * DMB; on host they are no-ops. Explicit rather than implied so the ordering
@@ -53,10 +50,9 @@ void log_port_publish_barrier(void);
 /* -------------------------------------------------------------------
  * Producer-side critical section
  *
- * Guards ONLY the byte reservation -- a handful of instructions -- never the
- * copy and never the UART (ADR-0023 D7). It exists because a task and an ISR
- * on the SAME core can both call log_evt(); cross-core needs no lock at all,
- * since each core has its own ring.
+ * Guards reserve+copy+publish as one indivisible step -- never the UART
+ * (ADR-0023 D7). It exists because a task and an ISR on the SAME core can both
+ * call log_evt(). There is no cross-core case: only one core produces.
  *
  * On target: raise BASEPRI to mask interrupts at or below the configured
  * priority, and restore the PREVIOUS value -- hence the save/restore token

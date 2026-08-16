@@ -18,13 +18,12 @@
 
 #include <string.h>
 
-/* Per-IMAGE state. shared/log is compiled separately into the app-core image
- * and the CM0+ image, so each core gets its own copy of these statics -- the
- * file-static core id is correct, not a shortcut. */
+/* Per-IMAGE state: one producer, one ring (ADR-0023 D4). s_core is the value
+ * stamped into the record's wire field, not an index. */
 static log_core_t s_core = LOG_CORE_APP;
-static uint8_t    s_seq[LOG_CORE_COUNT];
-static uint32_t   s_dropped[LOG_CORE_COUNT];
-static uint32_t   s_pending_overflow[LOG_CORE_COUNT];
+static uint8_t    s_seq;
+static uint32_t   s_dropped;
+static uint32_t   s_pending_overflow;
 
 enum {
     LOG_EVT_OVERFLOW = 0x0004U
@@ -51,10 +50,10 @@ static size_t log_min_size(size_t a, size_t b)
     return (a < b) ? a : b;
 }
 
-static void log_ring_copy_in(log_core_t core, uint32_t start, const uint8_t *src, size_t len)
+static void log_ring_copy_in(uint32_t start, const uint8_t *src, size_t len)
 {
-    uint8_t *ring = log_port_ring(core);
-    size_t   cap  = log_port_ring_cap(core);
+    uint8_t *ring = log_port_ring();
+    size_t   cap  = log_port_ring_cap();
     size_t   mask = cap - 1U;
     size_t   idx  = (size_t)start & mask;
     size_t   first;
@@ -90,13 +89,12 @@ static void log_ring_copy_in(log_core_t core, uint32_t start, const uint8_t *src
  * Bounded by construction: LOG_REC_SIZE (16) per record, LOG_TEXT_MAX (64) for
  * text -- so the masked region stays short even though it now spans the copy.
  */
-static bool log_try_enqueue(log_core_t core,
-                            const uint8_t *first, size_t first_len,
+static bool log_try_enqueue(const uint8_t *first, size_t first_len,
                             const uint8_t *second, size_t second_len)
 {
-    volatile uint32_t * const       head_cell = log_port_head(core);
-    volatile uint32_t const * const tail_cell = log_port_tail(core);
-    const size_t                    cap       = log_port_ring_cap(core);
+    volatile uint32_t * const       head_cell = log_port_head();
+    volatile uint32_t const * const tail_cell = log_port_tail();
+    const size_t                    cap       = log_port_ring_cap();
     const size_t                    need      = first_len + second_len;
     uint32_t                        start;
     uint32_t                        state;
@@ -115,8 +113,8 @@ static bool log_try_enqueue(log_core_t core,
         return false;
     }
 
-    log_ring_copy_in(core, start, first, first_len);
-    log_ring_copy_in(core, start + (uint32_t)first_len, second, second_len);
+    log_ring_copy_in(start, first, first_len);
+    log_ring_copy_in(start + (uint32_t)first_len, second, second_len);
 
     log_port_publish_barrier();
     *head_cell = start + (uint32_t)need;
@@ -125,10 +123,10 @@ static bool log_try_enqueue(log_core_t core,
     return true;
 }
 
-static void log_note_drop(log_core_t core)
+static void log_note_drop(void)
 {
-    s_dropped[core]++;
-    s_pending_overflow[core]++;
+    s_dropped++;
+    s_pending_overflow++;
 }
 
 /* @impl REQ-LOG-002 : CRC-16/CCITT-FALSE, poly 0x1021, init 0xFFFF, no
@@ -175,14 +173,12 @@ void log_rec_encode(uint8_t *out, log_core_t core, uint8_t seq,
 
 void log_init(log_core_t core)
 {
-    s_core                     = core;
-    s_seq[core]                = 0U;
-    s_dropped[core]            = 0U;
-    s_pending_overflow[core]   = 0U;
-    *log_port_head(core)       = 0U;
-    *log_port_tail(core)       = 0U;
-
-    /* Note: resets THIS core's ring only -- never the other core's (D4). */
+    s_core               = core;
+    s_seq                = 0U;
+    s_dropped            = 0U;
+    s_pending_overflow   = 0U;
+    *log_port_head()     = 0U;
+    *log_port_tail()     = 0U;
 
     /* Banner on the UART-owning core only. Delegates to log_banner() rather
      * than carrying a second copy of the string -- two literals drift. */
@@ -208,30 +204,29 @@ void log_evt(uint16_t evt, uint32_t arg0, uint16_t arg1)
     size_t   overflow_len = 0U;
 
     now_ms = log_port_now_ms();
-    seq    = s_seq[s_core];
+    seq    = s_seq;
 
-    if (s_pending_overflow[s_core] != 0U) {
-        log_rec_encode(overflow_rec, s_core, seq, LOG_EVT_OVERFLOW, now_ms, s_pending_overflow[s_core], 0U);
+    if (s_pending_overflow != 0U) {
+        log_rec_encode(overflow_rec, s_core, seq, LOG_EVT_OVERFLOW, now_ms, s_pending_overflow, 0U);
         overflow_len = LOG_REC_SIZE;
         seq = (uint8_t)((seq + 1U) & LOG_SEQ_MASK);
     }
 
     log_rec_encode(event_rec, s_core, seq, evt, now_ms, arg0, arg1);
 
-    if (!log_try_enqueue(s_core,
-                         (overflow_len != 0U) ? overflow_rec : NULL,
+    if (!log_try_enqueue((overflow_len != 0U) ? overflow_rec : NULL,
                          overflow_len,
                          event_rec,
                          LOG_REC_SIZE)) {
-        log_note_drop(s_core);
+        log_note_drop();
         return;
     }
 
     if (overflow_len != 0U) {
-        s_seq[s_core] = (uint8_t)((s_seq[s_core] + 2U) & LOG_SEQ_MASK);
-        s_pending_overflow[s_core] = 0U;
+        s_seq = (uint8_t)((s_seq + 2U) & LOG_SEQ_MASK);
+        s_pending_overflow = 0U;
     } else {
-        s_seq[s_core] = (uint8_t)((s_seq[s_core] + 1U) & LOG_SEQ_MASK);
+        s_seq = (uint8_t)((s_seq + 1U) & LOG_SEQ_MASK);
     }
 }
 
@@ -267,8 +262,8 @@ void log_text(const char *s)
         len++;
     }
 
-    if (!log_try_enqueue(s_core, (const uint8_t *)s, len, NULL, 0U)) {
-        log_note_drop(s_core);
+    if (!log_try_enqueue((const uint8_t *)s, len, NULL, 0U)) {
+        log_note_drop();
     }
 }
 
@@ -289,60 +284,55 @@ void log_banner(void)
  * @impl REQ-LOG-004 : walks EVERY core's ring, not just the caller's. */
 log_drain_t log_drain(size_t max_bytes)
 {
-    size_t remaining = max_bytes;
-    bool   sent_any  = false;
-    size_t core_ix;
+    volatile uint32_t const * const head_cell = log_port_head();
+    volatile uint32_t * const       tail_cell = log_port_tail();
+    uint8_t * const                 ring      = log_port_ring();
+    const size_t                    cap       = log_port_ring_cap();
+    const size_t                    mask      = cap - 1U;
+    size_t                          remaining = max_bytes;
+    bool                            sent_any  = false;
 
-    for (core_ix = 0U; core_ix < (size_t)LOG_CORE_COUNT; core_ix++) {
-        const log_core_t          core     = (log_core_t)core_ix;
-        volatile uint32_t const * const head_cell = log_port_head(core);
-        volatile uint32_t * const tail_cell = log_port_tail(core);
-        uint8_t * const            ring     = log_port_ring(core);
-        const size_t               cap      = log_port_ring_cap(core);
-        const size_t               mask     = cap - 1U;
+    for (;;) {
+        const uint32_t head = *head_cell;
+        const uint32_t tail = *tail_cell;
+        size_t         used = (size_t)(head - tail);
+        size_t         chunk;
+        size_t         idx;
+        size_t         sent;
 
-        for (;;) {
-            const uint32_t head = *head_cell;
-            const uint32_t tail = *tail_cell;
-            size_t         used = (size_t)(head - tail);
-            size_t         chunk;
-            size_t         idx;
-            size_t         sent;
+        if (used == 0U) {
+            break;
+        }
 
-            if (used == 0U) {
-                break;
-            }
+        if ((max_bytes != 0U) && (remaining == 0U)) {
+            return sent_any ? LOG_DRAIN_SENT : LOG_DRAIN_IDLE;
+        }
 
-            if ((max_bytes != 0U) && (remaining == 0U)) {
-                return sent_any ? LOG_DRAIN_SENT : LOG_DRAIN_IDLE;
-            }
+        if (!log_port_sink_ready()) {
+            return LOG_DRAIN_BLOCKED;
+        }
 
-            if (!log_port_sink_ready()) {
-                return LOG_DRAIN_BLOCKED;
-            }
+        idx   = (size_t)tail & mask;
+        chunk = log_min_size(used, cap - idx);   /* stop at the wrap */
+        if ((max_bytes != 0U) && (chunk > remaining)) {
+            chunk = remaining;
+        }
 
-            idx   = (size_t)tail & mask;
-            chunk = log_min_size(used, cap - idx);
-            if ((max_bytes != 0U) && (chunk > remaining)) {
-                chunk = remaining;
-            }
+        sent = log_port_tx(&ring[idx], chunk);
+        if (sent == 0U) {
+            return LOG_DRAIN_BLOCKED;
+        }
 
-            sent = log_port_tx(&ring[idx], chunk);
-            if (sent == 0U) {
-                return LOG_DRAIN_BLOCKED;
-            }
+        log_port_publish_barrier();
+        *tail_cell = tail + (uint32_t)sent;
 
-            log_port_publish_barrier();
-            *tail_cell = tail + (uint32_t)sent;
+        sent_any = true;
+        if (max_bytes != 0U) {
+            remaining -= sent;
+        }
 
-            sent_any = true;
-            if (max_bytes != 0U) {
-                remaining -= sent;
-            }
-
-            if (sent < chunk) {
-                return LOG_DRAIN_BLOCKED;
-            }
+        if (sent < chunk) {
+            return LOG_DRAIN_BLOCKED;
         }
     }
 
@@ -407,9 +397,9 @@ bool log_flush(uint32_t timeout_ms)
     }
 }
 
-uint32_t log_dropped(log_core_t core)
+uint32_t log_dropped(void)
 {
-    return s_dropped[core];
+    return s_dropped;
 }
 
 /* @impl REQ-LOG-010 : ring bypass + blocking write. The ONE place logging may
@@ -418,6 +408,6 @@ void log_panic(uint16_t evt, uint32_t arg0, uint16_t arg1)
 {
     uint8_t rec[LOG_REC_SIZE];
 
-    log_rec_encode(rec, s_core, s_seq[s_core], evt, log_port_now_ms(), arg0, arg1);
+    log_rec_encode(rec, s_core, s_seq, evt, log_port_now_ms(), arg0, arg1);
     log_port_tx_blocking(rec, LOG_REC_SIZE);
 }

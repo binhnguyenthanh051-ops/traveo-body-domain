@@ -6,8 +6,9 @@ sub-decision (the *why*) and **down** to the `@impl`/`@test` tags that prove it
 is a coverage gap the `checks/` pipeline flags.
 
 Design context: `ADR-0023` (this channel), `docs/briefs/BVT-bench-brief.md` (the consumer).
-Related: `ADR-0018` D6 (non-cacheable shared RAM, reused for the rings), `ADR-0020` (PPU access
-to the shared time base), `ADR-0003` (MISRA), `ADR-0001` (host-testable core).
+Related: `ADR-0021` D1 (the SecOC verdict is decided on the app core — why the security core
+does not log), `ADR-0016` D2/D5 (the `ERROR` verdict that reports M0+ health instead),
+`ADR-0003` (MISRA), `ADR-0001` (host-testable core).
 
 **Why this channel is normative at all.** For the SecOC rejection paths it is not telemetry —
 it is the *only positive evidence* that a node saw a frame, verified it, and refused it. The
@@ -23,7 +24,7 @@ drift apart.
 | REQ-LOG-001 | Producer emits fixed-size binary records; no `stdio`/varargs/formatting on target | D1 | `test_log` |
 | REQ-LOG-002 | Record layout, LE fields, CRC-16/CCITT-FALSE, 16 B, byte-offset encoded | D2 | `test_log` |
 | REQ-LOG-003 | `LOG_SYNC` outside ASCII; text runs pass through unescaped and are never assertable | D3, D6 | `test_log`, `test_log_decode` |
-| REQ-LOG-004 | One SPSC ring per producing core in the non-cacheable shared region; **not** via the IPC mailbox | D4 | `test_log` + `@design-only` |
+| REQ-LOG-004 | One SPSC ring **per image**, image-private RAM; the security core does not log | D4 | `test_log` + `@design-only` |
 | REQ-LOG-005 | `log_evt()` is bounded, non-blocking, ISR-safe; critical section covers reservation only | D7 | `test_log` |
 | REQ-LOG-006 | Overflow drops the **newest**, counts it, and emits `LOG_EVT_OVERFLOW`; `seq` gaps detect loss independently | D5 | `test_log` |
 | REQ-LOG-007 | A consumer shall treat any overflow within a window as **failing** that window | D5 | `test_bvt_harness` |
@@ -53,12 +54,19 @@ Records shall be encoded by **explicit byte offset**, never by overlaying a `str
 A decoder shall pass non-record byte runs through verbatim. `log_text()` shall reject bytes with
 the high bit set. **No test shall assert on text output.** *(D3, D6.)*
 
-### REQ-LOG-004 — ring placement and transport
-Each producing core shall own one single-producer/single-consumer byte ring, power-of-two
-capacity, located in the **MPU non-cacheable shared region** established by ADR-0018 D6. Log
-traffic shall **not** be carried over the IPC mailbox: the mailbox is synchronous and
-single-outstanding, and routing logs through it would couple logging latency into SecOC verify
-latency. *(D4.)*
+### REQ-LOG-004 — one ring per image; the security core does not log
+Each image shall own exactly **one** single-producer/single-consumer byte ring of power-of-two
+capacity, in ordinary image-private RAM, written and drained by the same core.
+
+The security core (CM0+) **shall not** produce log records. Per ADR-0021 D1 the SecOC verdict
+is decided on the application core, so no contract event originates on the CM0+; a shared-RAM
+channel out of the core holding the symmetric secret (REQ-SECOC-011) would be TCB surface
+across the security boundary with no contract evidence in return. M0+ health shall be reported
+from the application side instead, via the `ERROR` verdict (ADR-0016 D2/D5) and
+`LOG_EVT_CRYPTO_ERROR`.
+
+`LOG_CORE_SECURITY` shall remain defined in the wire format so revisiting this needs no
+format change. *(D4; revised 2026-08-16 — see the ADR for the withdrawn per-core design.)*
 
 ### REQ-LOG-005 — the producer never blocks
 `log_evt()` shall be callable from task or ISR context on any core, shall complete in bounded
@@ -73,8 +81,8 @@ reservation, and permits head to move backwards. The masked duration shall be bo
 
 ### REQ-LOG-006 — loss is bounded, counted, and announced
 When a ring lacks room the producer shall drop the **newest** record (never advance the
-consumer's tail) and increment a per-core drop counter. When space frees it shall emit
-`LOG_EVT_OVERFLOW` carrying the number lost. The per-core `seq` field shall let a consumer
+consumer's tail) and increment a drop counter. When space frees it shall emit
+`LOG_EVT_OVERFLOW` carrying the number lost. The `seq` field shall let a consumer
 detect loss **independently** of that record, so a lost overflow report does not hide the loss.
 *(D5.)*
 
