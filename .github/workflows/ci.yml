@@ -41,6 +41,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           if [ -f host_tools/requirements.txt ]; then pip install -r host_tools/requirements.txt; fi
+      # ADR-0023 D9: events.csv is the single source of truth for log event IDs.
+      # A stale generated table does not fail loudly — it renders the wrong event
+      # name for the right ID, i.e. a confidently wrong test result. Gate it.
+      - name: Verify generated log event tables are current
+        run: python host_tools/gen_log_events.py --check
+
       - name: Run Python tests (if any)
         run: |
           pip install pytest

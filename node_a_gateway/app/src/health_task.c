@@ -13,6 +13,8 @@
 #include "timers.h"   /* xTimerGetTimerDaemonTaskHandle */
 #include "cybsp.h"
 #include "cy_pdl.h"   /* Cy_GPIO_* */
+#include "log.h"        /* log_evt (ADR-0023) */
+#include "log_events.h"  /* LOG_EVT_APP_ALIVE — generated from events.csv */
 
 #define HEALTH_STACK_WORDS   128U   /* used ~26 words (g_hw_health) + margin (ADR-0010 D5) */
 
@@ -44,6 +46,15 @@ static void health_task(void *arg)
         g_hw_health = uxTaskGetStackHighWaterMark(NULL);
         g_hw_idle   = uxTaskGetStackHighWaterMark(xTaskGetIdleTaskHandle());
         g_hw_timer  = uxTaskGetStackHighWaterMark(xTimerGetTimerDaemonTaskHandle());
+
+        /* @impl REQ-LOG-009 : the BVT liveness test (bench test 1) keys on this.
+         * arg1 carries the health task's own stack headroom -- free to send,
+         * and it turns "the node is alive" into "the node is alive AND not
+         * about to overflow a stack", which is the failure this task exists to
+         * catch but could previously only report to a debugger. */
+        log_evt(LOG_EVT_APP_ALIVE,
+                (uint32_t)((uint32_t)xTaskGetTickCount() * (uint32_t)portTICK_PERIOD_MS),
+                (uint16_t)g_hw_health);
 
         vTaskDelayUntil(&last, pdMS_TO_TICKS(APP_PERIOD_HEALTH_MS));
     }
