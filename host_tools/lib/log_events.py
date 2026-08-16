@@ -17,7 +17,7 @@ EVENTS = {
     0x0201: ('LOG_EVT_CRYPTO_ERROR', 'contract', 'op', 'ipc_status', 'Crypto op produced ERROR (M0+ dead/timeout/malformed)'),
     0x0301: ('LOG_EVT_UDS_SESSION', 'contract', 'new_session', '-', 'Diagnostic session changed'),
     0x0302: ('LOG_EVT_UDS_SECURITY', 'contract', 'granted', 'attempt_no', 'SecurityAccess unlock result'),
-    0x0401: ('LOG_EVT_APP_ALIVE', 'contract', 'uptime_ms', '-', 'Periodic liveness -- the BVT liveness test keys on this'),
+    0x0401: ('LOG_EVT_APP_ALIVE', 'contract', 'uptime_ms', 'stack_free_words', 'Liveness every 5s; first is immediate after boot -- BVT timeouts must clear 5s'),
     0x1001: ('LOG_EVT_DBG_U32', 'diagnostic', 'value', 'tag', 'Ad-hoc developer value; delete freely'),
     0x1002: ('LOG_EVT_CRYPTO_MAC_US', 'diagnostic', 'elapsed_us', '-', 'MAC round-trip time -- timing only'),
 }

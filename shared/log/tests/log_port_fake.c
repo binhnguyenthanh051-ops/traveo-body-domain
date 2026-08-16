@@ -22,8 +22,10 @@ static uint8_t  s_panic_sink[SINK_CAP];
 static size_t   s_panic_len;
 
 static uint32_t s_now_ms;
+static uint32_t s_now_step;
 static size_t   s_tx_accept;
 static bool     s_sink_ready;
+static bool     s_sink_idle;
 
 static int32_t  s_lock_depth;
 static uint32_t s_lock_max_depth;
@@ -42,8 +44,10 @@ void log_fake_reset(void)
     s_sink_len       = 0U;
     s_panic_len      = 0U;
     s_now_ms         = 0U;
+    s_now_step       = 0U;
     s_tx_accept      = SIZE_MAX;
     s_sink_ready     = true;
+    s_sink_idle      = true;
     s_lock_depth     = 0;
     s_lock_max_depth = 0U;
     s_lock_enter     = 0U;
@@ -59,8 +63,10 @@ void log_fake_reset_sink_only(void)
 }
 
 void log_fake_set_now(uint32_t ms)          { s_now_ms = ms; }
+void log_fake_set_now_step(uint32_t step)   { s_now_step = step; }
 void log_fake_set_tx_accept(size_t n)       { s_tx_accept = n; }
 void log_fake_set_sink_ready(bool ready)    { s_sink_ready = ready; }
+void log_fake_set_sink_idle(bool idle)      { s_sink_idle = idle; }
 
 const uint8_t *log_fake_sink(void)          { return s_sink; }
 size_t         log_fake_sink_len(void)      { return s_sink_len; }
@@ -105,7 +111,12 @@ void log_port_unlock(uint32_t state)
     s_lock_depth--;
 }
 
-uint32_t log_port_now_ms(void) { return s_now_ms; }
+uint32_t log_port_now_ms(void)
+{
+    const uint32_t now = s_now_ms;
+    s_now_ms += s_now_step;
+    return now;
+}
 
 size_t log_port_tx(const uint8_t *data, size_t len)
 {
@@ -135,3 +146,4 @@ void log_port_tx_blocking(const uint8_t *data, size_t len)
 }
 
 bool log_port_sink_ready(void) { return s_sink_ready; }
+bool log_port_sink_idle(void)  { return s_sink_idle; }

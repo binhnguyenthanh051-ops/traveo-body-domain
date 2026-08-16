@@ -39,6 +39,22 @@ SEQ_MOD = SEQ_MASK + 1
 
 CORE_NAMES = {0: "app", 1: "sec"}
 
+# Resolved from the generated table rather than hardcoded, so it cannot drift
+# from events.csv (ADR-0023 D9).
+BOOT_EVT_ID = log_events.NAME_TO_ID.get("LOG_EVT_BOOT")
+
+# Argument meanings whose values are addresses: render hex, not decimal.
+# "app_entry_addr=268697600" is technically correct and practically useless --
+# 0x10040000 is the number you actually compare against the linker map.
+_HEX_HINTS = ("addr", "base", "mask", "id")
+
+
+def _fmt_arg(meaning: str, value: int) -> str:
+    lowered = meaning.lower()
+    if any(h in lowered for h in _HEX_HINTS):
+        return f"{meaning}=0x{value:X}"
+    return f"{meaning}={value}"
+
 
 def crc16(data: bytes) -> int:
     """CRC-16/CCITT-FALSE: poly 0x1021, init 0xFFFF, no reflection, no final XOR.
@@ -82,9 +98,9 @@ class Record:
             _, _, a0, a1, _ = meta
             args = []
             if a0 != "-":
-                args.append(f"{a0}={self.arg0}")
+                args.append(_fmt_arg(a0, self.arg0))
             if a1 != "-":
-                args.append(f"{a1}={self.arg1}")
+                args.append(_fmt_arg(a1, self.arg1))
             tail = " ".join(args)
         else:
             tail = f"arg0={self.arg0} arg1={self.arg1}"
@@ -181,9 +197,20 @@ class Decoder:
         core_seq = frame[OFF_CORE_SEQ]
         core = (core_seq >> CORE_SHIFT) & CORE_MASK
         seq = core_seq & SEQ_MASK
+        evt_id = struct.unpack_from("<H", frame, OFF_EVT)[0]
 
         out: list = []
         prev = self._last_seq.get(core)
+
+        # LOG_EVT_BOOT means the producer restarted: log_init() zeroed its
+        # sequence counter, so a "gap" here is an artefact of the reset, not
+        # lost records. Reporting it would be a FALSE positive -- and under
+        # REQ-LOG-007 a consumer must fail any window containing loss, so a
+        # false gap fails a good run. The BVT power-cycles between tests and
+        # spans the FBL->app handover, so this fires constantly if unhandled.
+        if evt_id == BOOT_EVT_ID:
+            prev = None
+
         if prev is not None:
             missing = (seq - prev - 1) % SEQ_MOD
             if missing:

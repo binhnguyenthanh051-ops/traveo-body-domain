@@ -21,7 +21,7 @@
 #define LOG_EVT_CRYPTO_ERROR           0x0201U   /* contract: Crypto op produced ERROR (M0+ dead/timeout/malformed) */
 #define LOG_EVT_UDS_SESSION            0x0301U   /* contract: Diagnostic session changed */
 #define LOG_EVT_UDS_SECURITY           0x0302U   /* contract: SecurityAccess unlock result */
-#define LOG_EVT_APP_ALIVE              0x0401U   /* contract: Periodic liveness -- the BVT liveness test keys on this */
+#define LOG_EVT_APP_ALIVE              0x0401U   /* contract: Liveness every 5s; first is immediate after boot -- BVT timeouts must clear 5s */
 #define LOG_EVT_DBG_U32                0x1001U   /* diagnostic: Ad-hoc developer value; delete freely */
 #define LOG_EVT_CRYPTO_MAC_US          0x1002U   /* diagnostic: MAC round-trip time -- timing only */
 

@@ -98,4 +98,17 @@ void log_port_tx_blocking(const uint8_t *data, size_t len);
  * overflow drops the NEWEST record, not the oldest (ADR-0023 D5). */
 bool log_port_sink_ready(void);
 
+/* True when the sink has put every accepted byte ON THE WIRE -- not merely
+ * queued it.
+ *
+ * The distinction is load-bearing at a hand-off. log_port_tx() reports bytes
+ * accepted into the TX FIFO, so an empty ring does NOT mean an empty UART: at
+ * 1 Mbps a 16-byte record still needs ~160 us to shift out, and a jump or reset
+ * arrives far sooner than that. Whoever re-initialises the SCB next (the app's
+ * log_port_init after the FBL jumps) resets the FIFO and those bytes are gone.
+ *
+ * log_flush() therefore waits on THIS, not just on the rings (REQ-LOG-015).
+ * Implementations map it to the peripheral's transmit-complete status. */
+bool log_port_sink_idle(void);
+
 #endif /* LOG_PORT_H */

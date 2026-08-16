@@ -117,6 +117,7 @@ DISABLE_COMPONENTS=CM0P_SLEEP
 # manually add source code to the build process from a location not searched
 # by default, or otherwise not found by the build system.
 SOURCES=../../../shared/boot/src/boot.c \
+        ../../../shared/log/src/log.c \
         ../../../shared/diag/src/isotp.c \
         ../../../shared/diag/src/uds_session.c \
         ../../../shared/diag/src/uds_session_control.c \
@@ -143,7 +144,8 @@ CY_IGNORE=src/startup_fbl.c linker
 # directories (without a leading -I). shared/crypto/include carries ipc_mailbox.h
 # (the transport interface) + ipc_mailbox_map.h (the shared mailbox layout).
 INCLUDES=../../../shared/boot/include ../../../shared/hal/include ../../../shared/can/include \
-          ../../../shared/diag/include ../../../shared/crypto/include config
+          ../../../shared/diag/include ../../../shared/crypto/include \
+          ../../../shared/log/include config
 
 # Add additional defines to the build process (without a leading -D).
 # M4 Seam 5 (ADR-0020 D6): uncomment to build the CM4-side TCB-isolation fault
@@ -152,6 +154,14 @@ INCLUDES=../../../shared/boot/include ../../../shared/hal/include ../../../share
 # walls-down). Overrides HardFault_Handler while defined.
 # DEFINES=FBL_M4_SEAM5_PROBE
 DEFINES=
+
+# Banner identity (ADR-0023). The FBL and the app are two CM4 images that both
+# log as LOG_CORE_APP — the core ROLE is the same — so the banner is the only
+# thing distinguishing them in a capture that spans the jump. Must come AFTER
+# the plain `DEFINES=` above, which would otherwise wipe it.
+# Add LOG_BUILD_ID=\"$(shell git rev-parse --short HEAD)\" here when the build
+# id is wanted (M5 bring-up finding #2).
+DEFINES+=LOG_IMAGE_NAME=\"fbl\"
 
 # Select softfp or hardfp floating point. Default is softfp.
 VFP_SELECT=

@@ -14,6 +14,9 @@
 #include "cybsp.h"      /* target-only: clocks + BSP pins (incl. the user LED) */
 #include "cycfg.h"      /* target-only: cycfg_config_init (Device Configurator: CAN clock/pins) */
 #include "cy_pdl.h"     /* target-only: __enable_irq (CMSIS core intrinsic) */
+#include "log.h"             /* log_evt / log_flush (ADR-0023) */
+#include "log_events.h"      /* generated from shared/log/events.csv */
+#include "port_log.h"        /* fbl_log_init / fbl_log_service */
 #if FBL_DIGEST_ALGO == FBL_DIGEST_SHA256
 #include "crypto_service.h"  /* M4 Seam 4: crypto_service_init (bind the port) */
 #endif
@@ -58,6 +61,12 @@ int main(void)
      * wall-clock accurate (the knock dwell just below, and ISO-TP's N_Cr
      * timeout once Seam 2 is wired in). */
     fbl_time_init();
+
+    /* Observability up as soon as there is a clock to timestamp with
+     * (ADR-0023). Emits the banner, and gives the boot decision below a
+     * way to say what it decided. */
+    fbl_log_init();
+    log_evt(LOG_EVT_BOOT, (uint32_t)fbl_port_reset_cause(), 0U);
 
     /* CAN must be up before fbl_run_boot(), not only once programming mode is
      * entered: the knock window (ADR-0008 D2) needs fbl_port_tool_contact()
@@ -112,12 +121,28 @@ int main(void)
 
     if (action == FBL_ACTION_JUMP_APP)
     {
+        /* @impl REQ-LOG-009 : the secure-boot BVT test's positive evidence.
+         * Emit BEFORE the flush, and flush BEFORE deinit_for_jump() — that call
+         * stops SysTick, so a flush after it would face a frozen clock, and
+         * after the jump the app re-inits SCB0 and anything still queued is
+         * gone. This is the ordering the whole log_flush() contract exists for
+         * (ADR-0023 REQ-LOG-015). */
+        log_evt(LOG_EVT_APP_JUMP, (uint32_t)fbl_port_app_image_base(), 0U);
+        (void)log_flush(FBL_LOG_FLUSH_MS);
+
         /* De-init to the handover contract (ADR-0008 D4 / review B3), then jump.
          * jump_to_app reads MSP/reset from the app vector table and never
          * returns. */
         fbl_port_deinit_for_jump();
         fbl_port_jump_to_app((uint32_t)fbl_port_app_image_base());
     }
+
+    /* @impl REQ-LOG-009 : "the FBL refused to jump" — the OTHER half of the
+     * secure-boot evidence. Silence alone cannot distinguish a correct refusal
+     * from a board that never booted, which is exactly what the BVT's
+     * corrupt-signature test would otherwise be asserting on. */
+    log_evt(LOG_EVT_APP_REJECT, (uint32_t)fbl_port_app_image_base(), (uint16_t)action);
+    (void)log_flush(FBL_LOG_FLUSH_MS);
 
     /* Programming mode (M1: minimal; M3: UDS programming services). */
     fbl_port_enter_programming_mode();

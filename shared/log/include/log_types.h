@@ -87,6 +87,31 @@ typedef enum {
 #define LOG_EVT_MOD_DIAG    0x0300U
 #define LOG_EVT_MOD_APP     0x0400U
 
+/* Name this IMAGE puts in its banner. Overridden per image via -D; the FBL and
+ * the app are two CM4 binaries that both log as LOG_CORE_APP (the core role is
+ * the same), so without this a capture spanning the jump is ambiguous about
+ * which image emitted what -- which is exactly when you are reading it. */
+#ifndef LOG_IMAGE_NAME
+#define LOG_IMAGE_NAME      "app"
+#endif
+
+/* Build identity, ideally the git short SHA passed in as -DLOG_BUILD_ID=\"...\".
+ * M5 bring-up finding #2: the BVT reflashes between tests, so a log that cannot
+ * name its own image makes "which build produced this trace?" unanswerable. */
+#ifndef LOG_BUILD_ID
+#define LOG_BUILD_ID        "nobuildid"
+#endif
+
+/* Consecutive no-progress iterations after which log_flush() gives up,
+ * INDEPENDENTLY of its timeout.
+ *
+ * The timeout alone is not a bound, because it assumes the clock runs. It may
+ * not: the FBL calls fbl_port_deinit_for_jump() -- which stops SysTick -- and a
+ * flush after that point would see a frozen log_port_now_ms() and spin forever,
+ * meaning the logger bricks the very boot path it exists to observe. This cap
+ * makes termination independent of the time base. */
+#define LOG_FLUSH_MAX_STALL 1000U
+
 /* Longest ASCII run log_text() will enqueue; anything beyond is truncated.
  *
  * This is a CONCURRENCY bound, not a style preference. The producer holds the
