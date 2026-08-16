@@ -37,7 +37,6 @@
 
 # --- 0x02xx crypto service -------------------------------------------------
 0x0201,LOG_EVT_CRYPTO_ERROR,contract,op,ipc_status,Crypto op produced ERROR (M0+ dead/timeout/malformed)
-0x0202,LOG_EVT_CRYPTO_MAC_MS,diagnostic,elapsed_us,-,MAC round-trip time -- timing only, never asserted
 
 # --- 0x03xx diag / UDS -----------------------------------------------------
 0x0301,LOG_EVT_UDS_SESSION,contract,new_session,-,Diagnostic session changed
@@ -48,3 +47,4 @@
 
 # --- 0x1000+ diagnostic ----------------------------------------------------
 0x1001,LOG_EVT_DBG_U32,diagnostic,value,tag,Ad-hoc developer value; delete freely
+0x1002,LOG_EVT_CRYPTO_MAC_US,diagnostic,elapsed_us,-,MAC round-trip time -- timing only, never asserted
