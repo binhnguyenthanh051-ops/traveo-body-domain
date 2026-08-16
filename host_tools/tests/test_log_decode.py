@@ -112,6 +112,42 @@ def test_sequence_wrap_is_not_a_gap():
     assert not [i for i in items if isinstance(i, d.Gap)]
 
 
+def test_boot_event_resets_sequence_tracking():
+    """A restart is not record loss.
+
+    Observed on hardware: the FBL logs, jumps, and the app calls log_init()
+    which zeroes the sequence counter. The decoder saw seq go backwards and
+    reported "62 records LOST" for a run that lost nothing. Under REQ-LOG-007 a
+    consumer must FAIL any window containing loss — so a false gap fails a
+    perfectly good BVT run, and the BVT power-cycles between every test.
+    """
+    boot = d.log_events.NAME_TO_ID["LOG_EVT_BOOT"]
+    items = d.decode_all(encode(seq=40) + encode(seq=0, evt=boot) + encode(seq=1))
+    assert not [i for i in items if isinstance(i, d.Gap)]
+
+
+def test_boot_event_does_not_mask_a_real_gap_after_it():
+    """Resetting on BOOT must not blind the decoder to genuine loss later."""
+    boot = d.log_events.NAME_TO_ID["LOG_EVT_BOOT"]
+    items = d.decode_all(encode(seq=0, evt=boot) + encode(seq=5))
+    gaps = [i for i in items if isinstance(i, d.Gap)]
+    assert len(gaps) == 1 and gaps[0].missing == 4
+
+
+def test_address_arguments_render_in_hex():
+    """"app_entry_addr=268697600" is correct and useless; 0x10040000 is the
+    number you compare against the linker map."""
+    jump = d.log_events.NAME_TO_ID["LOG_EVT_APP_JUMP"]
+    line = str(d.decode_all(encode(evt=jump, arg0=0x10040000))[0])
+    assert "0x10040000" in line
+
+
+def test_plain_counters_stay_decimal():
+    alive = d.log_events.NAME_TO_ID["LOG_EVT_APP_ALIVE"]
+    line = str(d.decode_all(encode(evt=alive, arg0=1500))[0])
+    assert "uptime_ms=1500" in line
+
+
 def test_cores_have_independent_sequences():
     """Interleaved cores must not look like loss to each other."""
     items = d.decode_all(encode(core=0, seq=1) + encode(core=1, seq=40)

@@ -26,6 +26,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include "log_types.h"
 
 /* Initialise the calling core's ring and sequence state. Call once, early,
@@ -85,6 +86,24 @@ void log_banner(void);
  * "as much as the sink accepts".
  */
 log_drain_t log_drain(size_t max_bytes);
+
+/* Drain until every ring is empty, or timeout_ms elapses. Returns true if the
+ * rings emptied.
+ *
+ * The one legitimate use of a bounded WAIT on the log path: at a hand-off where
+ * the sink is about to be taken away or the core is about to stop, cyclic
+ * draining has no next opportunity. The FBL emits LOG_EVT_APP_JUMP and then
+ * jumps -- the app re-inits SCB0 and the queued record is gone -- and an app
+ * about to ECUReset has the same problem. Without a flush those records are
+ * lost exactly when they matter most, which for the secure-boot BVT test is the
+ * entire evidence.
+ *
+ * NOT a general-purpose "make sure this gets out" call. Using it on a healthy
+ * path reintroduces the blocking that D7 forbids; the drain task is what moves
+ * bytes in normal operation. Bounded by log_port_now_ms(), so a dead sink costs
+ * timeout_ms once, not forever.
+ */
+bool log_flush(uint32_t timeout_ms);
 
 /* Records dropped on this core since boot (ADR-0023 D5).
  *

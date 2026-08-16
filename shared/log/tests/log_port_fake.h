@@ -28,12 +28,23 @@ void log_fake_reset_sink_only(void);
 /* Scripted clock -- log_port_now_ms() returns exactly this. */
 void log_fake_set_now(uint32_t ms);
 
+/* Auto-advance the clock by `step` ms on every log_port_now_ms() call.
+ * Default 0 = frozen, which is what most tests want (a frozen clock is how you
+ * prove ts_ms is sampled at production time). Set non-zero to exercise a
+ * bounded-wait loop's TIMEOUT path -- the same trick ipc_port_fake.c uses. */
+void log_fake_set_now_step(uint32_t step);
+
 /* Sink admission control. n = bytes log_port_tx() will accept per call;
  * SIZE_MAX means "accept everything". 0 models a busy UART. */
 void log_fake_set_tx_accept(size_t n);
 
 /* Sink readiness (log_port_sink_ready()). Defaults to true after reset. */
 void log_fake_set_sink_ready(bool ready);
+
+/* Sink transmit-complete (log_port_sink_idle()). Defaults to true after reset.
+ * Set false to model bytes still shifting out of the TX FIFO -- the state that
+ * loses a record across a jump or reset if log_flush() ignores it. */
+void log_fake_set_sink_idle(bool idle);
 
 /* Bytes the sink has received, in order, via the non-blocking path. */
 const uint8_t *log_fake_sink(void);

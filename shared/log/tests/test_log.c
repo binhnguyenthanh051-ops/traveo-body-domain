@@ -317,6 +317,77 @@ void test_records_queue_while_the_sink_is_not_ready(void)
     TEST_ASSERT_EQUAL_UINT32(7U, rd32(&log_fake_sink()[LOG_OFF_ARG0]));
 }
 
+/* ---- REQ-LOG-015: bounded flush at a hand-off --------------------- */
+
+/* @test REQ-LOG-015 : flush empties the rings and reports success */
+void test_flush_drains_everything(void)
+{
+    log_evt(0x0002U, 0x10040000U, 0U);
+    log_evt(0x0401U, 1U, 0U);
+
+    TEST_ASSERT_TRUE(log_flush(100U));
+    TEST_ASSERT_EQUAL_UINT(2U * LOG_REC_SIZE, log_fake_sink_len());
+    TEST_ASSERT_EQUAL_UINT(0U, log_fake_ring_used(LOG_CORE_APP));
+}
+
+/* @test REQ-LOG-015 : a dead sink AND a FROZEN CLOCK must still terminate.
+ *
+ * The scenario is real, not hypothetical: the FBL calls log_flush() on the way
+ * to the app, and fbl_port_deinit_for_jump() stops SysTick — so
+ * log_port_now_ms() can be frozen at exactly the moment flush runs. A timeout
+ * that assumes a live time base is not a bound at all, and the logger would
+ * hang the boot path it exists to observe. The clock is left at its default
+ * (step 0 = frozen) precisely to pin that case; termination comes from
+ * LOG_FLUSH_MAX_STALL, not from time. */
+void test_flush_terminates_with_a_dead_sink_and_frozen_clock(void)
+{
+    log_evt(0x0401U, 1U, 0U);
+    log_fake_set_sink_ready(false);
+
+    TEST_ASSERT_FALSE(log_flush(10U));
+    TEST_ASSERT_EQUAL_UINT(LOG_REC_SIZE, log_fake_ring_used(LOG_CORE_APP));
+}
+
+/* @test REQ-LOG-015 : with a running clock, the timeout is what bounds it */
+void test_flush_times_out_when_the_clock_runs(void)
+{
+    log_evt(0x0401U, 1U, 0U);
+    log_fake_set_sink_ready(false);
+    log_fake_set_now_step(1U);       /* 1 ms per now_ms() call */
+
+    TEST_ASSERT_FALSE(log_flush(5U));
+    TEST_ASSERT_EQUAL_UINT(LOG_REC_SIZE, log_fake_ring_used(LOG_CORE_APP));
+}
+
+/* @test REQ-LOG-015 : nothing queued is a successful flush, not a timeout */
+void test_flush_on_empty_rings_succeeds_immediately(void)
+{
+    TEST_ASSERT_TRUE(log_flush(0U));
+}
+
+/* @test REQ-LOG-015 : an empty RING is not an empty UART.
+ *
+ * This is the bug that lost every FBL record on real hardware. log_port_tx()
+ * reports bytes accepted into the TX FIFO, so the ring empties long before the
+ * bytes reach the wire -- ~160 us for one record at 1 Mbps, against a jump that
+ * takes microseconds. Whoever re-inits the SCB next (the app, right after the
+ * FBL jumps) resets the FIFO and the evidence is gone. Flush must wait for the
+ * sink to go idle, not merely for the ring to drain. */
+void test_flush_waits_for_the_sink_to_go_idle(void)
+{
+    log_evt(0x0002U, 0x10040000U, 0U);
+    log_fake_set_sink_idle(false);      /* bytes accepted, still shifting out */
+    log_fake_set_now_step(1U);
+
+    TEST_ASSERT_FALSE_MESSAGE(log_flush(5U),
+        "flush reported success while the UART was still transmitting");
+    TEST_ASSERT_EQUAL_UINT(0U, log_fake_ring_used(LOG_CORE_APP));   /* ring DID drain */
+
+    /* Once the shifter empties, the same flush succeeds. */
+    log_fake_set_sink_idle(true);
+    TEST_ASSERT_TRUE(log_flush(5U));
+}
+
 /* ---- REQ-LOG-003: text passthrough -------------------------------- */
 
 /* @test REQ-LOG-003 : ASCII passes through verbatim, no framing added */
@@ -475,6 +546,12 @@ int main(void)
     RUN_TEST(test_drain_respects_max_bytes);
     RUN_TEST(test_drain_on_empty_ring_is_idle);
     RUN_TEST(test_records_queue_while_the_sink_is_not_ready);
+
+    RUN_TEST(test_flush_drains_everything);
+    RUN_TEST(test_flush_terminates_with_a_dead_sink_and_frozen_clock);
+    RUN_TEST(test_flush_times_out_when_the_clock_runs);
+    RUN_TEST(test_flush_on_empty_rings_succeeds_immediately);
+    RUN_TEST(test_flush_waits_for_the_sink_to_go_idle);
 
     RUN_TEST(test_log_text_passes_ascii_through_unescaped);
     RUN_TEST(test_log_text_rejects_non_ascii);

@@ -11,6 +11,7 @@
  */
 #include "fbl_port.h"
 #include "fbl_diag.h"   /* M3 Seam 4: the real UDS session */
+#include "port_log.h"   /* fbl_log_service — the FBL has no drain task */
 #include "fbl_flash.h"  /* M3 Seam 6 bring-up test, see below */
 #include "boot_types.h" /* FBL_APP_FLASH_BASE/SIZE */
 #include "cybsp.h"      /* target-only */
@@ -131,6 +132,15 @@ void fbl_port_enter_programming_mode(void)
     for (;;)
     {
         fbl_diag_tick(fbl_port_now_ms());
+
+        /* Move queued log bytes. Safe in this loop for the same reason the
+         * blink is: it never blocks. log_drain() hands at most
+         * FBL_LOG_SERVICE_MAX_BYTES to the TX FIFO and returns whatever the
+         * FIFO would not take -- it does NOT wait for the wire. A blocking
+         * variant here would starve fbl_diag_tick() and overflow the 8-deep CAN
+         * RX FIFO mid-download, exactly as a Cy_SysLib_Delay() did during
+         * Seam 7. */
+        fbl_log_service();
         uint32_t now = fbl_port_now_ms();
         if ((now - last_blink_ms) >= 250U)   /* ms — fast blink = "in bootloader" */
         {
@@ -143,6 +153,7 @@ void fbl_port_enter_programming_mode(void)
     for (;;)
     {
         fbl_diag_tick(fbl_port_now_ms());
+        fbl_log_service();   /* non-blocking, same reasoning as the LED loop */
     }
 #endif
 }

@@ -272,15 +272,15 @@ void log_text(const char *s)
     }
 }
 
+/* Identifies the IMAGE (LOG_IMAGE_NAME) and, for the security core, the role.
+ * Two CM4 images both log as LOG_CORE_APP, so the core alone cannot tell an FBL
+ * record from an app record in a capture that spans the jump. */
 void log_banner(void)
 {
-    static const char s_app_banner[] = "traveo-body app build=unknown\n";
-    static const char s_sec_banner[] = "traveo-body sec build=unknown\n";
-
     if (s_core == LOG_CORE_SECURITY) {
-        log_text(s_sec_banner);
+        log_text("\n--- " LOG_IMAGE_NAME "/sec " LOG_BUILD_ID " ---\n");
     } else {
-        log_text(s_app_banner);
+        log_text("\n--- " LOG_IMAGE_NAME " " LOG_BUILD_ID " ---\n");
     }
 }
 
@@ -347,6 +347,64 @@ log_drain_t log_drain(size_t max_bytes)
     }
 
     return sent_any ? LOG_DRAIN_SENT : LOG_DRAIN_IDLE;
+}
+
+/* @impl REQ-LOG-015 : bounded flush at a hand-off (jump / reset).
+ *
+ * Deliberately the ONE place a caller may wait on the sink, and only because
+ * cyclic draining has no next opportunity once the core stops or the UART
+ * changes owner. The bound comes from log_port_now_ms(), so a dead sink costs
+ * timeout_ms once rather than hanging the hand-off. */
+bool log_flush(uint32_t timeout_ms)
+{
+    const uint32_t start   = log_port_now_ms();
+    uint32_t       stalled = 0U;
+    bool           drained = false;
+
+    for (;;) {
+        bool progress = false;
+
+        /* PHASE 1: empty the rings. */
+        if (!drained) {
+            const log_drain_t st = log_drain(0U);
+
+            if (st == LOG_DRAIN_IDLE) {
+                drained  = true;
+                progress = true;
+            } else if (st == LOG_DRAIN_SENT) {
+                progress = true;
+            } else {
+                /* BLOCKED: sink busy, no progress this round. */
+            }
+        }
+
+        /* PHASE 2: an empty ring is not an empty UART. log_port_tx reports bytes
+         * accepted into the TX FIFO, not bytes on the wire. Returning here would
+         * hand back "flushed" while a record is still shifting out -- and the
+         * next SCB re-init (the app's, right after the FBL jumps) resets the
+         * FIFO and destroys it. That is exactly the evidence the secure-boot BVT
+         * test depends on.
+         *
+         * Checked BEFORE the deadline so timeout_ms == 0 means "one look", not
+         * "fail immediately". */
+        if (drained && log_port_sink_idle()) {
+            return true;
+        }
+
+        /* Bound the spin on ITERATIONS as well as on time: the clock may not be
+         * running (the FBL stops SysTick in deinit_for_jump), and a timeout that
+         * assumes a live time base is not a bound at all. */
+        stalled = progress ? 0U : (stalled + 1U);
+        if (stalled >= LOG_FLUSH_MAX_STALL) {
+            return false;
+        }
+
+        /* Unsigned wrap-safe elapsed comparison: correct across the u32
+         * rollover, unlike (now < start + timeout). */
+        if ((log_port_now_ms() - start) >= timeout_ms) {
+            return false;
+        }
+    }
 }
 
 uint32_t log_dropped(log_core_t core)

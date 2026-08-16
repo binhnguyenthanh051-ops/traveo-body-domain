@@ -43,7 +43,7 @@
 0x0302,LOG_EVT_UDS_SECURITY,contract,granted,attempt_no,SecurityAccess unlock result
 
 # --- 0x04xx app ------------------------------------------------------------
-0x0401,LOG_EVT_APP_ALIVE,contract,uptime_ms,-,Periodic liveness -- the BVT liveness test keys on this
+0x0401,LOG_EVT_APP_ALIVE,contract,uptime_ms,stack_free_words,Liveness every 5s; first is immediate after boot -- BVT timeouts must clear 5s
 
 # --- 0x1000+ diagnostic ----------------------------------------------------
 0x1001,LOG_EVT_DBG_U32,diagnostic,value,tag,Ad-hoc developer value; delete freely

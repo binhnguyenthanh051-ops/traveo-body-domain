@@ -28,6 +28,7 @@
 #include "log_types.h"
 #include "log_port.h"
 #include "log.h"
+#include "log_events.h"   /* LOG_EVT_BOOT — generated from events.csv */
 #include "port_log.h"
 
 /* -------------------------------------------------------------------
@@ -192,6 +193,17 @@ bool log_port_sink_ready(void)
     return s_sink_ready;
 }
 
+/* Transmit COMPLETE, not "FIFO accepted it". log_flush() waits on this before a
+ * jump or reset, because whoever re-inits SCB0 next resets the FIFO and would
+ * otherwise destroy records that are still shifting out. */
+bool log_port_sink_idle(void)
+{
+    if (!s_sink_ready) {
+        return true;      /* nothing can be in flight if the sink never came up */
+    }
+    return Cy_SCB_UART_IsTxComplete(LOG_UART_SCB);
+}
+
 /* -------------------------------------------------------------------
  * Bring-up
  * ----------------------------------------------------------------- */
@@ -203,6 +215,19 @@ bool log_port_sink_ready(void)
  *
  * Returns false if no acceptable divider exists — the caller then leaves the
  * sink down rather than emitting garbage. */
+/* Bring-up aids: the numbers behind the baud, readable in the debugger. Same
+ * pattern as g_hw_health / g_assert_file / g_tcb_probe.
+ *
+ * These exist because a wrong baud is INVISIBLE from the console -- the console
+ * is the thing that breaks. If the FBL and the app disagree on CLK_PERI, each
+ * computes a different divider, and only one of them is readable at the
+ * terminal's fixed rate. Read g_log_peri_hz in both images and compare. */
+volatile uint32_t g_log_peri_hz;
+volatile uint32_t g_log_divider;
+volatile uint32_t g_log_actual_hz;
+volatile uint32_t g_log_err_pm;
+volatile bool     g_log_clk_ok;
+
 static bool log_uart_clock_init(void)
 {
     const uint32_t peri_hz = Cy_SysClk_ClkPeriGetFrequency();
@@ -210,6 +235,9 @@ static bool log_uart_clock_init(void)
     uint32_t       divider;
     uint32_t       actual;
     uint32_t       err_pm;
+
+    g_log_peri_hz = peri_hz;
+    g_log_clk_ok  = false;
 
     if ((peri_hz == 0U) || (target == 0U)) {
         return false;
@@ -225,9 +253,14 @@ static bool log_uart_clock_init(void)
     actual = peri_hz / divider;
     err_pm = (actual > target) ? (((actual - target) * 1000U) / target)
                                : (((target - actual) * 1000U) / target);
+    g_log_divider   = divider;
+    g_log_actual_hz = actual / LOG_UART_OVERSAMPLE;   /* achieved baud */
+    g_log_err_pm    = err_pm;
+
     if (err_pm > LOG_BAUD_TOLERANCE_PM) {
         return false;
     }
+    g_log_clk_ok = true;
 
     /* PeriphSetDivider takes divider-1 ("divide by N+1"). */
     (void)Cy_SysClk_PeriphAssignDivider(LOG_UART_PCLK, LOG_UART_DIV_TYPE, LOG_UART_DIV_NUM);
@@ -300,4 +333,11 @@ void log_port_init(void)
     /* Ring + banner. Producers may run before this; their records simply queue,
      * and overflow drops the NEWEST so the earliest survive (REQ-LOG-006). */
     log_init(LOG_CORE_APP);
+
+    /* Announce the image start. Not decoration: log_init() zeroed the sequence
+     * counter, and LOG_EVT_BOOT is how the host decoder knows a discontinuity
+     * is a RESTART rather than lost records. Without it every FBL->app handover
+     * and every power cycle reports a false "records LOST" — which, under
+     * REQ-LOG-007, fails a perfectly good BVT window. */
+    log_evt(LOG_EVT_BOOT, (uint32_t)Cy_SysLib_GetResetReason(), 0U);
 }
