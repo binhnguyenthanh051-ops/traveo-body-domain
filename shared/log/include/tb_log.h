@@ -1,5 +1,5 @@
 /*
- * log.h -- target logging channel: producer + drain API (ADR-0023).
+ * tb_log.h -- target logging channel: producer + drain API (ADR-0023).
  *
  * Structured binary event records over UART, decoded on the host. NOT a printf
  * facility: the target never formats (ADR-0023 D1). Two reasons, in order of
@@ -21,8 +21,8 @@
  *
  * Requirements: REQ-LOG-001..014 (docs/requirements/logging.md).
  */
-#ifndef LOG_H
-#define LOG_H
+#ifndef TB_LOG_H
+#define TB_LOG_H
 
 #include <stdint.h>
 #include <stddef.h>
@@ -144,4 +144,4 @@ void log_rec_encode(uint8_t *out, log_core_t core, uint8_t seq,
  * validates the CRC, then steps LOG_REC_SIZE at a time (ADR-0023 D2). */
 uint16_t log_crc16(const uint8_t *data, size_t len);
 
-#endif /* LOG_H */
+#endif /* TB_LOG_H */

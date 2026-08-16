@@ -17,6 +17,10 @@
 #include "cycfg_pins.h"
 #include "cy_gpio.h"
 #include "can_task.h"
+#include "port_crypto.h"   /* secoc_crypto_port_init — MPU non-cacheable + offload bind */
+#include "port_log.h"      /* log_port_init — SCB0 UART sink (ADR-0023) */
+#include "tb_log.h"        /* log_evt */
+#include "log_events.h"    /* LOG_EVT_APP_ALIVE — generated from events.csv */
 
 #define HEARTBEAT_STACK_WORDS   configMINIMAL_STACK_SIZE
 #define HEARTBEAT_PRIORITY      (tskIDLE_PRIORITY + 1U)
@@ -31,6 +35,46 @@ static StackType_t  s_idle_stack[configMINIMAL_STACK_SIZE];
 static StaticTask_t s_timer_tcb;
 static StackType_t  s_timer_stack[configTIMER_TASK_STACK_DEPTH];
 
+/* -------------------------------------------------------------------
+ * Liveness cadence (ADR-0023 / REQ-LOG-009) — mirrors Node A's health_task.
+ *
+ * One rate, first emission immediate. "Every 5 s" implemented as
+ * wait-then-emit would leave a 5 s blind window after every reset, and the BVT
+ * power-cycles between every test — liveness evidence must arrive at t~0.
+ *
+ * On THIS node the cadence matters more than on Node A: the BVT's SecOC
+ * replay/forgery tests assert the actuator HELD its state, and a liveness
+ * event is what separates "correctly refused" from "dead board". Any bench
+ * timeout must clear ALIVE_PERIOD_MS with margin.
+ * ----------------------------------------------------------------- */
+#define ALIVE_PERIOD_MS  5000U
+
+static bool       s_alive_started;
+static TickType_t s_alive_last;
+
+/* @impl REQ-LOG-009 : the BVT liveness test keys on this. arg1 carries this
+ * task's stack headroom -- free to send, and it upgrades "the node is alive"
+ * to "alive AND not about to overflow a stack". */
+static void heartbeat_log_alive(void)
+{
+    const TickType_t now = xTaskGetTickCount();
+
+    /* Unsigned tick subtraction is wrap-safe; (now >= last + period) is not.
+     * The started flag is what makes the first emission immediate -- zeroed
+     * statics alone would make it wait a full period. */
+    if (s_alive_started && ((now - s_alive_last) < pdMS_TO_TICKS(ALIVE_PERIOD_MS)))
+    {
+        return;
+    }
+
+    log_evt(LOG_EVT_APP_ALIVE,
+            (uint32_t)((uint32_t)now * (uint32_t)portTICK_PERIOD_MS),
+            (uint16_t)uxTaskGetStackHighWaterMark(NULL));
+
+    s_alive_last    = now;
+    s_alive_started = true;
+}
+
 static void heartbeat_task(void *arg)
 {
     (void)arg;
@@ -38,6 +82,7 @@ static void heartbeat_task(void *arg)
     for (;;)
     {
         Cy_GPIO_Inv(CYBSP_USER_LED_PORT, CYBSP_USER_LED_PIN);
+        heartbeat_log_alive();
         vTaskDelay(pdMS_TO_TICKS(HEARTBEAT_PERIOD_MS));
     }
 }
@@ -56,6 +101,21 @@ int main(void)
     Cy_SysClk_EcoSetFrequency(16000000UL);
     SystemCoreClockUpdate();
 
+    /* Observability, immediately after the clock tree is known to THIS core and
+     * before anything that might have something to report (ADR-0023). Order is
+     * load-bearing: the PDL's frequency bookkeeping is per-core, so before
+     * SystemCoreClockUpdate() the peripheral-clock read returns 0, the baud
+     * setup correctly refuses, and the console would stay silent for the whole
+     * run. Emits the banner + LOG_EVT_BOOT; touches no FreeRTOS object, so it is
+     * safe this side of the scheduler. */
+    log_port_init();
+
+    /* Crypto-offload seam (ADR-0018 D6 / ADR-0021): program the MPU non-cacheable
+     * region over the cross-core mailbox, idle the mailbox, and bind the IPC
+     * transport into crypto_service so tasks can call crypto_mac(). Must precede
+     * any crypto_mac() call; MPU setup is independent of the scheduler. */
+    secoc_crypto_port_init();
+
     TaskHandle_t hb = xTaskCreateStatic(heartbeat_task,
                                         "hb",
                                         HEARTBEAT_STACK_WORDS,
@@ -64,6 +124,10 @@ int main(void)
                                         s_hb_stack,
                                         &s_hb_tcb);
     configASSERT(hb != NULL);
+
+    /* Lowest-priority drain: moves queued log bytes to the UART (ADR-0023 D10).
+     * Created before can_task so a failure in CAN bring-up still gets reported. */
+    log_task_create();
 
     /* Bring up CANFD + create the CAN RX/TX task (Phase A: internal loopback).
      * The actuator FSM task joins here in a later seam. */

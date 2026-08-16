@@ -13,7 +13,7 @@
 #include "timers.h"   /* xTimerGetTimerDaemonTaskHandle */
 #include "cybsp.h"
 #include "cy_pdl.h"   /* Cy_GPIO_* */
-#include "log.h"        /* log_evt (ADR-0023) */
+#include "tb_log.h"     /* log_evt (ADR-0023) */
 #include "log_events.h"  /* LOG_EVT_APP_ALIVE — generated from events.csv */
 
 #define HEALTH_STACK_WORDS   128U   /* used ~26 words (g_hw_health) + margin (ADR-0010 D5) */

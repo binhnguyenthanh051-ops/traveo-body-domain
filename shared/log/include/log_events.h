@@ -10,7 +10,7 @@
  * must update the affected tests in the same commit. Diagnostic events are
  * never asserted on and stay free to add, reword or delete (REQ-LOG-008). */
 
-#define LOG_EVT_BOOT                   0x0001U   /* contract: Image started; first record after log_init */
+#define LOG_EVT_BOOT                   0x0001U   /* contract: Image started; first record after log_init. reset_reason is the CY_SYSLIB_RESET_* bitmask */
 #define LOG_EVT_APP_JUMP               0x0002U   /* contract: FBL verified the app and is jumping (ADR-0008) */
 #define LOG_EVT_APP_REJECT             0x0003U   /* contract: FBL refused to jump -- stays in FBL (fail-safe) */
 #define LOG_EVT_OVERFLOW               0x0004U   /* contract: Records lost since the last overflow report (D5) */

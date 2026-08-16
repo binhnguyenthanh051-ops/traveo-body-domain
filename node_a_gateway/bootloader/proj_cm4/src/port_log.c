@@ -24,7 +24,7 @@
 #include "cy_pdl.h"
 #include "log_types.h"
 #include "log_port.h"
-#include "log.h"
+#include "tb_log.h"
 #include "port_log.h"
 
 #define LOG_UART_SCB            SCB0
@@ -34,7 +34,10 @@
 #define LOG_UART_TX_PIN         1U
 
 #define LOG_UART_BAUD           1000000UL
-#define LOG_UART_OVERSAMPLE     8UL
+/* SCB UART oversample range (PDL: 8..16 for standard UART). The exact value
+ * is CHOSEN AT RUNTIME to hit the baud on whatever clock this core has. */
+#define LOG_UART_OVS_MIN        8UL
+#define LOG_UART_OVS_MAX        16UL
 
 /* Must match the app's choice: the two images configure the same SCB from the
  * same divider, so a mismatch would only show up as a baud change across the
@@ -142,57 +145,111 @@ bool log_port_sink_idle(void)
  * terminal's fixed rate. Read g_log_peri_hz in both images and compare. */
 volatile uint32_t g_log_peri_hz;
 volatile uint32_t g_log_divider;
+volatile uint32_t g_log_oversample;
 volatile uint32_t g_log_actual_hz;
 volatile uint32_t g_log_err_pm;
 volatile bool     g_log_clk_ok;
 
+/* Chosen at runtime by log_uart_clock_init(), consumed by the SCB config. */
+static uint32_t s_oversample = LOG_UART_OVS_MIN;
+
 static bool log_uart_clock_init(void)
 {
-    const uint32_t peri_hz = Cy_SysClk_ClkPeriGetFrequency();
-    const uint32_t target  = LOG_UART_BAUD * LOG_UART_OVERSAMPLE;
-    uint32_t       divider;
-    uint32_t       actual;
-    uint32_t       err_pm;
+    uint32_t src_hz;
+    uint32_t best_ovs = 0U;
+    uint32_t best_div = 0U;
+    uint32_t best_err = 0xFFFFFFFFUL;
+    uint32_t ovs;
 
-    g_log_peri_hz = peri_hz;
-    g_log_clk_ok  = false;
+    g_log_clk_ok = false;
 
-    if ((peri_hz == 0U) || (target == 0U)) {
+    /* Measure, do not assume. Set divide-by-1 first and READ BACK what the
+     * destination actually receives: that yields the source frequency without
+     * this file having to know the clock tree, which differs between the two
+     * nodes (CAT1A/TVIIBE vs CAT1C) and, on Node B, is configured by the CM0+.
+     *
+     * Cy_SysClk_PeriPclk* is the family-portable API -- the PDL documents it for
+     * "CAT1A (TVIIBE only), CAT1B, CAT1C and CAT1D" -- so all three images share
+     * one implementation instead of each guessing its own accessor. */
+    (void)Cy_SysClk_PeriPclkAssignDivider(LOG_UART_PCLK, LOG_UART_DIV_TYPE, LOG_UART_DIV_NUM);
+    (void)Cy_SysClk_PeriPclkSetDivider(LOG_UART_PCLK, LOG_UART_DIV_TYPE, LOG_UART_DIV_NUM, 0U);
+    (void)Cy_SysClk_PeriPclkEnableDivider(LOG_UART_PCLK, LOG_UART_DIV_TYPE, LOG_UART_DIV_NUM);
+
+    src_hz        = Cy_SysClk_PeriPclkGetFrequency(LOG_UART_PCLK, LOG_UART_DIV_TYPE,
+                                                   LOG_UART_DIV_NUM);
+    g_log_peri_hz = src_hz;
+
+    /* Zero means the clock tree is not up yet on this core -- on Node B the CM7
+     * reads 0 until SystemCoreClockUpdate() runs. Leave the sink down rather
+     * than emit at a garbage rate. */
+    if (src_hz == 0U) {
         return false;
     }
 
-    divider = (peri_hz + (target / 2U)) / target;      /* round to nearest */
-    if (divider == 0U) {
-        divider = 1U;
+    /* SEARCH the oversample, do not fix it.
+     *
+     * A single hardcoded oversample ties the achievable baud to one clock tree.
+     * Silicon proved it: at Node A's 80 MHz, oversample 8 divides by exactly 10
+     * and is perfect; at Node B's 100 MHz the same 8 needs 12.5, rounds to 13,
+     * and lands 3.8% off -- unusable. But 100 MHz / 1 Mbps = 100 = 10 x 10, so
+     * an oversample of 10 is EXACT. Searching 8..16 finds the best pair on any
+     * clock tree, which is what lets one port serve every image.
+     *
+     * Node A is unaffected: the search hits err = 0 at oversample 8 and stops
+     * there, reproducing the configuration already verified on that board. */
+    for (ovs = LOG_UART_OVS_MIN; ovs <= LOG_UART_OVS_MAX; ovs++) {
+        const uint32_t target = LOG_UART_BAUD * ovs;
+        uint32_t       div;
+        uint32_t       actual;
+        uint32_t       err_pm;
+
+        div = (src_hz + (target / 2U)) / target;   /* round to nearest */
+        if (div == 0U) {
+            div = 1U;
+        }
+
+        actual = src_hz / div;                     /* achieved SCB clock */
+        err_pm = (actual > target) ? (((actual - target) * 1000U) / target)
+                                   : (((target - actual) * 1000U) / target);
+
+        if (err_pm < best_err) {
+            best_err = err_pm;
+            best_ovs = ovs;
+            best_div = div;
+        }
+        if (err_pm == 0U) {
+            break;                                 /* exact -- stop looking */
+        }
     }
 
-    actual = peri_hz / divider;
-    err_pm = (actual > target) ? (((actual - target) * 1000U) / target)
-                               : (((target - actual) * 1000U) / target);
-    g_log_divider   = divider;
-    g_log_actual_hz = actual / LOG_UART_OVERSAMPLE;   /* achieved baud */
-    g_log_err_pm    = err_pm;
+    (void)Cy_SysClk_PeriPclkSetDivider(LOG_UART_PCLK, LOG_UART_DIV_TYPE, LOG_UART_DIV_NUM,
+                                       best_div - 1U);
 
-    if (err_pm > LOG_BAUD_TOLERANCE_PM) {
+    /* Read back the ACHIEVED clock rather than trusting the arithmetic. */
+    g_log_divider   = best_div;
+    g_log_oversample = best_ovs;
+    g_log_actual_hz = Cy_SysClk_PeriPclkGetFrequency(LOG_UART_PCLK, LOG_UART_DIV_TYPE,
+                                                     LOG_UART_DIV_NUM) / best_ovs;
+    g_log_err_pm    = best_err;
+
+    if (best_err > LOG_BAUD_TOLERANCE_PM) {
         return false;
     }
+
+    s_oversample = best_ovs;
     g_log_clk_ok = true;
-
-    (void)Cy_SysClk_PeriphAssignDivider(LOG_UART_PCLK, LOG_UART_DIV_TYPE, LOG_UART_DIV_NUM);
-    (void)Cy_SysClk_PeriphSetDivider(LOG_UART_DIV_TYPE, LOG_UART_DIV_NUM, divider - 1U);
-    (void)Cy_SysClk_PeriphEnableDivider(LOG_UART_DIV_TYPE, LOG_UART_DIV_NUM);
     return true;
 }
 
 void fbl_log_init(void)
 {
-    static const cy_stc_scb_uart_config_t uart_cfg = {
+    cy_stc_scb_uart_config_t uart_cfg = {
         .uartMode                   = CY_SCB_UART_STANDARD,
         .enableMutliProcessorMode   = false,
         .smartCardRetryOnNack       = false,
         .irdaInvertRx               = false,
         .irdaEnableLowPowerReceiver = false,
-        .oversample                 = LOG_UART_OVERSAMPLE,
+        .oversample                 = LOG_UART_OVS_MIN,   /* overwritten below */
         .enableMsbFirst             = false,
         .dataWidth                  = 8UL,
         .parity                     = CY_SCB_UART_PARITY_NONE,
@@ -219,6 +276,11 @@ void fbl_log_init(void)
     if (!log_uart_clock_init()) {
         return;     /* no usable divider: stay silent, never block the boot */
     }
+
+    /* The SCB must be told the SAME oversample the divider was computed for --
+     * they are two halves of one baud calculation, and disagreeing halves give
+     * a silently wrong rate. */
+    uart_cfg.oversample = s_oversample;
 
     Cy_GPIO_SetHSIOM(LOG_UART_PORT, LOG_UART_RX_PIN, P0_0_SCB0_UART_RX);
     Cy_GPIO_SetDrivemode(LOG_UART_PORT, LOG_UART_RX_PIN, CY_GPIO_DM_HIGHZ);

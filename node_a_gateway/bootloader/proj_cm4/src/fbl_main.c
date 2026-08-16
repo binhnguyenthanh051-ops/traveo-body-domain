@@ -14,7 +14,7 @@
 #include "cybsp.h"      /* target-only: clocks + BSP pins (incl. the user LED) */
 #include "cycfg.h"      /* target-only: cycfg_config_init (Device Configurator: CAN clock/pins) */
 #include "cy_pdl.h"     /* target-only: __enable_irq (CMSIS core intrinsic) */
-#include "log.h"             /* log_evt / log_flush (ADR-0023) */
+#include "tb_log.h"          /* log_evt / log_flush (ADR-0023) */
 #include "log_events.h"      /* generated from shared/log/events.csv */
 #include "port_log.h"        /* fbl_log_init / fbl_log_service */
 #if FBL_DIGEST_ALGO == FBL_DIGEST_SHA256

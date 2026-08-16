@@ -15,7 +15,7 @@
  *    tool side); this file pins the C encoder it compares against.
  */
 #include "unity.h"
-#include "log.h"
+#include "tb_log.h"
 #include "log_port.h"
 #include "log_port_fake.h"
 
