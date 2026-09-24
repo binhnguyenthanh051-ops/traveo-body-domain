@@ -24,7 +24,7 @@ post with the style guide loaded. It never holds its own copy of the plan.
    - `CLAUDE.md`
 
    Two things to check, because the GitHub sync reads what is **pushed**: push after each Sunday
-   commit, and check which branch it reads. The plan currently lives on `m5-secoc`; if the
+   commit, and check which branch it reads. The plan currently lives on `feat/m5-secoc`; if the
    integration only reads `main`, merge `docs/project/` to `main` or upload the files by hand.
 4. After each Sunday retro commit + push, press **sync** on the project's knowledge.
 
