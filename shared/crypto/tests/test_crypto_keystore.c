@@ -18,8 +18,8 @@ static const uint8_t k_dev[]  = { 0xDEU, 0xADU, 0xBEU, 0xEFU };
 static const uint8_t k_prod[] = { 0xC0U, 0xFFU, 0xEEU, 0x00U };
 
 static const crypto_key_entry_t g_keys[] = {
-    { 1U, k_dev,  sizeof k_dev  },
-    { 2U, k_prod, sizeof k_prod }
+    { .key_id = 1U, .pubkey = k_dev,  .pubkey_len = sizeof k_dev  },
+    { .key_id = 2U, .pubkey = k_prod, .pubkey_len = sizeof k_prod }
 };
 
 void setUp(void)  { crypto_keystore_init(g_keys, 2U); }

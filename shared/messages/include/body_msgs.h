@@ -11,9 +11,13 @@
 #include <stddef.h>
 
 /* CAN IDs are allocated centrally here — see ADR-0002 for the scheme. */
-#define MSG_ID_DOOR_CMD     0x120u   /* Gateway -> Actuator: command door state   */
-#define MSG_ID_LIGHT_CMD    0x121u   /* Gateway -> Actuator: command light level  */
-#define MSG_ID_SENSOR_RPT   0x200u   /* Actuator -> Gateway: sensor report        */
+#define MSG_ID_DOOR_CMD       0x120u   /* Gateway -> Actuator: command door state   */
+#define MSG_ID_LIGHT_CMD      0x121u   /* Gateway -> Actuator: command light level  */
+#define MSG_ID_SENSOR_RPT     0x200u   /* Actuator -> Gateway: sensor report        */
+#define MSG_ID_FRESHNESS_SYNC 0x2F0u   /* Actuator -> Gateway: SecOC freshness resync
+                                        * (ADR-0002 SecOC-mgmt sub-band; ADR-0021 D5).
+                                        * Authenticated; carries the receiver's epoch
+                                        * floor (u16 LE) as its PDU. */
 
 typedef enum { DOOR_LOCK = 0, DOOR_UNLOCK = 1 } door_cmd_t;
 

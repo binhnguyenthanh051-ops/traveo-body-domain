@@ -16,6 +16,7 @@ void crypto_keystore_init(const crypto_key_entry_t *table, size_t count)
     g_count = count;
 }
 
+/* @impl REQ-SECOC-010 : key_id selects the AES-CMAC secret; unknown => NULL, never key 0 */
 const crypto_key_entry_t *crypto_keystore_lookup(uint32_t key_id)
 {
     if (g_table == NULL)

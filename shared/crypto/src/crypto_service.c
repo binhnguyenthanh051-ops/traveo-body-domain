@@ -58,3 +58,52 @@ crypto_verdict_t crypto_verify_image(uint32_t base, uint32_t len, uint32_t key_i
     }
     return v;
 }
+
+/* @impl ADR-0021 D7 : app-side MAC client (mirrors crypto_verify_image) */
+bool crypto_mac(uint32_t key_id, const uint8_t *msg, size_t msg_len,
+                uint8_t tag[CRYPTO_CMAC_TAG_LEN])
+{
+    if ((g_port == NULL) || (tag == NULL) || ((msg == NULL) && (msg_len != 0U)))
+    {
+        return false;
+    }
+    /* The request is key_id(4) + len(2) + msg; it must fit CRYPTO_MAX_PAYLOAD. */
+    if (msg_len > (size_t)(CRYPTO_MAX_PAYLOAD - 6U))
+    {
+        return false;
+    }
+
+    crypto_msg_t reqm;
+    crypto_make_mac_request(key_id, msg, (uint16_t)msg_len, &reqm);
+    if (reqm.length == 0U)
+    {
+        return false;                   /* make_mac_request refused (overflow guard) */
+    }
+
+    uint8_t req[CRYPTO_MSG_MAX_WIRE];
+    size_t req_len = crypto_msg_encode(&reqm, req, sizeof req);
+    if (req_len == 0U)
+    {
+        return false;
+    }
+
+    uint8_t resp[CRYPTO_MSG_MAX_WIRE];
+    size_t resp_len = 0U;
+    ipc_status_t st = ipc_transact(g_port, req, req_len,
+                                   resp, sizeof resp, &resp_len,
+                                   CRYPTO_MAC_TIMEOUT_MS);
+    if (st != IPC_OK)
+    {
+        return false;
+    }
+
+    crypto_msg_t respm;
+    if (!crypto_msg_decode(resp, resp_len, &respm))
+    {
+        return false;
+    }
+
+    /* A tag response is 16 bytes; an M0+ error is a 1-byte verdict, which
+     * crypto_parse_mac_response rejects ⇒ false ⇒ caller drops (fail-safe). */
+    return crypto_parse_mac_response(&respm, tag);
+}
