@@ -112,6 +112,7 @@ SOURCES=../../shared/crypto/src/ipc_mailbox.c \
         ../../shared/crypto/src/crypto_service.c \
         ../../shared/secoc/src/secoc.c \
         ../../shared/secoc/src/secoc_freshness.c \
+        ../../shared/secoc/src/secoc_rx.c \
         ../../shared/messages/src/body_msgs.c
 
 # Like SOURCES, but for include directories. Value should be paths to

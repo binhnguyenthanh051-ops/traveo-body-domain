@@ -86,7 +86,8 @@ SOURCES=../../../shared/crypto/src/crypto_dispatch.c \
         ../../../shared/crypto/src/crypto_keystore.c \
         ../../../shared/prot/src/prot_region.c
 INCLUDES=../../../shared/crypto/include \
-         ../../../shared/prot/include
+         ../../../shared/prot/include \
+         ../../../security/include
 
 # Bench toggles (all OFF by default so the committed image matches Seam 4):
 #   FBL_M4_SEAM5_PROT   — raise the TCB-isolation walls (ADR-0020).

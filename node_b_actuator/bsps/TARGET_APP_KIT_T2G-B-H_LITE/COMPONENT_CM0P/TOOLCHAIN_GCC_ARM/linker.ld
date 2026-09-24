@@ -59,6 +59,16 @@ _size_SRAM_CM0P                     = cm0plus_sram_reserve - sram_start_reserve 
 _base_CODE_FLASH_CM0P               = code_flash_base_address;
 _size_CODE_FLASH_CM0P               = cm0plus_code_flash_reserve;
 
+/* SecOC cross-core mailbox (ADR-0018 D5/D6; node_b_actuator/ipc/include/
+ * ipc_mailbox_map.h). The CM0+ reaches the mailbox by ABSOLUTE address — it
+ * lives in the CM7's non-cacheable window (base _base_SRAM_NON_CACHE), far above
+ * this core's 16K SRAM at 0x2800_0000, so nothing here allocates or zeroes it.
+ * MUST equal Cy_SecOc_IpcMailbox in the COMPONENT_CM7 linker.ld (there it is
+ * ORIGIN(ram_noncache)). Computed there as sram_base(0x2800_0000) +
+ * cm0plus_sram(0x4000) + cm7_0_sram(0xDC000) = 0x280E_0000. VERIFY both maps
+ * agree at bring-up (the cross-file invariant, like Node A's IPC_MAILBOX_ADDR). */
+Cy_SecOc_IpcMailbox                 = 0x280E0000;
+
 /* Fixed Addesses */
 _base_WORK_FLASH                    = 0x14000000;
 _size_WORK_FLASH                    = 0x00040000;   /* 256K Work flash */

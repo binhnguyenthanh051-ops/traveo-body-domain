@@ -9,8 +9,9 @@
 #      now as OUR OWN buildable image so the crypto server has a home.
 #   2. Run the crypto (MAC) dispatch server (crypto seam): decode the mailbox
 #      envelope, route CRYPTO_OP_MAC to the AES-CMAC back end, hold the secret
-#      key. (ADR-0021 D1; the HW-vs-mbedTLS CMAC choice is a bring-up verify —
-#      the CYT4BF8CDS IPBLOCKS list shows no MXCRYPTO, so CMAC may be software.)
+#      key. (ADR-0021 D1: HW CMAC — CY_IP_MXCRYPTO IS present on CYT4BF8CDS and
+#      the PDL compiles cy_crypto_core_cmac_v2; the earlier "no MXCRYPTO" bsp.mk
+#      note was a false alarm. mbedTLS is the documented software fallback only.)
 #
 # Seam order (like Node A): Seam 1 = start CM7 only (main_cm0p.c). Seam 3 =
 # add the dispatch/framing/keystore SOURCES below + the CMAC back end.
@@ -91,7 +92,13 @@ VFP_SELECT=softfp
 SOURCES=../../shared/crypto/src/crypto_dispatch.c \
         ../../shared/crypto/src/crypto_msg.c \
         ../../shared/crypto/src/crypto_keystore.c
-INCLUDES=../../shared/crypto/include
+INCLUDES=../ipc/include \
+         ../../shared/crypto/include \
+         ../../security/include
+# src/crypto_ops_cm0p.c (the CRYPTO_OP_MAC back end + shared-secret keystore) is
+# auto-discovered under this project's src/ tree (like Node A). ../ipc/include
+# MUST come before ../../shared/crypto/include because both trees ship an
+# ipc_mailbox_map.h and Node B must bind its own mailbox map for the server loop.
 
 DEFINES=
 CFLAGS=

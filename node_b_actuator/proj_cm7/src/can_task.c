@@ -27,6 +27,9 @@
 #include "queue.h"
 #include "can_task.h"
 #include "can_hal.h"
+#include "secoc_app.h"      /* SecOC verify/secure/sync (M5 seam 3) */
+#include "actuator_fsm.h"   /* actuate only on VALID commands */
+#include "body_msgs.h"      /* MSG_ID_*, body_msg_t */
 #include "cy_pdl.h"     /* Cy_CANFD_*, Cy_SysInt_* */
 #include "cybsp.h"      /* generated CANFD config + IRQ names via cycfg */
 #include <string.h>
@@ -158,25 +161,69 @@ static void can_task(void *arg)
     (void)arg;
     can_raw_frame_t frame;
 
+#if !CAN_LOOPBACK_TEST
+    bool sync_sent = false;
+#endif
+
     for (;;)
     {
+#if !CAN_LOOPBACK_TEST
+        /* Phase B: on the real bus, announce our freshness floor once at startup
+         * so the gateway raises its command epoch (D5 resync). Task context — the
+         * MAC round-trip uses the RTOS-tick clock. */
+        if (!sync_sent)
+        {
+            can_raw_frame_t sync;
+            if (secoc_app_build_boot_sync(&sync) && (can_tx(&sync) == 0))
+            {
+                sync_sent = true;
+            }
+        }
+#endif
         if (xQueueReceive(s_raw_q, &frame, pdMS_TO_TICKS(CAN_POLL_MS)) == pdTRUE)
         {
             ++g_can_rx_count;            /* RX path alive (both phases) */
             g_can_last_id = frame.id;
+
+            if ((frame.id == MSG_ID_DOOR_CMD) || (frame.id == MSG_ID_LIGHT_CMD))
+            {
+                /* Authenticated command: actuate ONLY on VALID MAC + fresh
+                 * freshness; a bad frame is dropped + counted inside SecOC and
+                 * the FSM holds its last safe state (ADR-0021 D9). */
+                body_msg_t msg;
+                if (secoc_app_verify_and_decode(&frame, &msg))
+                {
+                    actuator_fsm_apply(&msg);
+                }
+            }
 #if !CAN_LOOPBACK_TEST
-            (void)can_tx(&frame);       /* Phase B echo: re-transmit to prove RX+TX on the real bus */
+            else
+            {
+                (void)can_tx(&frame);   /* Phase B: echo non-command IDs (bring-up aid) */
+            }
 #endif
-            /* Next seam: body_decode(frame.id, frame.data, frame.len, &msg) -> actuator FSM. */
         }
         else
         {
 #if CAN_LOOPBACK_TEST
-            /* Self-transmit a test frame so the loopback RX path has traffic. */
+            /* Phase A: self-transmit a test frame so the loopback RX path has
+             * traffic. 0x123 is not a command ID, so the SecOC RX path above
+             * stays dormant — the proven loopback bring-up is unchanged. */
             can_raw_frame_t t = { .id = 0x123U, .flags = CAN_FLAG_FDF, .len = 4U };
             t.data[0] = 0xDEU; t.data[1] = 0xADU; t.data[2] = 0xBEU; t.data[3] = 0xEFU;
             g_can_tx_status = can_tx(&t);
             ++g_can_tx_count;
+#else
+            /* Phase B: periodic authenticated telemetry (secured 0x200). The
+             * ambient value would come from an ADC read; door_ajar reflects the
+             * FSM state. */
+            sensor_report_msg_t rpt = { .ambient_raw = 0u,
+                                        .door_ajar = actuator_door_locked() ? 0u : 1u };
+            can_raw_frame_t tf;
+            if (secoc_app_build_telemetry(&rpt, &tf))
+            {
+                (void)can_tx(&tf);
+            }
 #endif
         }
     }
@@ -187,6 +234,12 @@ void can_task_create(void)
     s_raw_q = xQueueCreateStatic(RAW_FRAME_QDEPTH, sizeof(can_raw_frame_t),
                                  s_raw_q_store, &s_raw_q_ctrl);
     configASSERT(s_raw_q != NULL);
+
+    /* SecOC (seam 3): boot the freshness contexts + safe-state the actuator. No
+     * crypto here (the M0+ oracle is only touched from the task), so this is safe
+     * before the scheduler. secoc_crypto_port_init() (main.c) must run first. */
+    actuator_fsm_init();
+    secoc_app_init();
 
     cy_en_canfd_status_t st = Cy_CANFD_Init(CAN_HW_INSTANCE, CAN_HW_CHANNEL,
                                             &CAN_CHANNEL_CONFIG, &s_canfd_context);
