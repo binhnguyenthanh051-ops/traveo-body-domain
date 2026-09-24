@@ -14,10 +14,10 @@
 #define LOG_EVT_APP_JUMP               0x0002U   /* contract: FBL verified the app and is jumping (ADR-0008) */
 #define LOG_EVT_APP_REJECT             0x0003U   /* contract: FBL refused to jump -- stays in FBL (fail-safe) */
 #define LOG_EVT_OVERFLOW               0x0004U   /* contract: Records lost since the last overflow report (D5) */
-#define LOG_EVT_SECOC_ACCEPT           0x0101U   /* contract: Secured frame accepted and actuated */
-#define LOG_EVT_SECOC_REJECT_MAC       0x0102U   /* contract: MAC comparison failed -- forged or corrupt frame */
+#define LOG_EVT_SECOC_ACCEPT           0x0101U   /* contract: Secured frame passed MAC + freshness and was released to decode */
+#define LOG_EVT_SECOC_REJECT_MAC       0x0102U   /* contract: MAC check failed -- forged/corrupt frame (1) bad length (2) or oracle error (3) */
 #define LOG_EVT_SECOC_REJECT_FRESHNESS 0x0103U   /* contract: Freshness not ahead of stored -- replay */
-#define LOG_EVT_SECOC_RESYNC           0x0104U   /* contract: Receiver-reset resync completed (ADR-0021 D5) */
+#define LOG_EVT_SECOC_RESYNC           0x0104U   /* contract: Receiver-reset resync completed -- sender adopted the floor (ADR-0021 D5) */
 #define LOG_EVT_CRYPTO_ERROR           0x0201U   /* contract: Crypto op produced ERROR (M0+ dead/timeout/malformed) */
 #define LOG_EVT_UDS_SESSION            0x0301U   /* contract: Diagnostic session changed */
 #define LOG_EVT_UDS_SECURITY           0x0302U   /* contract: SecurityAccess unlock result */

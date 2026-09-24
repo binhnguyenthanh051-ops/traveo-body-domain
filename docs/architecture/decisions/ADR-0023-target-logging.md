@@ -295,6 +295,57 @@ transfer completion — an extra `log_port_tx_done()` call. Prefer a small port-
 **Revisit DMA only on measurement** — if drain CPU time shows up in an M5 timing measurement, or
 the overflow counter (D5) says the sink cannot keep up.
 
+### D11. The SecOC verdict events are emitted from **one composed seam**, not from the primitives
+
+`REQ-LOG-009` says the verdict events "are the observable form of the per-reason drop counters
+already required by REQ-SECOC-001; the two shall not diverge." That sentence is a *placement*
+requirement, and it rules out the obvious answers.
+
+**No existing function in `shared/secoc` knows a verdict.** `secoc_verify()` knows the MAC failed
+but cannot know the frame is *accepted* — the freshness gate can still reject it. `secoc_rx_check()`
+is deliberately **pure**, so putting an emission in it would add exactly the hidden side effect the
+coding standard forbids, and would fire inside `test_secoc_freshness` where no ring exists.
+`secoc_rx_accept()` knows a frame was accepted but not why the others were not. Emitting at the
+primitives therefore splits one frame's verdict across three functions in two modules — and leaves
+the counters somewhere else entirely, which is the divergence REQ-LOG-009 exists to prevent.
+
+Meanwhile the composed verdict *did* already exist — **twice**, in `node_a_gateway/app/src/secoc_app.c`
+and `node_b_actuator/proj_cm7/src/secoc_app.c`: the same verify → check → accept sequence with the
+same three counters, in app composition code that no host test can reach.
+
+**Decision:** hoist that composition into **`shared/secoc/src/secoc_rx.c`**. One function per received
+frame owns the MAC verdict, the freshness verdict, the accept, **the per-reason counters and the
+event emission together**. Counter and event become the same statement, so they cannot drift; both
+nodes get one implementation; the pure functions stay pure; and the BVT's own evidence becomes
+host-testable (`test_secoc_rx`) instead of living in two untestable copies.
+
+Three details follow from putting it there:
+
+- **`ACCEPT` means "passed MAC + freshness", not "actuated".** REQ-LOG-009 requires emission on the
+  verify path, which is *before* `body_decode`. `body_decode` and its drop counter stay in the apps,
+  where the message IDs live. The event description in `events.csv` was reworded to match; the ID and
+  argument meanings are the contract, the prose is not.
+- **`REJECT_MAC.arg1` carries the sub-reason**, and its codes *are* `secoc_verify_result_t`
+  (`1` bad MAC, `2` malformed length, `3` oracle error). Additive — `arg1` was unused. This exists
+  because a forgery test that goes green because the **M0+ was dead** is a false pass, and false
+  passes on the security path are the failure mode this whole channel was built to eliminate.
+- **`RESYNC` is not a Node B event.** Per ADR-0021 D5, B only *sends* `FRESHNESS_SYNC`; the resync
+  **completes** when the gateway adopts the floor. So the fourth event fires on **Node A**, from
+  `secoc_rx_sync_adopt()` in the same seam, and only when the epoch actually moved.
+
+**Cost, stated rather than glossed:** `shared/secoc` previously "reached in exactly two directions"
+(secoc-architecture §7.1) — the MAC oracle and the store port. It now reaches in three, the third
+being `tb_log.h`. ADR-0001 is intact (that header is vendor-free, host-tested, no RTOS), but the
+invariant was written down, so §7.1 and the ADR-0021 host/target table are amended rather than
+quietly outgrown.
+
+**Alternative considered — an injected `secoc_event_if_t` observer port**, matching the oracle and
+the store. It preserves the two-directions invariant *literally* and is more consistent with the
+module's style. Rejected: it buys an indirection and a NULL check on a per-frame path, plus a third
+port to wire up in two apps, in order to avoid depending on a header that is already as portable as
+`<stdint.h>`. If `shared/secoc` ever needs a second consumer of verdicts (a diagnostic DTC sink is
+the plausible one), the port becomes the right answer and this is where to revisit it.
+
 ## Consequences
 
 - **(+)** The SecOC rejection tests become positive assertions instead of "nothing happened"
@@ -311,6 +362,10 @@ the overflow counter (D5) says the sink cannot keep up.
 - **(−)** `log_evt()` on a hot path still costs a short interrupt-masked region. Bounded and
   measured at bring-up, but it is not free, and a log site added inside a tight loop can still
   hurt. Reviewer's job, not the format's.
+- **(±)** D11 makes `shared/secoc` depend on `shared/log`. Every image containing SecOC must now
+  link `log.c` and a log port — true for both node apps already, and host suites bind the fake.
+  The compensation is real: the drop counters and their events are one statement, and the RX
+  verdict path stopped being two untested copies.
 
 ## Resolved open items
 

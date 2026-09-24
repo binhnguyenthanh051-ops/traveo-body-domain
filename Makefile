@@ -109,6 +109,17 @@ SECOC_RESYNC_TEST := shared/secoc/tests/test_secoc_resync.c
 FRESH_STORE_SRC  := shared/secoc/tests/secoc_freshness_store_fake.c
 FRESH_STORE_TEST := shared/secoc/tests/test_freshness_store.c
 
+# The composed RX verdict seam (ADR-0023 D11): MAC + freshness + accept with the
+# per-reason counters and the LOG_EVT_SECOC_* events emitted together. It is the
+# one secoc suite that links shared/log — that dependency IS the decision, so the
+# link line is where a reviewer sees it.
+SECOC_RX_SRC  := shared/secoc/src/secoc.c shared/secoc/src/secoc_freshness.c \
+                 shared/secoc/src/secoc_rx.c shared/log/src/log.c \
+                 shared/secoc/tests/secoc_mac_fake.c \
+                 shared/secoc/tests/secoc_freshness_store_fake.c \
+                 shared/log/tests/log_port_fake.c
+SECOC_RX_TEST := shared/secoc/tests/test_secoc_rx.c
+
 # --- log (M5): target logging channel (ADR-0023, REQ-LOG-001..014). Structured
 # event records over UART, decoded on the host. log.c is a stub now => this
 # suite is red; it pins the contract before the body exists. The fake port IS
@@ -140,7 +151,7 @@ REPROG_TEST  := node_a_gateway/app/logic/tests/test_reprogram.c
         test_crypto_msg test_ipc_mailbox test_crypto_dispatch test_crypto_keystore \
         test_crypto_verify test_crypto_mac test_prot_region \
         test_secoc test_secoc_freshness test_secoc_resync test_freshness_store \
-        test_log clean lint
+        test_secoc_rx test_log clean lint
 
 test: test_messages test_scheduler test_boot test_boot_secure test_bodyctl test_reprogram \
       test_isotp test_uds_session test_uds_security_access test_uds_download \
@@ -148,7 +159,7 @@ test: test_messages test_scheduler test_boot test_boot_secure test_bodyctl test_
       test_crypto_msg test_ipc_mailbox test_crypto_dispatch test_crypto_keystore \
       test_crypto_verify test_crypto_mac test_prot_region \
       test_secoc test_secoc_freshness test_secoc_resync test_freshness_store \
-      test_log
+      test_secoc_rx test_log
 
 test_messages: $(BUILD)/test_messages
 	@echo "== messages =="
@@ -238,6 +249,10 @@ test_freshness_store: $(BUILD)/test_freshness_store
 	@echo "== freshness_store (persistence port contract / M5) =="
 	@$(BUILD)/test_freshness_store
 
+test_secoc_rx: $(BUILD)/test_secoc_rx
+	@echo "== secoc_rx (RX verdict + SecOC events / M5 Step 7) =="
+	@$(BUILD)/test_secoc_rx
+
 test_log: $(BUILD)/test_log
 	@echo "== log (structured event channel / M5) =="
 	@$(BUILD)/test_log
@@ -267,6 +282,7 @@ lint:
 	         -I shared/messages/include -I shared/hal/include -I scheduler/include \
 	         -I shared/boot/include -I shared/can/include -I shared/diag/include \
 	         -I shared/sysmgr/include -I shared/prot/include -I shared/log/include \
+	         -I shared/secoc/include -I shared/crypto/include \
 	         -I node_a_gateway/app/logic/include -I node_a_gateway/app/include \
 	         $(LINT_SRC)
 	@echo "(MISRA addon: add '--addon=misra.json' once the licensed rule-texts file is in place)"
@@ -289,6 +305,9 @@ $(BUILD)/test_bodyctl: $(BODYCTL_SRC) $(BODYCTL_TEST) $(UNITY_SRC) | $(BUILD)
 
 $(BUILD)/test_reprogram: $(REPROG_SRC) $(REPROG_TEST) $(UNITY_SRC) | $(BUILD)
 	$(CC) $(CFLAGS) $(UNITY_INC) $(BOOT_INC) $(APP_INC) $(UNITY_SRC) $(REPROG_SRC) $(REPROG_TEST) -o $@
+
+$(BUILD)/test_secoc_rx: $(SECOC_RX_SRC) $(SECOC_RX_TEST) $(UNITY_SRC) | $(BUILD)
+	$(CC) $(CFLAGS) $(UNITY_INC) $(SECOC_INC) $(LOG_INC) $(UNITY_SRC) $(SECOC_RX_SRC) $(SECOC_RX_TEST) -o $@
 
 $(BUILD)/test_log: $(LOG_SRC) $(LOG_TEST) $(UNITY_SRC) | $(BUILD)
 	$(CC) $(CFLAGS) $(UNITY_INC) $(LOG_INC) $(UNITY_SRC) $(LOG_SRC) $(LOG_TEST) -o $@

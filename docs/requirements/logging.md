@@ -29,7 +29,7 @@ drift apart.
 | REQ-LOG-006 | Overflow drops the **newest**, counts it, and emits `LOG_EVT_OVERFLOW`; `seq` gaps detect loss independently | D5 | `test_log` |
 | REQ-LOG-007 | A consumer shall treat any overflow within a window as **failing** that window | D5 | `test_bvt_harness` |
 | REQ-LOG-008 | Contract IDs (`< 0x1000`) are assertable and breaking to change; diagnostic IDs are never asserted | D6 | `test_log_events` |
-| REQ-LOG-009 | SecOC accept/reject events emitted with reason + CAN ID, on the verify path | D6 | `test_secoc`, BVT tests 4–6 |
+| REQ-LOG-009 | SecOC accept/reject events emitted with reason + CAN ID, on the verify path | D6, D11 | `test_secoc_rx`, BVT tests 4–6 |
 | REQ-LOG-010 | `log_panic()` bypasses the ring with a blocking, interrupt-free write | D7 | `test_log` |
 | REQ-LOG-011 | Logic host-testable with plain GCC; all hardware behind `log_port_*` | D8 | `test_log` |
 | REQ-LOG-012 | One generated event registry; stale generated files fail CI | D9 | `checks/` + `test_log_events` |
@@ -103,7 +103,17 @@ The SecOC receive path shall emit a contract event for each verdict — accept, 
 freshness failure, resync — carrying the CAN ID and the reason. These events are the observable
 form of the per-reason drop counters already required by **REQ-SECOC-001**; the two shall not
 diverge. Emission shall occur on the verify path itself, after the verdict and before or with
-the drop. *(D6; ADR-0021 D9.)*
+the drop. *(D6, D11; ADR-0021 D9.)*
+
+"Shall not diverge" is met **structurally**, not by review: each counter increment and its event
+are adjacent statements inside `secoc_rx_process()` (ADR-0023 D11), which is the only place either
+exists. Exactly one event shall be emitted per received frame. `LOG_EVT_SECOC_ACCEPT` denotes
+"passed MAC + freshness" — emission precedes `body_decode`, so a later decode failure is a separate
+app-side drop and not an actuation. `LOG_EVT_SECOC_REJECT_MAC.arg1` shall carry the
+`secoc_verify_result_t` sub-reason, so that an **oracle failure is distinguishable from a forgery**:
+a rejection test that cannot tell those apart passes on a dead security core.
+`LOG_EVT_SECOC_RESYNC` is emitted by the **sender** adopting an authenticated floor (ADR-0021 D5) —
+on the gateway, not the actuator — and only when the epoch actually moved.
 
 ### REQ-LOG-010 — the panic path
 `log_panic()` shall bypass the ring and write its record with a blocking, polled, interrupt-free

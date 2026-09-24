@@ -30,10 +30,17 @@
 # passes if the node is dead or was never listening. The reject events are the
 # only positive evidence that the node saw the frame, verified it, and refused
 # it for the right reason (ADR-0023 Context).
-0x0101,LOG_EVT_SECOC_ACCEPT,contract,can_id,freshness_ctr,Secured frame accepted and actuated
-0x0102,LOG_EVT_SECOC_REJECT_MAC,contract,can_id,-,MAC comparison failed -- forged or corrupt frame
+#
+# Emitted from ONE place -- shared/secoc/src/secoc_rx.c (ADR-0023 D11) -- so they cannot
+# diverge from the REQ-SECOC-001 drop counters incremented in the same statement.
+# ACCEPT means "passed MAC + freshness", i.e. the verify path, BEFORE body_decode: a
+# decode failure after it is a separate app-side drop and not an actuation.
+# reject_reason values ARE secoc_verify_result_t (1 bad MAC, 2 bad length, 3 oracle error).
+# Reason 3 matters: a forgery test that goes green because the M0+ was DEAD is a false pass.
+0x0101,LOG_EVT_SECOC_ACCEPT,contract,can_id,freshness_ctr,Secured frame passed MAC + freshness and was released to decode
+0x0102,LOG_EVT_SECOC_REJECT_MAC,contract,can_id,reject_reason,MAC check failed -- forged/corrupt frame (1) bad length (2) or oracle error (3)
 0x0103,LOG_EVT_SECOC_REJECT_FRESHNESS,contract,can_id,rx_ctr,Freshness not ahead of stored -- replay
-0x0104,LOG_EVT_SECOC_RESYNC,contract,can_id,new_epoch,Receiver-reset resync completed (ADR-0021 D5)
+0x0104,LOG_EVT_SECOC_RESYNC,contract,can_id,new_epoch,Receiver-reset resync completed -- sender adopted the floor (ADR-0021 D5)
 
 # --- 0x02xx crypto service -------------------------------------------------
 0x0201,LOG_EVT_CRYPTO_ERROR,contract,op,ipc_status,Crypto op produced ERROR (M0+ dead/timeout/malformed)
