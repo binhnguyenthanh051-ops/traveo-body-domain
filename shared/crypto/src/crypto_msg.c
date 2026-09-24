@@ -155,3 +155,119 @@ bool crypto_parse_verdict(const crypto_msg_t *m, crypto_verdict_t *v)
     *v = (crypto_verdict_t)raw;
     return true;
 }
+
+/* -------------------------------------------------------------------
+ * MAC op framing (ADR-0021 D7 / REQ-SECOC-012).
+ *   request  = key_id(u32 LE) | msg_len(u16 LE) | msg[msg_len]
+ *   response = tag[CRYPTO_CMAC_TAG_LEN]
+ * SecOC-agnostic: opaque bytes in, 16-byte tag out. A malformed reply (wrong op
+ * or short) is rejected so the client can tell a tag from an ERROR verdict.
+ * ----------------------------------------------------------------- */
+static void put_u16le(uint8_t *p, uint16_t v)
+{
+    p[0] = (uint8_t)(v & 0xFFU);
+    p[1] = (uint8_t)((v >> 8) & 0xFFU);
+}
+
+static uint16_t get_u16le(const uint8_t *p)
+{
+    return (uint16_t)((uint16_t)p[0] | (uint16_t)((uint16_t)p[1] << 8));
+}
+
+/* @impl REQ-SECOC-012 : MAC request framing (key_id | len | msg) */
+void crypto_make_mac_request(uint32_t key_id, const uint8_t *msg, uint16_t msg_len,
+                             crypto_msg_t *m)
+{
+    if (m == NULL)
+    {
+        return;
+    }
+
+    /* payload = key_id(4) + msg_len(2) + msg; must fit CRYPTO_MAX_PAYLOAD. On
+     * overflow (or a NULL msg with non-zero length) emit an empty request. */
+    size_t total = (size_t)6U + (size_t)msg_len;
+    if ((total > (size_t)CRYPTO_MAX_PAYLOAD) || ((msg == NULL) && (msg_len != 0U)))
+    {
+        m->op_code = (uint8_t)CRYPTO_OP_MAC;
+        m->length = 0U;
+        payload_zero_from(m, 0U);
+        return;
+    }
+
+    m->op_code = (uint8_t)CRYPTO_OP_MAC;
+    m->length = (uint16_t)total;
+    put_u32le(&m->payload[0], key_id);
+    put_u16le(&m->payload[4], msg_len);
+    for (uint16_t i = 0U; i < msg_len; ++i)
+    {
+        m->payload[(size_t)6U + (size_t)i] = msg[i];
+    }
+    payload_zero_from(m, (uint16_t)total);
+}
+
+/* @impl REQ-SECOC-012 : MAC request parse; *msg points into m->payload */
+bool crypto_parse_mac_request(const crypto_msg_t *m, uint32_t *key_id,
+                              const uint8_t **msg, uint16_t *msg_len)
+{
+    if ((m == NULL) || (key_id == NULL) || (msg == NULL) || (msg_len == NULL))
+    {
+        return false;
+    }
+    if (m->op_code != (uint8_t)CRYPTO_OP_MAC)
+    {
+        return false;
+    }
+    if (m->length < 6U)
+    {
+        return false;
+    }
+
+    uint16_t ml = get_u16le(&m->payload[4]);
+    if ((size_t)ml > ((size_t)m->length - (size_t)6U))
+    {
+        return false;
+    }
+
+    *key_id = get_u32le(&m->payload[0]);
+    *msg = &m->payload[6];
+    *msg_len = ml;
+    return true;
+}
+
+/* @impl REQ-SECOC-012 : MAC response framing (full 16-byte tag) */
+void crypto_make_mac_response(const uint8_t tag[CRYPTO_CMAC_TAG_LEN], crypto_msg_t *m)
+{
+    if ((m == NULL) || (tag == NULL))
+    {
+        return;
+    }
+    m->op_code = (uint8_t)CRYPTO_OP_MAC;
+    m->length = (uint16_t)CRYPTO_CMAC_TAG_LEN;
+    for (uint16_t i = 0U; i < (uint16_t)CRYPTO_CMAC_TAG_LEN; ++i)
+    {
+        m->payload[i] = tag[i];
+    }
+    payload_zero_from(m, (uint16_t)CRYPTO_CMAC_TAG_LEN);
+}
+
+/* @impl REQ-SECOC-012 : MAC response parse; rejects a verdict-length reply */
+bool crypto_parse_mac_response(const crypto_msg_t *m, uint8_t tag[CRYPTO_CMAC_TAG_LEN])
+{
+    if ((m == NULL) || (tag == NULL))
+    {
+        return false;
+    }
+    if (m->op_code != (uint8_t)CRYPTO_OP_MAC)
+    {
+        return false;
+    }
+    if (m->length < (uint16_t)CRYPTO_CMAC_TAG_LEN)
+    {
+        return false;
+    }
+    for (uint16_t i = 0U; i < (uint16_t)CRYPTO_CMAC_TAG_LEN; ++i)
+    {
+        tag[i] = m->payload[i];
+    }
+    return true;
+}

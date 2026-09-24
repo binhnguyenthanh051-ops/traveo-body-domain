@@ -1,8 +1,15 @@
 # M5 node software architecture with SecOC
 
-**Status:** design-complete, pending ADR-0021. Decisions locked this session:
+**Status:** implemented (host CI-green), bench-pending. ADR-0021 **accepted** and realized:
+the host-testable core (frame, freshness, resync, MAC framing, keystore, MAC client) is built and
+passing all five Unity suites; the target seams (both CM0+ MAC handlers + shared secret, the Node B
+CM0+ mailbox server + linker reservation, the CM7 IPC port binding + MPU non-cacheable region, and
+the `secoc_app`/actuator-FSM CAN integration on both nodes) are authored with `@impl` tags and
+awaiting on-silicon bring-up. Decisions locked this session and carried into ADR-0021:
 **D3 = per-ID freshness counter**, **D5 = receiver-reset resync included in M5**,
-**D7 = telemetry authenticated + symmetric-key handling both owned by ADR-0021**.
+**D7 = telemetry authenticated + symmetric-key handling both owned by ADR-0021**; plus the ADR-0021
+strengthenings **Data-ID-in-MAC** (cross-ID substitution fix), **counter-rollover epoch-bump**, and
+the stated **u16-epoch** limitation. Full status: ADR-0021 Review history.
 
 > This document shows **how SecOC integrates with the existing modules** (CAN, UDS/ISO-TP, crypto
 > service, FreeRTOS, boot) on each node, the **node hardware asymmetry** (Node B is a different

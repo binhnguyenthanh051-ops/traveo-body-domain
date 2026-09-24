@@ -23,6 +23,14 @@
 #define CRYPTO_VERIFY_TIMEOUT_MS   1000U
 #endif
 
+/* MAC round-trip timeout (ADR-0021 D7). Much tighter than the boot verify: this
+ * is the runtime control path, and the op is a CMAC over ~a dozen bytes, so the
+ * cost is the IPC hop, not the crypto. Bench-tunable against the control budget
+ * (secoc-architecture §8.4). */
+#ifndef CRYPTO_MAC_TIMEOUT_MS
+#define CRYPTO_MAC_TIMEOUT_MS      10U
+#endif
+
 /* Bind the transport port (composition root). */
 void crypto_service_init(const ipc_port_if_t *port);
 
@@ -30,5 +38,14 @@ void crypto_service_init(const ipc_port_if_t *port);
  * (hash + signature, two-stage on the M0+ side — ADR-0016 D2). Returns the
  * verdict; any transport failure ⇒ CRYPTO_VERDICT_ERROR (⇒ fail-safe). */
 crypto_verdict_t crypto_verify_image(uint32_t base, uint32_t len, uint32_t key_id);
+
+/* Ask the M0+ to AES-CMAC `msg` under key_id, writing the full 16-byte tag on
+ * success (ADR-0021 D7). Returns false on ANY failure — no port, unencodable
+ * request, transport busy/timeout/malformed, or an M0+ error reply (unknown
+ * key_id ⇒ a verdict, not a tag) — so the SecOC caller drops the frame
+ * (fail-safe, REQ-SECOC-001/010). The signature matches secoc_mac_if_t.mac, so
+ * the app binds this directly as the SecOC oracle. */
+bool crypto_mac(uint32_t key_id, const uint8_t *msg, size_t msg_len,
+                uint8_t tag[CRYPTO_CMAC_TAG_LEN]);
 
 #endif /* CRYPTO_SERVICE_H */

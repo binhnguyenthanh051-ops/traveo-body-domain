@@ -19,10 +19,14 @@
 typedef enum {
     CRYPTO_OP_NONE         = 0x00,
     CRYPTO_OP_HASH         = 0x01,   /* SHA-256 over a range */
-    CRYPTO_OP_VERIFY_IMAGE = 0x02    /* hash + signature over a flash range (ADR-0017 D1) */
-    /* CRYPTO_OP_MAC       = 0x03 — RESERVED for M5 SecOC (ADR-0017 D3).
-     * Deliberately not defined/built now; an incoming 0x03 must dispatch to
-     * an ERROR verdict, not be silently accepted — see test_crypto_dispatch. */
+    CRYPTO_OP_VERIFY_IMAGE = 0x02,   /* hash + signature over a flash range (ADR-0017 D1) */
+    CRYPTO_OP_MAC          = 0x03    /* AES-CMAC over opaque bytes -> 16 B tag (ADR-0021 D7).
+                                      * SecOC-agnostic: freshness/Data-ID/truncation are the
+                                      * caller's concern (shared/secoc). An unknown key_id or a
+                                      * malformed request still yields an ERROR verdict, never a
+                                      * tag — the dispatcher only runs a handler that is REGISTERED
+                                      * (see test_crypto_dispatch: a table without the MAC row keeps
+                                      * answering 0x03 with ERROR). */
 } crypto_op_t;
 
 /* -------------------------------------------------------------------
@@ -60,6 +64,12 @@ typedef enum {
  * CY_CRYPTO_SHA256_DIGEST_SIZE (32). Kept here so host-side/portable code
  * needs no vendor header. */
 #define CRYPTO_SHA256_DIGEST_LEN   32U
+
+/* Full AES-CMAC tag length, protocol-level (the MAC response payload size). The
+ * target back end must agree — it equals the PDL's CY_CRYPTO_AES_BLOCK_SIZE (16).
+ * SecOC truncates this to 8 B on the wire (ADR-0021 D1); truncation lives in
+ * shared/secoc, not here — this op returns the full tag. */
+#define CRYPTO_CMAC_TAG_LEN        16U
 
 /* Wire size of an encoded envelope with a full payload. */
 #define CRYPTO_MSG_HDR_SIZE  3U     /* op_code (1) + length (2, little-endian) */
