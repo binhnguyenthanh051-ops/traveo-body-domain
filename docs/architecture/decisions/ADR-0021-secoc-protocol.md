@@ -214,6 +214,7 @@ map to drop (ADR-0017 verdict semantics).
 | Host-testable core (GCC + Unity) | Target-only (behind ports) |
 |---|---|
 | frame pack/unpack + Data-ID MAC-input assembly (D2) | HW AES-CMAC back end on the M0+ (D1) |
+| composed RX verdict + per-reason counters + `LOG_EVT_SECOC_*` emission (`secoc_rx.c`, ADR-0023 D11) | the UART sink behind `log_port_*` (ADR-0023 D8) |
 | truncation + constant-time compare (D1) | the **secret key bytes** in the M0+ image (D6) |
 | freshness gen + accept rule + rollover + adopt (D3/D4) | `secoc_freshness_store` `eeprom_emu` backing (D8, M6) |
 | resync floor logic (D5) | Node B mailbox cache attribute (ADR-0018 D6) |

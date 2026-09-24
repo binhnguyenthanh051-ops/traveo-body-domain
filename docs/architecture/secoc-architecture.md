@@ -260,9 +260,16 @@ SecOC is a **filter keyed by a per-ID config flag** (config over `#ifdef`, ADR-0
 - **RX (verify):** `secoc_verify()` checks the trailing freshness + MAC and strips them → only then
   `body_decode()` / `unpack_*` runs. A failed verify never reaches decode/actuation.
 
-`shared/secoc` reaches in exactly **two** directions (enforced by the `secoc_core` rule in
-`checks/rules.yml`): **`crypto_mac()`** (down to the M0+) and the **`secoc_freshness_store_if_t`
-port**. It never touches CAN transport symbols, the raw mailbox, or `eeprom_emu`.
+The composed RX verdict — verify → freshness check → accept, with the per-reason drop counters and
+the `LOG_EVT_SECOC_*` events emitted from the same place — lives in **`shared/secoc/src/secoc_rx.c`**
+(ADR-0023 **D11**), not in each node's app glue. `body_decode()` and its own drop counter stay in the
+app, where the message IDs live.
+
+`shared/secoc` reaches in exactly **three** directions (enforced by the `secoc_core` rule in
+`checks/rules.yml`): **`crypto_mac()`** (down to the M0+), the **`secoc_freshness_store_if_t`
+port**, and **`tb_log.h`** (vendor-free and host-tested, so ADR-0001 holds — added by ADR-0023 D11,
+which explains why the alternative injected observer port was rejected). It never touches CAN
+transport symbols, the raw mailbox, or `eeprom_emu`.
 
 ### 7.2 Secured frame layout (single CAN FD frame)
 
@@ -384,7 +391,9 @@ The M4→M7 change touches **only** the right column — the entire left column 
 - `@impl`/`@test` tags link code/tests to those IDs; design-only items (Node B secure boot,
   provisioning lifecycle, latency) are `@design-only`.
 - Layer rule: a `secoc_core` entry in `checks/rules.yml` forbids `shared/secoc/**` from referencing
-  `ipc_transact`, `crypto_dispatch`, `Cy_CANFD*`, `eeprom_*`, or FreeRTOS symbols.
+  `ipc_transact`, `crypto_dispatch`, `Cy_CANFD*`, `eeprom_*`, or FreeRTOS symbols. `tb_log.h` is
+  permitted (ADR-0023 D11) — it is host-testable and vendor-free; `log_port.h` is not, since the
+  port is the image's to bind, not SecOC's to reach for.
 - ADR-0018 **D6** (written): MPU-scoped non-cacheable mailbox on Node B; D-cache stays on for all
   other SRAM (§6.1).
 ```
