@@ -321,6 +321,25 @@ SECTIONS
 
     __noncache_ramdata_lma_start__ = __etext + __data_end__ - __data_start__;
 
+    /* SecOC cross-core mailbox (ADR-0018 D5/D6; node_b_actuator/ipc/include/
+     * ipc_mailbox_map.h). A fixed-address slot at the BASE of the non-cacheable
+     * window, so this image and the CM0+ image agree on its address and it is
+     * coherent between the cached CM7 and the CM0+ WITHOUT per-transaction cache
+     * maintenance (D6). NOLOAD: it is shared scratch, never initialised from
+     * flash (like .noinit). Kept FIRST in ram_noncache, so
+     * Cy_SecOc_IpcMailbox == ORIGIN(ram_noncache) == _base_SRAM_NON_CACHE.
+     * 0x100 bytes reserved >= sizeof(ipc_mailbox_shared_t) (=136).
+     * VERIFY (bench): the CM7 MPU actually marks ram_noncache non-cacheable at
+     * startup, and the CM0+ linker's Cy_SecOc_IpcMailbox resolves to this same
+     * address. */
+    .secoc_ipc_mailbox (NOLOAD) :
+    {
+        . = ALIGN(32);
+        Cy_SecOc_IpcMailbox = .;
+        . = . + 0x100;
+        . = ALIGN(32);
+    } > ram_noncache
+
     .ram_noncache :
     {
         . = ALIGN(32);

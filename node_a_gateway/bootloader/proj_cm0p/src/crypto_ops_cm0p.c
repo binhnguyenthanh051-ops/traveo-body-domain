@@ -20,6 +20,7 @@
 #include "crypto_msg.h"
 #include "crypto_types.h"
 #include "crypto_pubkey_dev.h"   /* crypto_pubkey_dev[64], CRYPTO_DEV_KEY_ID */
+#include "secoc_shared_secret.h" /* secoc_shared_secret[16], SECOC_MAC_KEY_ID (ADR-0021 D6) */
 #include "cy_pdl.h"              /* CRYPTO base, Cy_Crypto_Core_* */
 #include <string.h>
 
@@ -148,16 +149,84 @@ static bool verify_handler(const crypto_msg_t *req, crypto_msg_t *resp)
 }
 
 /* -------------------------------------------------------------------
+ * CRYPTO_OP_MAC — AES-CMAC over opaque bytes (M5 SecOC, ADR-0021 D7)
+ *
+ * SecOC-agnostic: the M0+ MACs the bytes it is handed (DataID∥freshness∥PDU,
+ * assembled by shared/secoc on the app side) and returns the full 16-byte tag.
+ * Truncation to 8 B and the constant-time compare live in shared/secoc, not
+ * here. An unknown/typemismatched key_id returns an ERROR VERDICT, never a tag,
+ * so the client (crypto_mac) drops the frame (REQ-SECOC-010).
+ *
+ * @impl ADR-0021 D7 : CRYPTO_OP_MAC handler (server side)
+ * ----------------------------------------------------------------- */
+static bool cmac_compute(const uint8_t *key, const uint8_t *msg, uint16_t len,
+                         uint8_t tag[CRYPTO_CMAC_TAG_LEN])
+{
+    /* Vetted PDL CMAC (ADR-0006 — no hand-rolled subkey/padding). One-shot form;
+     * aes_state is the required scratch workspace. AES-CMAC is byte-oriented, so
+     * — unlike the ECDSA path (S3-2) — key/message/tag need NO endianness
+     * reversal. VERIFY at bring-up (ADR-0021 D1): the exact prototype / whether
+     * an explicit Cy_Crypto_Core_Aes_Init is needed is mtb-pdl-cat1-version-
+     * specific, and correctness is proven against the NIST SP 800-38B KAT. */
+    cy_stc_crypto_aes_state_t aes_state;
+    (void)memset(&aes_state, 0, sizeof aes_state);
+
+    cy_en_crypto_status_t st = Cy_Crypto_Core_Cmac(CRYPTO, msg, (uint32_t)len, key,
+                                                   CY_CRYPTO_KEY_AES_128,
+                                                   tag, &aes_state);
+    return (st == CY_CRYPTO_SUCCESS);
+}
+
+static bool mac_handler(const crypto_msg_t *req, crypto_msg_t *resp)
+{
+    uint32_t       key_id  = 0U;
+    const uint8_t *msg     = NULL;
+    uint16_t       msg_len = 0U;
+
+    if (!crypto_parse_mac_request(req, &key_id, &msg, &msg_len))
+    {
+        crypto_make_verdict(CRYPTO_OP_MAC, CRYPTO_VERDICT_ERROR, resp);
+        return true;
+    }
+
+    const crypto_key_entry_t *k = crypto_keystore_lookup(key_id);
+    if ((k == NULL) || (k->type != CRYPTO_KEY_AES_SECRET) ||
+        (k->secret == NULL) || (k->secret_len != SECOC_AES128_KEY_BYTES))
+    {
+        /* unknown / wrong-type key_id -> ERROR verdict, never a tag (REQ-SECOC-010) */
+        crypto_make_verdict(CRYPTO_OP_MAC, CRYPTO_VERDICT_ERROR, resp);
+        return true;
+    }
+
+    uint8_t tag[CRYPTO_CMAC_TAG_LEN];
+    if (!cmac_compute(k->secret, msg, msg_len, tag))
+    {
+        crypto_make_verdict(CRYPTO_OP_MAC, CRYPTO_VERDICT_ERROR, resp);
+        return true;
+    }
+
+    crypto_make_mac_response(tag, resp);
+    return true;   /* always answers (a tag, or a verdict) */
+}
+
+/* -------------------------------------------------------------------
  * Table + init
  * ----------------------------------------------------------------- */
 static const crypto_handler_if_t g_handlers[] = {
     { CRYPTO_OP_HASH,         hash_handler },
-    { CRYPTO_OP_VERIFY_IMAGE, verify_handler }
+    { CRYPTO_OP_VERIFY_IMAGE, verify_handler },
+    { CRYPTO_OP_MAC,          mac_handler }      /* ★ M5 SecOC (ADR-0021 D7) */
 };
 
-/* One-row keystore (ADR-0019 D3): the dev key compiled into this image. */
+/* Keystore (ADR-0019 D3): the ECDSA verify key AND the M5 AES-CMAC secret.
+ * Unknown key_id => lookup NULL => fail (never key 0).
+ * @impl ADR-0021 D6 : shared AES secret held only in the M0+ image
+ * @impl REQ-SECOC-011 : app never holds key bytes; secret resides in this image */
 static const crypto_key_entry_t g_keys[] = {
-    { CRYPTO_DEV_KEY_ID, crypto_pubkey_dev, sizeof crypto_pubkey_dev }
+    { .key_id = CRYPTO_DEV_KEY_ID, .pubkey = crypto_pubkey_dev,
+      .pubkey_len = sizeof crypto_pubkey_dev },  /* .type defaults to ECDSA_PUBLIC */
+    { .key_id = SECOC_MAC_KEY_ID, .type = CRYPTO_KEY_AES_SECRET,
+      .secret = secoc_shared_secret, .secret_len = SECOC_AES128_KEY_BYTES }
 };
 
 void cm0p_crypto_service_init(void)

@@ -1,0 +1,481 @@
+<title>Traveo Portfolio Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --ground: #F2F5F3;
+    --surface: #FFFFFF;
+    --ink: #15201B;
+    --muted: #5B6A64;
+    --line: #D9E1DC;
+    --accent: #1D6B49;
+    --accent-soft: #E1EFE7;
+    --bench: #B97A06;
+    --bench-soft: #FBF0D9;
+    --off: #8A9791;
+    --today: #1D6B49;
+    --font-display: "IBM Plex Sans Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+    --font-body: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --ground: #0E1412;
+      --surface: #16201C;
+      --ink: #E3ECE7;
+      --muted: #93A39C;
+      --line: #2A3732;
+      --accent: #5CC49A;
+      --accent-soft: #1B3328;
+      --bench: #E6AE45;
+      --bench-soft: #33280F;
+      --off: #6F7E77;
+      --today: #5CC49A;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --ground: #0E1412;
+    --surface: #16201C;
+    --ink: #E3ECE7;
+    --muted: #93A39C;
+    --line: #2A3732;
+    --accent: #5CC49A;
+    --accent-soft: #1B3328;
+    --bench: #E6AE45;
+    --bench-soft: #33280F;
+    --off: #6F7E77;
+    --today: #5CC49A;
+  }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .wrap {
+    max-width: 960px;
+    margin: 0 auto;
+    padding-inline: 16px;
+    padding-block: 28px 48px;
+    display: grid;
+    gap: 36px;
+  }
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    line-height: 1.15;
+    text-wrap: balance;
+    margin: 0;
+  }
+  h1 { font-size: 30px; letter-spacing: -0.01em; }
+  h2 { font-size: 20px; }
+  h3 { font-size: 16px; }
+  p { margin: 0; }
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    background: var(--accent-soft);
+    padding: 1px 5px;
+    border-radius: 4px;
+    overflow-wrap: anywhere;
+  }
+  .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  section { display: grid; gap: 14px; }
+  .section-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
+
+  /* ---- header + summary strip ---- */
+  header { display: grid; gap: 8px; }
+  header .sub { color: var(--muted); max-width: 62ch; }
+  .strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 14px 16px;
+    display: grid;
+    gap: 4px;
+    align-content: start;
+  }
+  .stat .big {
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat .note { color: var(--muted); font-size: 13px; }
+  .stat.lead { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+
+  /* ---- chips ---- */
+  .chip {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 999px;
+    border: 1px solid currentColor;
+    white-space: nowrap;
+  }
+  .chip.bench { color: var(--bench); background: var(--bench-soft); }
+  .chip.off { color: var(--off); }
+  .chip.retro { color: var(--accent); background: var(--accent-soft); }
+  .chip.work { color: var(--muted); }
+  .chip.now { color: var(--today); }
+
+  /* ---- this week ---- */
+  .days { display: grid; gap: 8px; }
+  .day {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: grid;
+    grid-template-columns: 92px 1fr;
+    gap: 4px 14px;
+  }
+  .day .when { display: grid; gap: 4px; align-content: start; }
+  .day .date { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+  .day .dname { font-family: var(--font-display); font-weight: 600; font-size: 17px; }
+  .day .body { display: grid; gap: 6px; min-width: 0; }
+  .day .meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .day .low { color: var(--muted); font-size: 13.5px; }
+  .day .low b { font-weight: 600; color: var(--ink); }
+  .day.is-off { background: transparent; border-style: dashed; }
+  .day.is-off .body { color: var(--muted); }
+  .day.is-bench { border-color: color-mix(in srgb, var(--bench) 45%, var(--line)); }
+  .day.is-today { border-color: var(--today); box-shadow: 0 0 0 1px var(--today); }
+  .day.is-past { opacity: 0.62; }
+  @media (max-width: 520px) {
+    .day { grid-template-columns: 1fr; }
+    .day .when { display: flex; gap: 10px; align-items: baseline; }
+  }
+
+  .checklist {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 14px 16px;
+    display: grid;
+    gap: 10px;
+  }
+  .checklist ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .checklist li { display: grid; grid-template-columns: 20px 1fr; gap: 8px; }
+  .checklist .box {
+    width: 14px; height: 14px; margin-top: 4px;
+    border: 1.5px solid var(--bench); border-radius: 3px;
+  }
+  .checklist .goal { color: var(--muted); font-size: 13.5px; }
+
+  /* ---- calendar ---- */
+  .table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+  table { width: 100%; border-collapse: collapse; min-width: 760px; font-size: 14px; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  th { font-family: var(--font-mono); font-size: 11.5px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.wk { font-family: var(--font-mono); font-weight: 500; white-space: nowrap; }
+  td.dates { font-family: var(--font-mono); font-size: 13px; color: var(--muted); white-space: nowrap; }
+  td.benchcell.has { color: var(--bench); }
+  td.benchcell.none { color: var(--off); font-style: italic; }
+  td.deliv { font-weight: 600; }
+  tr.is-current td { background: var(--accent-soft); }
+  tr.is-past td { color: var(--muted); }
+  tr.is-milestone td.deliv { color: var(--accent); }
+  .buffer-note { color: var(--muted); font-size: 13.5px; max-width: 70ch; }
+
+  /* ---- later + rules ---- */
+  .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+  ol.rules, ul.plain { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+  ol.rules li::marker { font-family: var(--font-mono); color: var(--muted); }
+  .rhythm { display: grid; gap: 6px; }
+  .rhythm div { display: grid; grid-template-columns: 70px 64px 1fr; gap: 10px; align-items: baseline; }
+  .rhythm .d { font-family: var(--font-mono); font-weight: 500; }
+  .rhythm .h { font-family: var(--font-mono); color: var(--muted); font-size: 13px; }
+
+  footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); padding-top: 14px; display: grid; gap: 4px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Automotive embedded architect portfolio · TRAVEO™ T2G</span>
+    <h1>Traveo Portfolio Board</h1>
+    <p class="sub" id="sub"></p>
+  </header>
+
+  <div class="strip" id="strip"></div>
+
+  <section aria-labelledby="week-title">
+    <div class="section-head">
+      <span class="eyebrow" id="week-code"></span>
+      <h2 id="week-title"></h2>
+    </div>
+    <div class="days" id="days"></div>
+    <div class="checklist" id="checklist"></div>
+  </section>
+
+  <section aria-labelledby="cal-title">
+    <div class="section-head">
+      <span class="eyebrow">Calendar</span>
+      <h2 id="cal-title">To December 6</h2>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Week</th><th>Dates</th><th>Weekdays — no hardware</th><th>Saturday bench</th><th>Delivery</th></tr>
+        </thead>
+        <tbody id="cal"></tbody>
+      </table>
+    </div>
+    <p class="buffer-note" id="buffer-note"></p>
+  </section>
+
+  <div class="two">
+    <section aria-labelledby="later-title">
+      <div class="section-head"><span class="eyebrow">Dec – Feb</span><h2 id="later-title">M6-lite, while applying</h2></div>
+      <ul class="plain" id="later"></ul>
+    </section>
+    <section aria-labelledby="rhythm-title">
+      <div class="section-head"><span class="eyebrow">Every week</span><h2 id="rhythm-title">The rhythm</h2></div>
+      <div class="rhythm" id="rhythm"></div>
+    </section>
+  </div>
+
+  <section aria-labelledby="rules-title">
+    <div class="section-head"><span class="eyebrow">Agreed 2026-09-23</span><h2 id="rules-title">Rules</h2></div>
+    <ol class="rules" id="rules"></ol>
+  </section>
+
+  <footer id="footer"></footer>
+</div>
+
+<!-- BOARD DATA — the only block the Sunday retro task edits. Source of truth: docs/project/ in the repo. -->
+<script id="board-data" type="application/json">
+{
+  "rebuilt": "2026-09-23",
+  "source": "docs/project/plan.md + docs/project/weeks/2026-W39.md",
+  "readyToApply": "2026-10-25",
+  "jobSearch": "2026-12-01",
+  "subtitle": "Re-planned after a month-long break. Ready to apply by Oct 25; the bench makes the portfolio stronger but never delays the job search (Dec 2026 – Feb 2027).",
+  "week": {
+    "code": "W39 · Sep 23–27",
+    "title": "Get going again, gently",
+    "delivery": "Clean repo — the ~2 months of M5 work committed, the plan in the repo",
+    "budget": "~6 h",
+    "days": [
+      { "date": "2026-09-23", "kind": "work",  "hours": "1 h", "task": "Agree the plan (`docs/project/plan.md`) and choose how to track it in Claude.", "low": "Done in the planning session." },
+      { "date": "2026-09-24", "kind": "work",  "hours": "1 h", "task": "Review the proposed commit split for the M5 pile; Claude commits. Decide on the register dumps and `capture.bin`. Claude updates `docs/roadmap.md` and moves the cuts into `docs/future-ideas.md`.", "low": "Approve the split only; the roadmap waits for Sunday." },
+      { "date": "2026-09-25", "kind": "off",   "hours": "—",   "task": "Off.", "low": "" },
+      { "date": "2026-09-26", "kind": "bench", "hours": "≤ 2 h", "task": "Bench smoke test — both kits flash, boot and log after five weeks away. Stop at 2 h whatever the state.", "low": "Just the two firmware builds." },
+      { "date": "2026-09-27", "kind": "retro", "hours": "1.5 h", "task": "10:00 — Retrospective #1 · plan W40 day by day · review the roadmap edits.", "low": "Retro only; plan W40 on Monday." }
+    ],
+    "checklist": {
+      "title": "Saturday checklist — bench smoke test",
+      "goal": "Prove the bench still works after five weeks, not make progress on SecOC.",
+      "items": [
+        "Build the Node A app and Node B CM7 from the committed tree. First ModusToolbox build of the Step 7 code (`secoc_rx.c`) — a compile or link error is the likeliest failure; note it and stop.",
+        "Node A: `./zz_build_gateway_app.sh program` → logview shows the banner, `LOG_EVT_BOOT`, then `LOG_EVT_APP_ALIVE`.",
+        "Node B: program CM0+ and CM7 → heartbeat LED blinks; logview shows the banner, `LOG_EVT_BOOT`, `LOG_EVT_APP_ALIVE` every 5 s.",
+        "Expect zero SecOC events on Node B — Phase A loopback sends `0x123`, not a command ID. Zero is correct.",
+        "Save both captures, write three lines in the retro, commit."
+      ]
+    }
+  },
+  "calendar": [
+    { "w": "W39", "start": "2026-09-21", "end": "2026-09-27", "focus": "Commit the M5 pile; plan + roadmap in repo", "bench": "Smoke test: both kits flash, boot and log", "delivery": "Clean repo + plan" },
+    { "w": "W40", "start": "2026-09-28", "end": "2026-10-04", "focus": "README → 2-minute “start here”", "bench": "", "delivery": "README v1" },
+    { "w": "W41", "start": "2026-10-05", "end": "2026-10-11", "focus": "Draft the M5a post (SecOC design, proven by host tests)", "bench": "Stage 2: AES-CMAC known-answer test on each CM0+", "delivery": "" },
+    { "w": "W42", "start": "2026-10-12", "end": "2026-10-18", "focus": "Finish + publish the M5a post", "bench": "Stage 3.1–3.2: Node B dual-core boot + loopback", "delivery": "M5a post" },
+    { "w": "W43", "start": "2026-10-19", "end": "2026-10-25", "focus": "RX bring-up shim; series index post; README final", "bench": "Stage 3.3–3.4 + shim: every receive verdict on the UART", "delivery": "Ready to apply", "milestone": true },
+    { "w": "W44", "start": "2026-10-26", "end": "2026-11-01", "focus": "Write up the single-node capture", "bench": "Stage 4: cross-node key agreement", "delivery": "M5b log capture" },
+    { "w": "W45", "start": "2026-11-02", "end": "2026-11-08", "focus": "Bus prep: transceiver EN pin, loopback-off builds, VN1610 config, termination", "bench": "Stage 5: real bus, happy path end to end", "delivery": "" },
+    { "w": "W46", "start": "2026-11-09", "end": "2026-11-15", "focus": "M5b post (CM7 bring-up + cache / non-cacheable mailbox)", "bench": "Stage 6: forgery + replay demos with the VN1610", "delivery": "M5b post" },
+    { "w": "W47", "start": "2026-11-16", "end": "2026-11-22", "focus": "Prepare the demo-capture checklist", "bench": "Stage 7: resync; capture the demo traces", "delivery": "" },
+    { "w": "W48", "start": "2026-11-23", "end": "2026-11-29", "focus": "Draft the M5 demo post", "bench": "Buffer — reserve bench day", "delivery": "Tag m5", "buffer": true },
+    { "w": "W49", "start": "2026-11-30", "end": "2026-12-06", "focus": "Publish the demo post; “10 decisions I can defend” cheat-sheet", "bench": "Buffer", "delivery": "M5 demo post", "buffer": true }
+  ],
+  "bufferNote": "W48–W49 Saturdays are reserve bench days. If a stage slips, it moves there — never into a weekday.",
+  "later": [
+    "Threat-model essay — safety + security as one defensive story (EP.21 + EP.24 merged).",
+    "Capstone retrospective (EP.26) — what I'd do differently; the overview as centrepiece.",
+    "Optional, only with spare energy: watchdog + safe-state hands-on (EP.22)."
+  ],
+  "rhythm": [
+    { "d": "Mon–Thu", "h": "~1 h", "what": "Code, host tests, firmware builds, docs, writing. No board." },
+    { "d": "Fri", "h": "—", "what": "Off." },
+    { "d": "Sat", "h": "3–4 h", "what": "Bench session, from a checklist prepared Mon–Thu." },
+    { "d": "Sun", "h": "~1.5 h", "what": "10:00 retrospective + next week's day-by-day plan." }
+  ],
+  "rules": [
+    "No hardware on weekdays — boards only on the weekend.",
+    "Plan every week, day by day, at the Sunday retro. Only the coming week is planned per day.",
+    "One small delivery or blog every 1–2 weeks.",
+    "Retrospective every Sunday at 10:00.",
+    "Budget ~12 h/week; 15–20 is upside.",
+    "Every weekday has a low-energy option. Skipping is data, not failure — write it down.",
+    "No new detours before Dec 6. A new idea gets one line in `docs/future-ideas.md`.",
+    "Commit at the end of every session, even work in progress.",
+    "ADR/REQ ceremony only for decisions that will appear in a post."
+  ]
+}
+</script>
+
+<script>
+(function () {
+  var data;
+  try { data = JSON.parse(document.getElementById('board-data').textContent); }
+  catch (e) { document.getElementById('sub').textContent = 'Board data could not be read.'; return; }
+
+  var DAY = 86400000;
+  function parseDate(s) { var p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  var now = new Date();
+  var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  function daysUntil(s) { return Math.round((parseDate(s) - today) / DAY); }
+  var WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  var MO = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+  /* Render `backtick` spans as <code>, everything else as plain text. */
+  function rich(tag, cls, text) {
+    var n = el(tag, cls);
+    String(text).split('`').forEach(function (part, i) {
+      if (!part) return;
+      n.appendChild(i % 2 ? el('code', null, part) : document.createTextNode(part));
+    });
+    return n;
+  }
+  function chip(kind, label) { return el('span', 'chip ' + kind, label); }
+
+  document.getElementById('sub').textContent = data.subtitle;
+
+  /* ---- summary strip ---- */
+  var strip = document.getElementById('strip');
+  function stat(label, big, note, lead) {
+    var s = el('div', 'stat' + (lead ? ' lead' : ''));
+    s.appendChild(el('span', 'eyebrow', label));
+    s.appendChild(el('span', 'big', big));
+    if (note) s.appendChild(rich('span', 'note', note));
+    strip.appendChild(s);
+  }
+  function countdown(dateStr) {
+    var n = daysUntil(dateStr);
+    if (n > 1) return n + ' days';
+    if (n === 1) return 'Tomorrow';
+    if (n === 0) return 'Today';
+    return 'Passed';
+  }
+  var rd = parseDate(data.readyToApply), js = parseDate(data.jobSearch);
+  stat('This week delivers', data.week.code.split(' ')[0], data.week.delivery, true);
+  stat('Ready to apply', countdown(data.readyToApply), WD[rd.getDay()] + ' ' + MO[rd.getMonth()] + ' ' + rd.getDate() + ' — README, index post, M5a post live');
+  stat('Job search opens', countdown(data.jobSearch), MO[js.getMonth()] + ' ' + js.getDate() + ' · window runs to Feb 2027');
+
+  /* ---- this week ---- */
+  document.getElementById('week-code').textContent = data.week.code + ' · budget ' + data.week.budget;
+  document.getElementById('week-title').textContent = data.week.title;
+  var days = document.getElementById('days');
+  var KIND = { bench: ['bench', 'Bench'], off: ['off', 'Off'], retro: ['retro', 'Retro'], work: ['work', 'No board'] };
+  data.week.days.forEach(function (d) {
+    var dt = parseDate(d.date);
+    var diff = Math.round((dt - today) / DAY);
+    var row = el('article', 'day is-' + d.kind + (diff === 0 ? ' is-today' : '') + (diff < 0 ? ' is-past' : ''));
+    var when = el('div', 'when');
+    when.appendChild(el('span', 'dname', WD[dt.getDay()]));
+    when.appendChild(el('span', 'date', MO[dt.getMonth()] + ' ' + dt.getDate()));
+    row.appendChild(when);
+    var body = el('div', 'body');
+    var meta = el('div', 'meta');
+    var k = KIND[d.kind] || KIND.work;
+    meta.appendChild(chip(k[0], k[1]));
+    if (d.hours && d.hours !== '—') meta.appendChild(el('span', 'mono date', d.hours));
+    if (diff === 0) meta.appendChild(chip('now', 'Today'));
+    body.appendChild(meta);
+    body.appendChild(rich('p', null, d.task));
+    if (d.low) {
+      var low = el('p', 'low');
+      low.appendChild(el('b', null, 'Low energy: '));
+      low.appendChild(rich('span', null, d.low));
+      body.appendChild(low);
+    }
+    row.appendChild(body);
+    days.appendChild(row);
+  });
+
+  var cl = document.getElementById('checklist');
+  if (data.week.checklist) {
+    cl.appendChild(el('h3', null, data.week.checklist.title));
+    cl.appendChild(el('p', 'goal', data.week.checklist.goal));
+    var ul = el('ul');
+    data.week.checklist.items.forEach(function (t) {
+      var li = el('li');
+      li.appendChild(el('span', 'box'));
+      li.appendChild(rich('span', null, t));
+      ul.appendChild(li);
+    });
+    cl.appendChild(ul);
+  } else { cl.hidden = true; }
+
+  /* ---- calendar ---- */
+  var cal = document.getElementById('cal');
+  function fmtRange(a, b) {
+    var x = parseDate(a), y = parseDate(b);
+    return MO[x.getMonth()] + ' ' + x.getDate() + '–' + (x.getMonth() === y.getMonth() ? '' : MO[y.getMonth()] + ' ') + y.getDate();
+  }
+  data.calendar.forEach(function (w) {
+    var s = parseDate(w.start), e = parseDate(w.end);
+    var cls = [];
+    if (today >= s && today <= e) cls.push('is-current');
+    else if (today > e) cls.push('is-past');
+    if (w.milestone) cls.push('is-milestone');
+    var tr = el('tr', cls.join(' '));
+    tr.appendChild(el('td', 'wk', w.w));
+    tr.appendChild(el('td', 'dates', fmtRange(w.start, w.end)));
+    tr.appendChild(rich('td', null, w.focus));
+    tr.appendChild(el('td', 'benchcell ' + (w.bench ? 'has' : 'none'), w.bench || 'Rest'));
+    var dc = el('td', 'deliv');
+    if (w.delivery) dc.textContent = (w.milestone ? '✓ ' : '') + w.delivery;
+    else { dc.textContent = '—'; dc.style.color = 'var(--off)'; dc.style.fontWeight = '400'; }
+    tr.appendChild(dc);
+    cal.appendChild(tr);
+  });
+  document.getElementById('buffer-note').textContent = data.bufferNote;
+
+  /* ---- later, rhythm, rules ---- */
+  var later = document.getElementById('later');
+  data.later.forEach(function (t) { later.appendChild(rich('li', null, t)); });
+  var rh = document.getElementById('rhythm');
+  data.rhythm.forEach(function (r) {
+    var d = el('div');
+    d.appendChild(el('span', 'd', r.d));
+    d.appendChild(el('span', 'h', r.h));
+    d.appendChild(el('span', null, r.what));
+    rh.appendChild(d);
+  });
+  var rules = document.getElementById('rules');
+  data.rules.forEach(function (t) { rules.appendChild(rich('li', null, t)); });
+
+  var f = document.getElementById('footer');
+  f.appendChild(rich('span', null, 'Source of truth: `' + data.source + '` in the repo. This page is a view of it.'));
+  f.appendChild(el('span', null, 'Rebuilt ' + data.rebuilt + ' · rebuilt every Sunday at 10:00 by the retro task.'));
+})();
+</script>

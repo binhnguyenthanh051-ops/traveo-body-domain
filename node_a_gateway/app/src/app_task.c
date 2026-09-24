@@ -16,6 +16,7 @@
 #include "bodyctl.h"
 #include "reprogram.h"
 #include "body_msgs.h"
+#include "secoc_app.h"   /* secured command TX (M5 seam 3) */
 #include "cy_pdl.h"   /* Cy_GPIO_* */
 
 #define APP_STACK_WORDS     192U   /* used ~34 words (g_hw_app) + margin for the reprogram path (ADR-0010 D5) */
@@ -72,16 +73,26 @@ static void poll_reprogram_button(void)
 
 static void apply_output(const bodyctl_output_t *out)
 {
-    if (out->light_cmd_valid)
+#if !CAN_LOOPBACK_TEST
+    /* Phase B (M5): the gateway does not actuate locally — it SENDS authenticated
+     * commands to the actuator (Node B), which verifies and drives the hardware.
+     * secoc_app_build_* secures the frame (freshness + MAC via the M0+); a build
+     * failure (freshness/oracle) simply skips this command — the actuator holds
+     * its last safe state. */
+    can_raw_frame_t f;
+    if (out->lock_cmd_valid && secoc_app_build_door_cmd(out->lock_locked, &f))
     {
-        /* TODO(bring-up): drive the light output / LED to out->light_pct. */
-        (void)out->light_pct;
+        (void)can_app_send(&f);
     }
-    if (out->lock_cmd_valid)
+    if (out->light_cmd_valid && secoc_app_build_light_cmd(out->light_pct, &f))
     {
-        /* TODO(bring-up): drive the lock actuator to out->lock_locked. */
-        (void)out->lock_locked;
+        (void)can_app_send(&f);
     }
+#else
+    /* Phase A: local outputs (TODO bring-up), no bus/SecOC. */
+    if (out->light_cmd_valid) { (void)out->light_pct; }
+    if (out->lock_cmd_valid)  { (void)out->lock_locked; }
+#endif
 }
 
 static void app_task(void *arg)

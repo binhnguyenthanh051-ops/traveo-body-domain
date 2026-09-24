@@ -20,6 +20,7 @@
 #include "task.h"
 #include "can_hal.h"
 #include "body_msgs.h"
+#include "secoc_app.h"  /* SecOC verify (telemetry/sync) — M5 seam 3 */
 #include "cy_pdl.h"     /* Cy_CANFD_*, Cy_SysInt_* */
 #include "cybsp.h"      /* generated canfd_0_chan_1_* (config, IRQ) via cycfg */
 #include <string.h>
@@ -170,6 +171,12 @@ static int can_tx(const can_raw_frame_t *f)
             == CY_CANFD_SUCCESS) ? 0 : -1;
 }
 
+/* Public TX for App_CyclicTask's secured commands (tasks.h). */
+int can_app_send(const can_raw_frame_t *f)
+{
+    return can_tx(f);
+}
+
 static void can_task(void *arg)
 {
     (void)arg;
@@ -185,13 +192,31 @@ static void can_task(void *arg)
 #if CAN_LOOPBACK_TEST
             ++g_can_rx_count;            /* observe in the debugger: the RX path is alive */
             g_can_last_id = frame.id;
-#endif
+            /* Phase A: unsecured decode, for the on-chip loopback bring-up. */
             if (body_decode(frame.id, frame.data, frame.len, &msg) == 1)
             {
                 (void)xQueueSend(app_msg_queue(), &msg, 0);
             }
-#if !CAN_LOOPBACK_TEST
-            (void)can_tx(&frame);       /* M2 echo: prove the RX->TX loop on one node */
+#else
+            /* Phase B (M5): the gateway RECEIVES only authenticated frames from the
+             * actuator. Telemetry (0x200) is verified then forwarded to bodyctl;
+             * FRESHNESS_SYNC (0x2F0) adopts B's floor into our command epoch (D5).
+             * A bad MAC / stale freshness is dropped + counted inside SecOC. */
+            if (frame.id == MSG_ID_SENSOR_RPT)
+            {
+                if (secoc_app_verify_telemetry(&frame, &msg))
+                {
+                    (void)xQueueSend(app_msg_queue(), &msg, 0);
+                }
+            }
+            else if (frame.id == MSG_ID_FRESHNESS_SYNC)
+            {
+                (void)secoc_app_handle_sync(&frame);
+            }
+            else
+            {
+                (void)can_tx(&frame);   /* echo other IDs (bring-up aid) */
+            }
 #endif
         }
         else
