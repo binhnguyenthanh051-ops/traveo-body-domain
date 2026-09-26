@@ -25,9 +25,10 @@ stronger, but nothing on the bench is allowed to delay the job search.
 4. **Retrospective every Sunday at 10:00.** 30–45 minutes, template below, written into the week file.
 5. **Budget ~12 h/week; 15–20 is upside.** A plan that needs your best weeks fails on your
    average ones.
-6. **Every weekday has a no-energy option.** If an evening is bad, do the smallest item or skip —
-   and write down that you skipped. Skipping is data, not failure.
-7. **No new detours before Dec 6.** A new idea gets one line in `docs/future-ideas.md`.
+6. **Today's task is done today.** Only sickness or an urgent matter moves it; write the reason
+   in the retro. The time box still holds.
+7. **No new detours before Dec 6.** A new idea gets one line in `docs/future-ideas.md`. A
+   *finding* (something wrong in existing work) gets a row in `docs/project/findings.md`.
 8. **Commit at the end of every session**, even work in progress.
 9. **ADR/REQ ceremony only for decisions that will appear in a post.** Glue and bring-up shims
    get a commit message and a cheap test.
@@ -109,6 +110,8 @@ Copy into the bottom of the week file.
 
 **What got in the way:**
 -
+
+**Findings:** opened __ / resolved __ · any Open past its date? (re-date or reject)
 
 **One change for next week:**
 -

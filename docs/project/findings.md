@@ -1,0 +1,24 @@
+# Findings & action items
+
+Things found wrong or weak in **existing** work: bench surprises, review remarks, process gaps.
+New scope does not go here; it goes to `docs/future-ideas.md` (rule 7).
+
+**Statuses**
+- **Open**: has a planned date. An Open item past its date is raised at the Sunday retro, and
+  either gets a new date or is rejected.
+- **Resolved**: date + commit that closed it.
+- **Rejected**: date + one-line reason. Kept, so the same idea isn't re-argued later.
+
+Numbering is `F-NNN`, never reused. Newest at the bottom.
+
+| ID | Found | Finding | Action | Status |
+|---|---|---|---|---|
+| F-001 | 2026-09-26, W39 bench | Node B CM7 fails to link: `undefined reference to uxTaskGetStackHighWaterMark` (`heartbeat_log_alive`, `main.c:72`). `proj_cm7/FreeRTOSConfig.h` had `INCLUDE_uxTaskGetStackHighWaterMark 0`; Node A has it `1`. | Set the flag to `1` (Node A parity). | **Resolved** 2026-09-26 — commit `738c388` |
+| F-002 | 2026-09-26, W39 bench | The heartbeat's dependency on that `INCLUDE_*` flag is invisible: getting it wrong surfaces as a confusing linker error, only on a full firmware build. | Add `#if (INCLUDE_uxTaskGetStackHighWaterMark != 1) #error ...` next to the call in both nodes' `main.c`, so the same mistake fails at compile time and names the fix. | **Open** — planned 2026-09-28 (confirm at retro) |
+| F-003 | 2026-09-26, W39 bench | A committed Node B change (`2183bd4`, from the Thu 24 commit split) had never been built with ModusToolbox. The Stop hook gate is host-only, so it cannot see firmware compile/link errors. | Make "both firmware images build clean from the committed tree" a weekday task before every Saturday bench (builds need no board, rule 1). | **Open** — planned 2026-09-27 (add to W40 plan at retro) |
+| F-004 | 2026-09-26, W39 bench | Proposed after F-001: a build option to turn the LOG module on/off per node. | None. | **Rejected** 2026-09-26 — the dependency is the heartbeat's, not the logger's; `LOG_EVT_APP_ALIVE` is mandatory (REQ-LOG-009, BVT liveness), so an off variant would be untested and break the BVT; and it means `#ifdef`s at every call site (ADR-0004). F-002 addresses the real gap. |
+| F-005 | 2026-09-26, W39 bench | `logview --file ... > out.txt` crashes on Windows (`UnicodeEncodeError`, cp1252) when the capture holds undecodable text bytes. Workaround: `PYTHONIOENCODING=utf-8`. | Make logview write UTF-8 (`errors="replace"`) regardless of console codepage, + a pytest case. | **Open** — planned 2026-10-01 (confirm at retro) |
+| F-006 | 2026-09-26, W39 bench (`docs/bench/2026-09-26/node_a_w39_reset.txt`) | Node A after a reset: the `--- fbl nobuildid ---` banner appears **twice** before the single FBL `LOG_EVT_BOOT`, and the FBL's records render with source tag `app`, not `fbl`. Neither breaks anything. | Triage: check whether the FBL prints its banner twice, and how logview picks the source tag. Then fix it or reject it. | **Open** — planned 2026-10-01 (confirm at retro) |
+| F-007 | 2026-09-26, W39 bench (`node_b_w39.txt`) | Node B `LOG_EVT_BOOT reset_reason=0x40010010` = PORVDDD \| XRES \| SOFT: the reset-cause bits are **sticky and never cleared** on Node B, so every boot reports the union of all resets since power-on. Node A is fine only because its FBL calls `Cy_SysLib_ClearResetReason()` (`bootloader/proj_cm4/src/port_reset.c:67`); Node B has no FBL. | Read-then-clear the reset cause once at Node B boot (after logging it), plus a line in the events table saying the value is a `CY_SYSLIB_RESET_*` bitmask. | **Open** — planned 2026-10-01 (confirm at retro) |
+| F-008 | 2026-09-26, W39 bench (`node_b_w39.txt`) | Node B booted **twice** within 5 s during `zz_build_actuator_app.sh program` (two banners + two `LOG_EVT_BOOT`). Probably the programmer resetting once per project (CM0+, then CM7), but not confirmed. | Triage: re-capture a plain reset-button boot. If it boots once, it was the programmer, so reject this item. | **Open** — planned 2026-10-03 (next bench) |
+| F-009 | 2026-09-26, W39 bench | In Eclipse, Node A's app project shows as **`Empty_App`** (Node B is fine: `node_b_actuator`). The local Eclipse metadata (`node_a_gateway/app/.project`, `.mtbLaunchConfigs/Empty_App *.launch`) was generated from the MTB template before `APPNAME=gateway_app` was set, and was never regenerated. The bootloader's launch configs carry the same `Empty_App` prefix. These files are gitignored, so this only affects the local workspace. | In the MTB shell, run `make eclipse` in `node_a_gateway/app/` and `node_a_gateway/bootloader/`, delete the stale `Empty_App *.launch` files, and re-import into Eclipse. | **Open** — planned 2026-09-29 (confirm at retro) |
