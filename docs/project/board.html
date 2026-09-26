@@ -156,8 +156,6 @@
   .day .dname { font-family: var(--font-display); font-weight: 600; font-size: 17px; }
   .day .body { display: grid; gap: 6px; min-width: 0; }
   .day .meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-  .day .low { color: var(--muted); font-size: 13.5px; }
-  .day .low b { font-weight: 600; color: var(--ink); }
   .day.is-off { background: transparent; border-style: dashed; }
   .day.is-off .body { color: var(--muted); }
   .day.is-bench { border-color: color-mix(in srgb, var(--bench) 45%, var(--line)); }
@@ -268,7 +266,7 @@
 <!-- BOARD DATA — the only block the Sunday retro task edits. Source of truth: docs/project/ in the repo. -->
 <script id="board-data" type="application/json">
 {
-  "rebuilt": "2026-09-23",
+  "rebuilt": "2026-09-26",
   "source": "docs/project/plan.md + docs/project/weeks/2026-W39.md",
   "readyToApply": "2026-10-25",
   "jobSearch": "2026-12-01",
@@ -279,11 +277,11 @@
     "delivery": "Clean repo — the ~2 months of M5 work committed, the plan in the repo",
     "budget": "~6 h",
     "days": [
-      { "date": "2026-09-23", "kind": "work",  "hours": "1 h", "task": "Agree the plan (`docs/project/plan.md`) and choose how to track it in Claude.", "low": "Done in the planning session." },
-      { "date": "2026-09-24", "kind": "work",  "hours": "1 h", "task": "Review the proposed commit split for the M5 pile; Claude commits. Decide on the register dumps and `capture.bin`. Claude updates `docs/roadmap.md` and moves the cuts into `docs/future-ideas.md`.", "low": "Approve the split only; the roadmap waits for Sunday." },
-      { "date": "2026-09-25", "kind": "off",   "hours": "—",   "task": "Off.", "low": "" },
-      { "date": "2026-09-26", "kind": "bench", "hours": "≤ 2 h", "task": "Bench smoke test — both kits flash, boot and log after five weeks away. Stop at 2 h whatever the state.", "low": "Just the two firmware builds." },
-      { "date": "2026-09-27", "kind": "retro", "hours": "1.5 h", "task": "10:00 — Retrospective #1 · plan W40 day by day · review the roadmap edits.", "low": "Retro only; plan W40 on Monday." }
+      { "date": "2026-09-23", "kind": "work",  "hours": "1 h", "task": "Agree the plan (`docs/project/plan.md`) and choose how to track it in Claude." },
+      { "date": "2026-09-24", "kind": "work",  "hours": "1 h", "task": "Review the proposed commit split for the M5 pile; Claude commits. Decide on the register dumps and `capture.bin`. Claude updates `docs/roadmap.md` and moves the cuts into `docs/future-ideas.md`." },
+      { "date": "2026-09-25", "kind": "off",   "hours": "—",   "task": "Off." },
+      { "date": "2026-09-26", "kind": "bench", "hours": "≤ 2 h", "task": "Bench smoke test — both kits flash, boot and log after five weeks away. Stop at 2 h whatever the state." },
+      { "date": "2026-09-27", "kind": "retro", "hours": "1.5 h", "task": "10:00 — Retrospective #1 · plan W40 day by day · review the roadmap edits." }
     ],
     "checklist": {
       "title": "Saturday checklist — bench smoke test",
@@ -411,12 +409,6 @@
     if (diff === 0) meta.appendChild(chip('now', 'Today'));
     body.appendChild(meta);
     body.appendChild(rich('p', null, d.task));
-    if (d.low) {
-      var low = el('p', 'low');
-      low.appendChild(el('b', null, 'Low energy: '));
-      low.appendChild(rich('span', null, d.low));
-      body.appendChild(low);
-    }
     row.appendChild(body);
     days.appendChild(row);
   });
