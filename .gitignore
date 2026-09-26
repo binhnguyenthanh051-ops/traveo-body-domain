@@ -75,3 +75,6 @@ test_signed_image.h
 # Local evidence for bring-up logs, not source. Kept on disk, never committed.
 dump_*.txt
 capture*.bin
+
+# ── Claude Code: personal settings stay local (project settings.json IS committed) ──
+.claude/settings.local.json

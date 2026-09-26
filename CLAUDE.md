@@ -72,6 +72,11 @@ Toolchain: Infineon ModusToolbox for firmware. GCC for host-side tests.
 - Challenge my decisions when you see a problem; don't just agree.
 - When you write code, prefer a matching host test in the module's `tests/` folder.
 
+## Quality gate (Stop hook)
+
+- The Stop hook (`tools/hooks/stop_gate.sh`, brief Q1) runs the host gate, `make test && make lint`, whenever a turn changed C, header, Makefile or test files; Claude cannot hand back while it is red (max 3 blocks, then it says so).
+- Firmware (ModusToolbox) builds and flashing are **manual** — the gate is host-only.
+
 ## Conventions
 
 - C17 for host-testable modules; keep them freestanding-friendly (no libc assumptions
