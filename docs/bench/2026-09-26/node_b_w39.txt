@@ -1,0 +1,13 @@
+
+--- actuator nobuildid ---
+[       0 app] LOG_EVT_BOOT reset_reason=0x40010010
+[       0 app] LOG_EVT_APP_ALIVE uptime_ms=0 stack_free_words=117
+
+--- actuator nobuildid ---
+[       0 app] LOG_EVT_BOOT reset_reason=0x40010010
+[       0 app] LOG_EVT_APP_ALIVE uptime_ms=0 stack_free_words=117
+[    5000 app] LOG_EVT_APP_ALIVE uptime_ms=5000 stack_free_words=82
+[   10000 app] LOG_EVT_APP_ALIVE uptime_ms=10000 stack_free_words=82
+[   15000 app] LOG_EVT_APP_ALIVE uptime_ms=15000 stack_free_words=82
+
+# 7 records, 56 text bytes, 0 resync(s), 0 record(s) lost
