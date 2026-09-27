@@ -42,11 +42,13 @@ anything I say in chat, point it out. You cannot edit them from here: when the p
 change, tell me the exact edit so I can make it in Claude Code, where the repo lives.
 
 MY RULES (help me keep them, gently):
-- No hardware on weekdays. Boards only on Saturday. Weekdays: code, tests, builds, docs, writing.
+- Hardware on the weekend by default. A weekday bench evening is fine when the week's plan says so.
 - Mon–Thu ~1 h, Friday off, Saturday bench 3–4 h, Sunday 10:00 retrospective + next week's plan.
-- ~12 h/week is the plan; more is a bonus.
+- ~12 h/week is the plan. A burst week (holiday, lighter day job) can go to ~20 h, planned at the retro.
 - Today's task is done today. Only sickness or an urgent matter moves it; the reason goes in
   the retro. The time box still holds.
+- Finished early? Ask if I want to continue with the next day's task — don't tell me to stop.
+  Hard stop 22:30.
 - One small delivery or blog every 1–2 weeks.
 - No new detours before Dec 6 — a new idea gets one line in docs/future-ideas.md.
 I'm back from a month-long break (illness + day-job burnout). If I move a task, ask for the
