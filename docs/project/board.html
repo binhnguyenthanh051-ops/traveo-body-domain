@@ -236,7 +236,7 @@
     <div class="table-scroll">
       <table>
         <thead>
-          <tr><th>Week</th><th>Dates</th><th>Weekdays — no hardware</th><th>Saturday bench</th><th>Delivery</th></tr>
+          <tr><th>Week</th><th>Dates</th><th>Weekday focus</th><th>Bench</th><th>Delivery</th></tr>
         </thead>
         <tbody id="cal"></tbody>
       </table>
@@ -256,7 +256,7 @@
   </div>
 
   <section aria-labelledby="rules-title">
-    <div class="section-head"><span class="eyebrow">Agreed 2026-09-23</span><h2 id="rules-title">Rules</h2></div>
+    <div class="section-head"><span class="eyebrow">Agreed 2026-09-23 · updated 2026-09-27</span><h2 id="rules-title">Rules</h2></div>
     <ol class="rules" id="rules"></ol>
   </section>
 
@@ -266,70 +266,174 @@
 <!-- BOARD DATA — the only block the Sunday retro task edits. Source of truth: docs/project/ in the repo. -->
 <script id="board-data" type="application/json">
 {
-  "rebuilt": "2026-09-26",
-  "source": "docs/project/plan.md + docs/project/weeks/2026-W39.md",
+  "rebuilt": "2026-09-27",
+  "source": "docs/project/plan.md + docs/project/weeks/2026-W40.md",
   "readyToApply": "2026-10-25",
   "jobSearch": "2026-12-01",
-  "subtitle": "Re-planned after a month-long break. Ready to apply by Oct 25; the bench makes the portfolio stronger but never delays the job search (Dec 2026 – Feb 2027).",
+  "subtitle": "Re-planned at the W39 retro: M5 closes in W40, not late November. Ready to apply by Oct 25; the rest of the autumn goes to posts and interview prep (job search Dec 2026 – Feb 2027).",
   "week": {
-    "code": "W39 · Sep 23–27",
-    "title": "Get going again, gently",
-    "delivery": "Clean repo — the ~2 months of M5 work committed, the plan in the repo",
-    "budget": "~6 h",
+    "code": "W40 · Sep 28–Oct 4",
+    "title": "Close M5",
+    "budget": "~20 h",
+    "delivery": "M5 closed: SecOC done on both nodes, tag `m5`",
     "days": [
-      { "date": "2026-09-23", "kind": "work",  "hours": "1 h", "task": "Agree the plan (`docs/project/plan.md`) and choose how to track it in Claude." },
-      { "date": "2026-09-24", "kind": "work",  "hours": "1 h", "task": "Review the proposed commit split for the M5 pile; Claude commits. Decide on the register dumps and `capture.bin`. Claude updates `docs/roadmap.md` and moves the cuts into `docs/future-ideas.md`." },
-      { "date": "2026-09-25", "kind": "off",   "hours": "—",   "task": "Off." },
-      { "date": "2026-09-26", "kind": "bench", "hours": "≤ 2 h", "task": "Bench smoke test — both kits flash, boot and log after five weeks away. Stop at 2 h whatever the state." },
-      { "date": "2026-09-27", "kind": "retro", "hours": "1.5 h", "task": "10:00 — Retrospective #1 · plan W40 day by day · review the roadmap edits." }
+      {
+        "date": "2026-09-28",
+        "kind": "work",
+        "hours": "2 h",
+        "task": "Stage 0: build the Node A FBL CM0+ (CMAC API) + check the Node B map files. Claude writes the Stage 2 known-answer hook; cross-check the NIST vectors."
+      },
+      {
+        "date": "2026-09-29",
+        "kind": "bench",
+        "hours": "2 h",
+        "task": "Stage 1 (secure boot still verifies + jumps) + Stage 2 (CMAC tag matches on both CM0+)."
+      },
+      {
+        "date": "2026-09-30",
+        "kind": "bench",
+        "hours": "2 h",
+        "task": "Stage 3 (CM7 → CM0+ MAC round trip, non-cacheable mailbox) + Stage 4 (same tag on A and B). Cut-off check."
+      },
+      {
+        "date": "2026-10-01",
+        "kind": "work",
+        "hours": "2 h",
+        "task": "Stage 5 prep: transceiver EN pin from the schematic, `CAN_LOOPBACK_TEST=0` builds, VN1610 + injection frames, termination. Saturday checklist."
+      },
+      {
+        "date": "2026-10-02",
+        "kind": "off",
+        "hours": "—",
+        "task": "Off."
+      },
+      {
+        "date": "2026-10-03",
+        "kind": "bench",
+        "hours": "6 h",
+        "task": "Stage 5 (real bus, happy path, zero drops) + Stage 6 (forged / bit-flip / replay / cross-ID all refused, captured)."
+      },
+      {
+        "date": "2026-10-04",
+        "kind": "retro",
+        "hours": "3 h",
+        "task": "Stage 7 (optional) · fold findings into ADR-0021/0018 · tag `m5` · 10:00 retro + W41 plan."
+      }
     ],
     "checklist": {
-      "title": "Saturday checklist — bench smoke test",
-      "goal": "Prove the bench still works after five weeks, not make progress on SecOC.",
+      "title": "Bench pass criteria — M5 Stages 1–6",
+      "goal": "Full procedure and triage: `docs/briefs/M5-bringup-plan.md`. Cut-off: Stage 3 passed by Wed 30, or Stages 5–6 move to the W41 Saturday.",
       "items": [
-        "Build the Node A app and Node B CM7 from the committed tree. First ModusToolbox build of the Step 7 code (`secoc_rx.c`) — a compile or link error is the likeliest failure; note it and stop.",
-        "Node A: `./zz_build_gateway_app.sh program` → logview shows the banner, `LOG_EVT_BOOT`, then `LOG_EVT_APP_ALIVE`.",
-        "Node B: program CM0+ and CM7 → heartbeat LED blinks; logview shows the banner, `LOG_EVT_BOOT`, `LOG_EVT_APP_ALIVE` every 5 s.",
-        "Expect zero SecOC events on Node B — Phase A loopback sends `0x123`, not a command ID. Zero is correct.",
-        "Save both captures, write three lines in the retro, commit."
+        "Tue 29 · 1.1–1.2: Node A FBL verifies + jumps; SEAM6 DEAD/GARBAGE stay in the FBL.",
+        "Tue 29 · 2.1–2.3: CMAC tag = NIST vector on both CM0+, no byte reversal.",
+        "Wed 30 · 3.1–3.4: Node B dual-core boots; `secoc_crypto_bringup_mac()` true; D-cache on + mailbox non-cacheable.",
+        "Wed 30 · 4.1: same 16-byte tag on Node A and Node B.",
+        "Sat 3 · 5.4–5.5: SecOC frames visible on the VN1610; courtesy light works end to end; `g_secoc_drop_*` = 0.",
+        "Sat 3 · 6.1–6.4: forged, bit-flip, replay, cross-ID each refused; one counter each; actuator holds."
       ]
     }
   },
   "calendar": [
-    { "w": "W39", "start": "2026-09-21", "end": "2026-09-27", "focus": "Commit the M5 pile; plan + roadmap in repo", "bench": "Smoke test: both kits flash, boot and log", "delivery": "Clean repo + plan" },
-    { "w": "W40", "start": "2026-09-28", "end": "2026-10-04", "focus": "README → 2-minute “start here”", "bench": "", "delivery": "README v1" },
-    { "w": "W41", "start": "2026-10-05", "end": "2026-10-11", "focus": "Draft the M5a post (SecOC design, proven by host tests)", "bench": "Stage 2: AES-CMAC known-answer test on each CM0+", "delivery": "" },
-    { "w": "W42", "start": "2026-10-12", "end": "2026-10-18", "focus": "Finish + publish the M5a post", "bench": "Stage 3.1–3.2: Node B dual-core boot + loopback", "delivery": "M5a post" },
-    { "w": "W43", "start": "2026-10-19", "end": "2026-10-25", "focus": "RX bring-up shim; series index post; README final", "bench": "Stage 3.3–3.4 + shim: every receive verdict on the UART", "delivery": "Ready to apply", "milestone": true },
-    { "w": "W44", "start": "2026-10-26", "end": "2026-11-01", "focus": "Write up the single-node capture", "bench": "Stage 4: cross-node key agreement", "delivery": "M5b log capture" },
-    { "w": "W45", "start": "2026-11-02", "end": "2026-11-08", "focus": "Bus prep: transceiver EN pin, loopback-off builds, VN1610 config, termination", "bench": "Stage 5: real bus, happy path end to end", "delivery": "" },
-    { "w": "W46", "start": "2026-11-09", "end": "2026-11-15", "focus": "M5b post (CM7 bring-up + cache / non-cacheable mailbox)", "bench": "Stage 6: forgery + replay demos with the VN1610", "delivery": "M5b post" },
-    { "w": "W47", "start": "2026-11-16", "end": "2026-11-22", "focus": "Prepare the demo-capture checklist", "bench": "Stage 7: resync; capture the demo traces", "delivery": "" },
-    { "w": "W48", "start": "2026-11-23", "end": "2026-11-29", "focus": "Draft the M5 demo post", "bench": "Buffer — reserve bench day", "delivery": "Tag m5", "buffer": true },
-    { "w": "W49", "start": "2026-11-30", "end": "2026-12-06", "focus": "Publish the demo post; “10 decisions I can defend” cheat-sheet", "bench": "Buffer", "delivery": "M5 demo post", "buffer": true }
+    {
+      "w": "W39",
+      "start": "2026-09-21",
+      "end": "2026-09-27",
+      "focus": "Commit the M5 pile; plan + roadmap in repo",
+      "bench": "Smoke test: both kits flash, boot and log",
+      "delivery": "Clean repo + plan"
+    },
+    {
+      "w": "W40",
+      "start": "2026-09-28",
+      "end": "2026-10-04",
+      "focus": "Close M5 — Stage 0 builds, Stage 5 prep (~20 h)",
+      "bench": "Tue/Wed + Sat: Stages 1–6",
+      "delivery": "M5 closed, tag m5",
+      "milestone": true
+    },
+    {
+      "w": "W41",
+      "start": "2026-10-05",
+      "end": "2026-10-11",
+      "focus": "(burst if the week allows) README v1 · draft the M5a post · findings",
+      "bench": "Reserve — slipped W40 stages",
+      "delivery": "README v1",
+      "buffer": true
+    },
+    {
+      "w": "W42",
+      "start": "2026-10-12",
+      "end": "2026-10-18",
+      "focus": "Publish the M5a post · draft the M5b post (CM7 + cache mailbox)",
+      "bench": "Reserve",
+      "delivery": "M5a post",
+      "buffer": true
+    },
+    {
+      "w": "W43",
+      "start": "2026-10-19",
+      "end": "2026-10-25",
+      "focus": "Publish M5b · series index post · README final",
+      "bench": "",
+      "delivery": "Ready to apply",
+      "milestone": true
+    },
+    {
+      "w": "W44",
+      "start": "2026-10-26",
+      "end": "2026-11-01",
+      "focus": "M5 demo post from the W40 captures",
+      "bench": "",
+      "delivery": "M5 demo post"
+    },
+    {
+      "w": "W45–49",
+      "start": "2026-11-02",
+      "end": "2026-12-06",
+      "focus": "Interview prep (“10 decisions I can defend”, mock design questions) · M6-lite starts early",
+      "bench": "",
+      "delivery": ""
+    }
   ],
-  "bufferNote": "W48–W49 Saturdays are reserve bench days. If a stage slips, it moves there — never into a weekday.",
+  "bufferNote": "W41–W42 Saturdays are reserve bench days. If a W40 stage slips, it moves there.",
   "later": [
     "Threat-model essay — safety + security as one defensive story (EP.21 + EP.24 merged).",
     "Capstone retrospective (EP.26) — what I'd do differently; the overview as centrepiece.",
     "Optional, only with spare energy: watchdog + safe-state hands-on (EP.22)."
   ],
   "rhythm": [
-    { "d": "Mon–Thu", "h": "~1 h", "what": "Code, host tests, firmware builds, docs, writing. No board." },
-    { "d": "Fri", "h": "—", "what": "Off." },
-    { "d": "Sat", "h": "3–4 h", "what": "Bench session, from a checklist prepared Mon–Thu." },
-    { "d": "Sun", "h": "~1.5 h", "what": "10:00 retrospective + next week's day-by-day plan." }
+    {
+      "d": "Mon–Thu",
+      "h": "~1 h",
+      "what": "Code, host tests, firmware builds, docs, writing. Bench only if the week's plan says so."
+    },
+    {
+      "d": "Fri",
+      "h": "—",
+      "what": "Off."
+    },
+    {
+      "d": "Sat",
+      "h": "3–4 h",
+      "what": "Bench session, from a checklist prepared Mon–Thu."
+    },
+    {
+      "d": "Sun",
+      "h": "~1.5 h",
+      "what": "10:00 retrospective + next week's day-by-day plan."
+    }
   ],
   "rules": [
-    "No hardware on weekdays — boards only on the weekend.",
+    "Hardware on the weekend by default; a weekday bench is agreed at the retro.",
     "Plan every week, day by day, at the Sunday retro. Only the coming week is planned per day.",
     "One small delivery or blog every 1–2 weeks.",
     "Retrospective every Sunday at 10:00.",
-    "Budget ~12 h/week; 15–20 is upside.",
+    "Budget ~12 h/week; burst to ~20 h when there is more time, planned at the retro.",
     "Today's task is done today. Only sickness or an urgent matter moves it; write the reason in the retro. The time box still holds.",
-    "No new detours before Dec 6. A new idea gets one line in `docs/future-ideas.md`.",
+    "No new detours before Dec 6. A new idea gets one line in `docs/future-ideas.md`; a finding gets a row in `docs/project/findings.md`.",
     "Commit at the end of every session, even work in progress.",
-    "ADR/REQ ceremony only for decisions that will appear in a post."
+    "ADR/REQ ceremony only for decisions that will appear in a post.",
+    "Finished early? Offer the next day's task, don't stop. Hard stop 22:30."
   ]
 }
 </script>
