@@ -8,7 +8,7 @@ Pass = `g_kat_result == 7`. Memory view shows 32-bit words (little-endian); tags
 |---|---|---|
 | g_kat_result | 0x08000F54 | 7 |
 | g_kat_tag_16b | 0x08000F34 | 070a16b4 6b4d4144 … (first 8 B read) |
-| g_kat_shared_tag | 0x08000F24 | 6ca65e17 e56e15f7 … (first 8 B read) |
+| g_kat_shared_tag | 0x08000F24 | 6ca65e17 e56e15f7 f52497d0 1aae5ea4 (= Node B ✓, Stage 4.1) |
 
 ## Node B — CYT4BF CM0+ (flashed via `program all CRYPTO_BRINGUP_KAT=1`)
 Raw memory view:
