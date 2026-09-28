@@ -39,3 +39,13 @@ moving toward Linux/AP, it becomes the primary portfolio and gets scoped like th
   the roadmap's open items).
 - Hardware-in-the-loop CI (auto-flash + on-target tests).
 - AUTOSAR-flavored layer on the app — only if year-1 content lands well.
+- **Stack drill — static worst-case stack usage before flashing** (idea 2026-09-28, W40 Stage 3).
+  A host tool that reads each image's `.elf` (objdump call graph: `push`/`vpush`/`sub sp` per
+  function, followed along `bl` edges; or GCC `-fstack-usage` + `-fcallgraph-info`) and prints the
+  worst-case depth per task entry next to its `*_STACK_WORDS`, failing the gate when margin < X%.
+  Why: Node B's `can` task overflowed on the first `crypto_mac()` (556 B frame). A 30-line
+  prototype found the 856 B worst case vs a 768 B stack in seconds, with no debugger. Limits to
+  state honestly: indirect calls (function pointers such as the IPC port) and ISR/exception frames
+  (up to 104 B with FPU lazy stacking) must be added by hand or annotated. Good interview story:
+  "verify stack budgets at build time, not in a hook at runtime."
+

@@ -1,0 +1,30 @@
+
+--- actuator nobuildid ---
+[       0 app] LOG_EVT_BOOT reset_reason=0x40010011
+[       0 app] LOG_EVT_DBG_U32 value=0 tag=13056
+[       0 app] LOG_EVT_DBG_U32 value=0 tag=13059
+[       0 app] LOG_EVT_DBG_U32 value=459264 tag=13120
+[       0 app] LOG_EVT_DBG_U32 value=5 tag=13121
+[       0 app] LOG_EVT_DBG_U32 value=672006144 tag=13136
+[       0 app] LOG_EVT_DBG_U32 value=319291425 tag=13152
+[       0 app] LOG_EVT_DBG_U32 value=672006151 tag=13143
+[       0 app] LOG_EVT_DBG_U32 value=319553569 tag=13159
+[       0 app] LOG_EVT_APP_ALIVE uptime_ms=0 stack_free_words=117
+
+--- actuator nobuildid ---
+[       0 app] LOG_EVT_BOOT reset_reason=0x40010011
+[       0 app] LOG_EVT_DBG_U32 value=0 tag=13056
+[       0 app] LOG_EVT_DBG_U32 value=0 tag=13059
+[       0 app] LOG_EVT_DBG_U32 value=459264 tag=13120
+[       0 app] LOG_EVT_DBG_U32 value=5 tag=13121
+[       0 app] LOG_EVT_DBG_U32 value=672006144 tag=13136
+[       0 app] LOG_EVT_DBG_U32 value=319291425 tag=13152
+[       0 app] LOG_EVT_DBG_U32 value=672006151 tag=13143
+[       0 app] LOG_EVT_DBG_U32 value=319553569 tag=13159
+[       0 app] LOG_EVT_APP_ALIVE uptime_ms=0 stack_free_words=117
+[    5000 app] LOG_EVT_APP_ALIVE uptime_ms=5000 stack_free_words=82
+[   10000 app] LOG_EVT_APP_ALIVE uptime_ms=10000 stack_free_words=82
+[   15000 app] LOG_EVT_APP_ALIVE uptime_ms=15000 stack_free_words=82
+[   20000 app] LOG_EVT_APP_ALIVE uptime_ms=20000 stack_free_words=82
+
+# 24 records, 56 text bytes, 0 resync(s), 0 record(s) lost
