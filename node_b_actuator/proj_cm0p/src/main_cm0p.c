@@ -40,6 +40,11 @@
 /* Defined in crypto_ops_cm0p.c: enable the HW Crypto block + bind the MAC op table. */
 void cm0p_crypto_service_init(void);
 
+#if defined(CRYPTO_BRINGUP_KAT) && (CRYPTO_BRINGUP_KAT != 0)
+/* M5 bench Stage 2 + 4.1 (crypto_ops_cm0p.c): CMAC known-answer test. */
+void cm0p_cmac_kat(void);
+#endif
+
 /* Service one mailbox request in place (mirrors Node A's service_mailbox_once).
  * crypto_dispatch decodes into a local copy first, so req==resp reuse of the
  * payload buffer is safe, and it ALWAYS answers — a bad op / unknown key / HW
@@ -78,6 +83,12 @@ int main(void)
     /* Enable the HW Crypto block + bind the MAC op table BEFORE CM7_0 starts, so
      * the service is ready by the time the app issues its first MAC request. */
     cm0p_crypto_service_init();
+
+#if defined(CRYPTO_BRINGUP_KAT) && (CRYPTO_BRINGUP_KAT != 0)
+    /* Bench Stage 2: prove the CMAC primitive on this silicon before the other
+     * core can ask for a MAC. Result in g_kat_result (debugger). */
+    cm0p_cmac_kat();
+#endif
 
     Cy_SysEnableCM7(CM7_0_CORE_INDEX, CM7_0_VECTOR_TABLE_ADDR);
 
