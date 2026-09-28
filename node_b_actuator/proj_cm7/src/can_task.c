@@ -30,6 +30,7 @@
 #include "secoc_app.h"      /* SecOC verify/secure/sync (M5 seam 3) */
 #include "actuator_fsm.h"   /* actuate only on VALID commands */
 #include "body_msgs.h"      /* MSG_ID_*, body_msg_t */
+#include "port_crypto.h"    /* secoc_crypto_bringup_report (bench Stage 3) */
 #include "cy_pdl.h"     /* Cy_CANFD_*, Cy_SysInt_* */
 #include "cybsp.h"      /* generated CANFD config + IRQ names via cycfg */
 #include <string.h>
@@ -47,7 +48,9 @@
 #define CAN_IRQ_PRIORITY     5U              /* kernel-aware: >= configMAX_SYSCALL_INTERRUPT_PRIORITY */
 #define CAN_TX_BUF_IDX       0U
 
-#define CAN_STACK_WORDS      192U
+/* 384: crypto_mac() alone needs ~540 B (2 x crypto_msg_t + 2 wire buffers) on the
+ * caller's stack; 192 overflowed on the first MAC (W40 bench, Stage 3). ADR-0010 D5. */
+#define CAN_STACK_WORDS      384U
 #define RAW_FRAME_QDEPTH     16U
 #define CAN_TASK_PRIO        2U
 #define CAN_POLL_MS          20U
@@ -163,6 +166,12 @@ static void can_task(void *arg)
 
 #if !CAN_LOOPBACK_TEST
     bool sync_sent = false;
+#endif
+
+#if defined(SECOC_CRYPTO_BRINGUP) && (SECOC_CRYPTO_BRINGUP != 0)
+    /* Bench Stage 3.3/3.4: one CM7 -> CM0+ MAC round trip + cache/MPU state,
+     * reported as LOG_EVT_DBG_U32 (tags 0x33xx). Build with SECOC_CRYPTO_BRINGUP=1. */
+    secoc_crypto_bringup_report();
 #endif
 
     for (;;)

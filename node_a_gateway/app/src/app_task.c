@@ -19,7 +19,9 @@
 #include "secoc_app.h"   /* secured command TX (M5 seam 3) */
 #include "cy_pdl.h"   /* Cy_GPIO_* */
 
-#define APP_STACK_WORDS     192U   /* used ~34 words (g_hw_app) + margin for the reprogram path (ADR-0010 D5) */
+/* 384: crypto_mac() alone needs ~540 B (2 x crypto_msg_t + 2 wire buffers) on the
+ * caller's stack; 192 overflowed on the first MAC (W40 bench, Stage 3). ADR-0010 D5. */
+#define APP_STACK_WORDS     384U   /* pre-SecOC: ~34 words used (g_hw_app) + the reprogram path */
 #define APP_MSG_QDEPTH       8U
 
 /* User button SW1 = P7.0 on the CYTVII-B-E-1M-SK, active-low (idle high via the
