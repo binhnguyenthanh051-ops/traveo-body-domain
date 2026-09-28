@@ -22,6 +22,8 @@
 #   ./zz_build_actuator_app.sh build  cm0p    # scope to proj_cm0p only
 #   ./zz_build_actuator_app.sh program cm7    # flash only the CM7 image
 #   ./zz_build_actuator_app.sh program cm0p   # flash only the CM0+ image
+#   ./zz_build_actuator_app.sh build cm0p DEFINES=CRYPTO_BRINGUP_KAT=1
+#                                             # anything after the project goes to make
 #
 # Run from a ModusToolbox shell (or with CY_TOOLS_PATHS exported) so MTB's make
 # and GCC_ARM toolchain are on PATH.
@@ -33,6 +35,7 @@ APP="$ROOT/node_b_actuator"
 
 ACTION="${1:-build}"
 PROJECT="${2:-}"
+EXTRA=("${@:3}")   # extra make args, e.g. DEFINES=CRYPTO_BRINGUP_KAT=1
 MAKE_TARGET="$ACTION"
 
 case "$PROJECT" in
@@ -54,9 +57,9 @@ fi
 # Pass CY_TOOLS_DIR directly so $(wildcard C:/...) in the MTB Makefiles resolves
 # correctly under Git Bash's make, which does not expand C:/ wildcard paths.
 if [ -n "${CY_TOOLS_PATHS:-}" ]; then
-    make CY_TOOLS_DIR="$CY_TOOLS_PATHS" "$MAKE_TARGET"
+    make CY_TOOLS_DIR="$CY_TOOLS_PATHS" "$MAKE_TARGET" "${EXTRA[@]}"
 else
-    make "$MAKE_TARGET"
+    make "$MAKE_TARGET" "${EXTRA[@]}"
 fi
 
 # The MTB application recipe merges the CM0+ + CM7 project hexes into

@@ -26,6 +26,8 @@
 #   ./zz_build_gateway_fbl.sh build  cm0p     # scope to proj_cm0p only
 #   ./zz_build_gateway_fbl.sh program cm0p    # flash just the CM0+ image (its own flash
 #                                              # region only -- doesn't touch the FBL's)
+#   ./zz_build_gateway_fbl.sh build cm0p DEFINES=CRYPTO_BRINGUP_KAT=1
+#                                              # anything after the project goes to make
 #
 # Run from a ModusToolbox shell (or with CY_TOOLS_PATHS exported) so MTB's make
 # and GCC_ARM toolchain are on PATH.
@@ -36,6 +38,7 @@ BOOTLOADER="$ROOT/node_a_gateway/bootloader"
 
 ACTION="${1:-build}"
 PROJECT="${2:-}"
+EXTRA=("${@:3}")   # extra make args, e.g. DEFINES=CRYPTO_BRINGUP_KAT=1
 MAKE_TARGET="$ACTION"
 
 case "$PROJECT" in
@@ -54,7 +57,7 @@ if [ -n "$PROJECT" ]; then
     esac
 fi
 
-make "$MAKE_TARGET"
+make "$MAKE_TARGET" "${EXTRA[@]}"
 
 # The MTB application recipe merges the CM0+ (HSM) + CM4 (FBL) project hexes into
 # build/app_combined.hex -- that name is hardcoded in recipe-make-cat1a (vendor,
