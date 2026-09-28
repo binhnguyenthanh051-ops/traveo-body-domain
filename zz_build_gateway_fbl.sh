@@ -26,7 +26,7 @@
 #   ./zz_build_gateway_fbl.sh build  cm0p     # scope to proj_cm0p only
 #   ./zz_build_gateway_fbl.sh program cm0p    # flash just the CM0+ image (its own flash
 #                                              # region only -- doesn't touch the FBL's)
-#   ./zz_build_gateway_fbl.sh build cm0p DEFINES=CRYPTO_BRINGUP_KAT=1
+#   ./zz_build_gateway_fbl.sh program cm0p CRYPTO_BRINGUP_KAT=1
 #                                              # anything after the project goes to make
 #
 # Run from a ModusToolbox shell (or with CY_TOOLS_PATHS exported) so MTB's make

@@ -22,8 +22,9 @@
 #   ./zz_build_actuator_app.sh build  cm0p    # scope to proj_cm0p only
 #   ./zz_build_actuator_app.sh program cm7    # flash only the CM7 image
 #   ./zz_build_actuator_app.sh program cm0p   # flash only the CM0+ image
-#   ./zz_build_actuator_app.sh build cm0p DEFINES=CRYPTO_BRINGUP_KAT=1
-#                                             # anything after the project goes to make
+#   ./zz_build_actuator_app.sh program all CRYPTO_BRINGUP_KAT=1
+#                                             # anything after the project goes to make;
+#                                             # 'all' = both projects, merged hex rebuilt
 #
 # Run from a ModusToolbox shell (or with CY_TOOLS_PATHS exported) so MTB's make
 # and GCC_ARM toolchain are on PATH.
@@ -41,7 +42,7 @@ MAKE_TARGET="$ACTION"
 case "$PROJECT" in
     cm7)  cd "$APP/proj_cm7" ;;
     cm0p) cd "$APP/proj_cm0p" ;;
-    "")   cd "$APP" ;;
+    ""|all) cd "$APP" ; PROJECT="" ;;
     *)    echo "Unknown project '$PROJECT' -- use 'cm7', 'cm0p', or omit for both" >&2
           exit 1 ;;
 esac

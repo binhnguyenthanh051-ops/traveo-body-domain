@@ -97,6 +97,14 @@ INCLUDES=../../../shared/crypto/include \
 #                         stay-in-FBL. (Use SEAM6_DEAD and SEAM6_GARBAGE one at a
 #                         time.) Example: DEFINES=FBL_M4_SEAM6_DEAD
 DEFINES=
+
+# Bench toggle (M5 Stage 2 + 4.1): `CRYPTO_BRINGUP_KAT=1` on the make command line
+# compiles the CMAC known-answer test in (crypto_ops_cm0p.c). A named variable
+# rather than DEFINES=..., so it can be given at the app root: it reaches every
+# sub-make without wiping another project's DEFINES.
+ifeq ($(CRYPTO_BRINGUP_KAT),1)
+DEFINES+=CRYPTO_BRINGUP_KAT=1
+endif
 VFP_SELECT=
 CFLAGS=
 CXXFLAGS=
