@@ -28,6 +28,11 @@
 /* Defined in crypto_ops_cm0p.c: enable the HW Crypto block + bind the op table. */
 void cm0p_crypto_service_init(void);
 
+#if defined(CRYPTO_BRINGUP_KAT) && (CRYPTO_BRINGUP_KAT != 0)
+/* M5 bench Stage 2 + 4.1 (crypto_ops_cm0p.c): CMAC known-answer test. */
+void cm0p_cmac_kat(void);
+#endif
+
 /* ABSOLUTE address of the CM4 image's vector table = flash base + the CM0+
  * region (fbl_cm4.ld: flash ORIGIN 0x1000_0000, FLASH_CM0P_SIZE 0x20000, so
  * CM4 .text/.isr_vector at 0x1002_0000). NOTE: Cy_SysEnableCM4()'s param is
@@ -134,6 +139,12 @@ int main(void)
     /* Enable the HW Crypto block + bind the op table BEFORE the CM4 starts, so
      * the service is ready by the time the FBL issues its first request. */
     cm0p_crypto_service_init();
+
+#if defined(CRYPTO_BRINGUP_KAT) && (CRYPTO_BRINGUP_KAT != 0)
+    /* Bench Stage 2: prove the CMAC primitive on this silicon before the other
+     * core can ask for a MAC. Result in g_kat_result (debugger). */
+    cm0p_cmac_kat();
+#endif
 
     /* S0-4: the CM4's flash erase/program is an SROM system call serviced by the
      * CM0+ via NvicMux0/1. The BSP's PrepareSystemCallInfrastructure() that wires

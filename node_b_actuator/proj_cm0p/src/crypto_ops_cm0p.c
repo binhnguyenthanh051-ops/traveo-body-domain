@@ -100,3 +100,81 @@ void cm0p_crypto_service_init(void)
     crypto_keystore_init(g_keys, sizeof g_keys / sizeof g_keys[0]);
     crypto_dispatch_init(g_handlers, sizeof g_handlers / sizeof g_handlers[0]);
 }
+
+#if defined(CRYPTO_BRINGUP_KAT) && (CRYPTO_BRINGUP_KAT != 0)
+/* -------------------------------------------------------------------
+ * M5 bench Stage 2 + 4.1: AES-CMAC known-answer test (bring-up only)
+ *
+ * Compiled only with DEFINES=CRYPTO_BRINGUP_KAT=1. Runs once at boot, before
+ * the other core is released, and parks everything in globals for the
+ * debugger — the CM0+ has no log sink. Pass: g_kat_result == KAT_PASS_ALL (7).
+ * The tags are kept even on a pass, so a mismatch can be read as "stable
+ * and input-sensitive" (the vector is suspect) vs "random" (wiring is wrong).
+ *
+ * Vectors: NIST SP 800-38B App. D.1 (AES-128), cross-checked on the host
+ * against pyca/cryptography CMAC on 2026-09-27.
+ * g_kat_shared_tag is Stage 4.1: the same input MACed with the SecOC shared
+ * secret. It must be byte-identical on Node A and Node B.
+ * ----------------------------------------------------------------- */
+#define KAT_PASS_EMPTY  (0x1U)
+#define KAT_PASS_16B    (0x2U)
+#define KAT_SHARED_OK   (0x4U)
+#define KAT_PASS_ALL    (KAT_PASS_EMPTY | KAT_PASS_16B | KAT_SHARED_OK)
+
+volatile uint32_t g_kat_result = 0U;   /* 0 = not run; KAT_PASS_ALL = pass */
+volatile uint8_t  g_kat_tag_empty[CRYPTO_CMAC_TAG_LEN];
+volatile uint8_t  g_kat_tag_16b[CRYPTO_CMAC_TAG_LEN];
+volatile uint8_t  g_kat_shared_tag[CRYPTO_CMAC_TAG_LEN];
+
+static void kat_park(volatile uint8_t *dst, const uint8_t *src)
+{
+    for (uint32_t i = 0U; i < CRYPTO_CMAC_TAG_LEN; i++)
+    {
+        dst[i] = src[i];
+    }
+}
+
+void cm0p_cmac_kat(void)
+{
+    static const uint8_t key[16] = {
+        0x2bU, 0x7eU, 0x15U, 0x16U, 0x28U, 0xaeU, 0xd2U, 0xa6U,
+        0xabU, 0xf7U, 0x15U, 0x88U, 0x09U, 0xcfU, 0x4fU, 0x3cU };
+    static const uint8_t msg16[16] = {
+        0x6bU, 0xc1U, 0xbeU, 0xe2U, 0x2eU, 0x40U, 0x9fU, 0x96U,
+        0xe9U, 0x3dU, 0x7eU, 0x11U, 0x73U, 0x93U, 0x17U, 0x2aU };
+    static const uint8_t exp_empty[CRYPTO_CMAC_TAG_LEN] = {
+        0xbbU, 0x1dU, 0x69U, 0x29U, 0xe9U, 0x59U, 0x37U, 0x28U,
+        0x7fU, 0xa3U, 0x7dU, 0x12U, 0x9bU, 0x75U, 0x67U, 0x46U };
+    static const uint8_t exp_16b[CRYPTO_CMAC_TAG_LEN] = {
+        0x07U, 0x0aU, 0x16U, 0xb4U, 0x6bU, 0x4dU, 0x41U, 0x44U,
+        0xf7U, 0x9bU, 0xddU, 0x9dU, 0xd0U, 0x4aU, 0x28U, 0x7cU };
+    uint8_t  tag[CRYPTO_CMAC_TAG_LEN];
+    uint32_t result = 0U;
+
+    /* Empty message: pass a valid pointer anyway, length 0. */
+    if (cmac_compute(key, msg16, 0U, tag))
+    {
+        kat_park(g_kat_tag_empty, tag);
+        if (memcmp(tag, exp_empty, sizeof tag) == 0)
+        {
+            result |= KAT_PASS_EMPTY;
+        }
+    }
+    if (cmac_compute(key, msg16, (uint16_t)sizeof msg16, tag))
+    {
+        kat_park(g_kat_tag_16b, tag);
+        if (memcmp(tag, exp_16b, sizeof tag) == 0)
+        {
+            result |= KAT_PASS_16B;
+        }
+    }
+    /* Stage 4.1: no expected value here (the secret stays in this image);
+     * the check is A == B, compared by hand in the debugger. */
+    if (cmac_compute(secoc_shared_secret, msg16, (uint16_t)sizeof msg16, tag))
+    {
+        kat_park(g_kat_shared_tag, tag);
+        result |= KAT_SHARED_OK;
+    }
+    g_kat_result = result;
+}
+#endif /* CRYPTO_BRINGUP_KAT */
