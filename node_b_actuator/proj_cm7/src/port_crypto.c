@@ -155,17 +155,23 @@ const ipc_port_if_t *secoc_crypto_port(void)
 
 #if defined(SECOC_CRYPTO_BRINGUP) && (SECOC_CRYPTO_BRINGUP != 0)
 #include "secoc_key_id.h"      /* SECOC_MAC_KEY_ID (public selector; no secret) */
+#include "tb_log.h"            /* log_evt */
+#include "log_events.h"        /* LOG_EVT_DBG_U32 */
 #include <string.h>            /* memcmp */
 
 /* On-silicon offload round-trip check (call from a task, after the scheduler is
  * running and the CM0+ server is up). Proves the CM7<->CM0+ MAC path end to end
  * WITHOUT a precomputed tag: same input => same tag (deterministic), a changed
  * input => a changed tag, and an unknown key_id => failure. The AES-CMAC
- * primitive's NIST SP 800-38B KAT is a separate check on the CM0+ handler. */
-bool secoc_crypto_bringup_mac(void)
+ * primitive's NIST SP 800-38B KAT is a separate check on the CM0+ (Stage 2).
+ *
+ * Does NOT call secoc_crypto_port_init(): main.c already did, before the
+ * scheduler, and re-running it from a task would idle the mailbox under a
+ * transaction another task may have in flight.
+ *
+ * Returns 0 on pass, else the number of the first check that failed. */
+uint32_t secoc_crypto_bringup_mac(void)
 {
-    secoc_crypto_port_init();
-
     const uint8_t msg_a[4] = { 0x11U, 0x22U, 0x33U, 0x44U };
     const uint8_t msg_b[4] = { 0x11U, 0x22U, 0x33U, 0x45U };   /* one byte different */
     uint8_t t1[CRYPTO_CMAC_TAG_LEN];
@@ -173,15 +179,47 @@ bool secoc_crypto_bringup_mac(void)
     uint8_t t3[CRYPTO_CMAC_TAG_LEN];
     uint8_t t4[CRYPTO_CMAC_TAG_LEN];
 
-    if (!crypto_mac(SECOC_MAC_KEY_ID, msg_a, sizeof msg_a, t1)) { return false; }
-    if (!crypto_mac(SECOC_MAC_KEY_ID, msg_a, sizeof msg_a, t2)) { return false; }
-    if (memcmp(t1, t2, sizeof t1) != 0) { return false; }      /* deterministic */
+    if (!crypto_mac(SECOC_MAC_KEY_ID, msg_a, sizeof msg_a, t1)) { return 1U; }  /* no answer / error */
+    if (!crypto_mac(SECOC_MAC_KEY_ID, msg_a, sizeof msg_a, t2)) { return 2U; }
+    if (memcmp(t1, t2, sizeof t1) != 0) { return 3U; }      /* not deterministic */
 
-    if (!crypto_mac(SECOC_MAC_KEY_ID, msg_b, sizeof msg_b, t3)) { return false; }
-    if (memcmp(t1, t3, sizeof t1) == 0) { return false; }      /* input-sensitive */
+    if (!crypto_mac(SECOC_MAC_KEY_ID, msg_b, sizeof msg_b, t3)) { return 4U; }
+    if (memcmp(t1, t3, sizeof t1) == 0) { return 5U; }      /* not input-sensitive */
 
-    if (crypto_mac(0x99U, msg_a, sizeof msg_a, t4)) { return false; }  /* unknown key => fail */
+    if (crypto_mac(0x99U, msg_a, sizeof msg_a, t4)) { return 6U; }  /* unknown key accepted */
 
-    return true;
+    return 0U;
+}
+
+/* Bench Stage 3.3 + 3.4 in one go, reported on the log channel so no CM7 debug
+ * session is needed. All records are LOG_EVT_DBG_U32 (value, tag):
+ *   tag 0x3300  value 0           round trip starting (no 0x3303 after it = hang)
+ *   tag 0x3303  value result      0 = pass, else the failed check (see above)
+ *   tag 0x3340  value SCB->CCR    bit 16 (DC) = D-cache on, bit 17 (IC) = I-cache on
+ *   tag 0x3341  value MPU->CTRL   bit 0 = MPU on, bit 2 = PRIVDEFENA
+ *   tag 0x335r  value RBAR        region r (enabled regions only)
+ *   tag 0x336r  value RASR        region r (enabled regions only) */
+void secoc_crypto_bringup_report(void)
+{
+    log_evt(LOG_EVT_DBG_U32, 0U, 0x3300U);
+    log_evt(LOG_EVT_DBG_U32, secoc_crypto_bringup_mac(), 0x3303U);
+
+    log_evt(LOG_EVT_DBG_U32, SCB->CCR, 0x3340U);
+    log_evt(LOG_EVT_DBG_U32, MPU->CTRL, 0x3341U);
+
+    /* MPU->TYPE can't be spelled here: the PDL's cy_crypto_common.h does
+     * `#define TYPE uint8_t`. TYPE is the first MPU register (offset 0). */
+    const uint32_t mpu_type = *(volatile const uint32_t *)(uintptr_t)MPU_BASE;
+    const uint32_t regions  = (mpu_type & MPU_TYPE_DREGION_Msk) >> MPU_TYPE_DREGION_Pos;
+    for (uint32_t r = 0U; r < regions; r++)
+    {
+        MPU->RNR = r;
+        const uint32_t rasr = MPU->RASR;
+        if ((rasr & MPU_RASR_ENABLE_Msk) != 0UL)
+        {
+            log_evt(LOG_EVT_DBG_U32, MPU->RBAR, (uint16_t)(0x3350U + r));
+            log_evt(LOG_EVT_DBG_U32, rasr, (uint16_t)(0x3360U + r));
+        }
+    }
 }
 #endif /* SECOC_CRYPTO_BRINGUP */

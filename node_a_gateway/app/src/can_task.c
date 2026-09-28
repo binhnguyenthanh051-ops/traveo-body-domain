@@ -25,7 +25,9 @@
 #include "cybsp.h"      /* generated canfd_0_chan_1_* (config, IRQ) via cycfg */
 #include <string.h>
 
-#define CAN_STACK_WORDS     192U   /* used ~88 words (g_hw_can; incl. can_tx) + margin (ADR-0010 D5) */
+/* 384: crypto_mac() alone needs ~540 B (2 x crypto_msg_t + 2 wire buffers) on the
+ * caller's stack; 192 overflowed on the first MAC (W40 bench, Stage 3). ADR-0010 D5. */
+#define CAN_STACK_WORDS     384U   /* pre-SecOC: ~88 words used (g_hw_can; incl. can_tx) */
 #define RAW_FRAME_QDEPTH     16U
 
 /* CANFD channel for the gateway (ADR-0011). The kit routes CAN0 channel 1 to the
