@@ -136,6 +136,13 @@ DEFINES=
 # above, which would otherwise wipe it.
 DEFINES+=LOG_IMAGE_NAME=\"actuator\"
 
+# Bench toggle (M5 Stage 3.3): `SECOC_CRYPTO_BRINGUP=1` on the make command line
+# builds secoc_crypto_bringup_mac() (port_crypto.c). Named variable, not
+# DEFINES=..., so LOG_IMAGE_NAME above survives.
+ifeq ($(SECOC_CRYPTO_BRINGUP),1)
+DEFINES+=SECOC_CRYPTO_BRINGUP=1
+endif
+
 # Select softfp or hardfp floating point. Default is softfp.
 VFP_SELECT=hardfp
 
