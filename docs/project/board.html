@@ -266,7 +266,7 @@
 <!-- BOARD DATA — the only block the Sunday retro task edits. Source of truth: docs/project/ in the repo. -->
 <script id="board-data" type="application/json">
 {
-  "rebuilt": "2026-09-27",
+  "rebuilt": "2026-09-28",
   "source": "docs/project/plan.md + docs/project/weeks/2026-W40.md",
   "readyToApply": "2026-10-25",
   "jobSearch": "2026-12-01",
@@ -281,25 +281,25 @@
         "date": "2026-09-28",
         "kind": "work",
         "hours": "2 h",
-        "task": "Stage 0: build the Node A FBL CM0+ (CMAC API) + check the Node B map files. Claude writes the Stage 2 known-answer hook; cross-check the NIST vectors."
+        "task": "✅ Done early: Stage 0 builds, Stage 2 (CMAC KAT, both CM0+), Stage 4.1 (same tag on A and B), Stage 3 (CM7→CM0+ MAC, D-cache on)."
       },
       {
         "date": "2026-09-29",
         "kind": "bench",
         "hours": "2 h",
-        "task": "Stage 1 (secure boot still verifies + jumps) + Stage 2 (CMAC tag matches on both CM0+)."
+        "task": "CAN day 1: Stage 5 prep (EN pin, loopback-off builds, termination, VN1610) + Stage 5.1–5.4 (bus up, SecOC frames visible). Stage 1 rides along."
       },
       {
         "date": "2026-09-30",
         "kind": "bench",
         "hours": "2 h",
-        "task": "Stage 3 (CM7 → CM0+ MAC round trip, non-cacheable mailbox) + Stage 4 (same tag on A and B). Cut-off check."
+        "task": "CAN day 2: Stage 5.5 happy path end to end, zero drops + F-010. Stage 6 injection prep. Cut-off: Stage 5 passed?"
       },
       {
         "date": "2026-10-01",
         "kind": "work",
         "hours": "2 h",
-        "task": "Stage 5 prep: transceiver EN pin from the schematic, `CAN_LOOPBACK_TEST=0` builds, VN1610 + injection frames, termination. Saturday checklist."
+        "task": "Slack for Stage 5 leftovers; else the Stage 6 checklist + fold findings into the ADRs."
       },
       {
         "date": "2026-10-02",
@@ -322,13 +322,12 @@
     ],
     "checklist": {
       "title": "Bench pass criteria — M5 Stages 1–6",
-      "goal": "Full procedure and triage: `docs/briefs/M5-bringup-plan.md`. Cut-off: Stage 3 passed by Wed 30, or Stages 5–6 move to the W41 Saturday.",
+      "goal": "Full procedure: `docs/briefs/M5-bringup-plan.md`. Cut-off: Stage 5 passed by Wed 30, or Stage 6 moves to the W41 Saturday.",
       "items": [
-        "Tue 29 · 1.1–1.2: Node A FBL verifies + jumps; SEAM6 DEAD/GARBAGE stay in the FBL.",
-        "Tue 29 · 2.1–2.3: CMAC tag = NIST vector on both CM0+, no byte reversal.",
-        "Wed 30 · 3.1–3.4: Node B dual-core boots; `secoc_crypto_bringup_mac()` true; D-cache on + mailbox non-cacheable.",
-        "Wed 30 · 4.1: same 16-byte tag on Node A and Node B.",
-        "Sat 3 · 5.4–5.5: SecOC frames visible on the VN1610; courtesy light works end to end; `g_secoc_drop_*` = 0.",
+        "✅ Mon 28 · Stage 2: CMAC tag = NIST on both CM0+ · Stage 4.1: same tag on A and B.",
+        "✅ Mon 28 · Stage 3: CM7→CM0+ round trip = 0; D-cache on; mailbox non-cacheable.",
+        "Tue 29 · 5.1–5.4: bus terminated, EN pin driven, SecOC frames visible on the VN1610 · 1.1–1.2 secure boot still verifies.",
+        "Wed 30 · 5.5: courtesy light end to end; `g_secoc_drop_*` = 0.",
         "Sat 3 · 6.1–6.4: forged, bit-flip, replay, cross-ID each refused; one counter each; actuator holds."
       ]
     }
