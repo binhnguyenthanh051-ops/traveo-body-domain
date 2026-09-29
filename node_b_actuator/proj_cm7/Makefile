@@ -143,6 +143,12 @@ ifeq ($(SECOC_CRYPTO_BRINGUP),1)
 DEFINES+=SECOC_CRYPTO_BRINGUP=1
 endif
 
+# Bench toggle: `CAN_LOOPBACK_TEST=1` = Phase A on-chip loopback (no bus needed).
+# The default (unset) is Phase B, the real bus (can_task.c).
+ifeq ($(CAN_LOOPBACK_TEST),1)
+DEFINES+=CAN_LOOPBACK_TEST=1
+endif
+
 # Select softfp or hardfp floating point. Default is softfp.
 VFP_SELECT=hardfp
 

@@ -56,8 +56,8 @@
 #define CAN_POLL_MS          20U
 
 #ifndef CAN_LOOPBACK_TEST
-#define CAN_LOOPBACK_TEST    1               /* Phase A: on-chip loopback (proven). Phase B (=0): real bus + echo.
-                                              * Phase B deferred: needs VN1610 + 120R-terminated bus. */
+#define CAN_LOOPBACK_TEST    0               /* Phase B (default since W40 Stage 5): real bus + echo.
+                                              * Phase A on-chip loopback: build with CAN_LOOPBACK_TEST=1. */
 #endif
 
 /* Stage counters (read in the debugger to localise a stall — same as Node A):
@@ -238,6 +238,21 @@ static void can_task(void *arg)
     }
 }
 
+/* The Node B BSP leaves P12_0/P12_1 as analog GPIO (HSIOM_SEL_GPIO) — Phase A's
+ * internal loopback never needed the pins, so nothing noticed. Route them to
+ * CANFD0 CH2 here, in code, like port_log.c does for the UART, so the real bus
+ * does not depend on the regenerable BSP. Mux values from the CYT4BF8CDS GPIO
+ * header (canfd[0].ttcan_tx[2] / ttcan_rx[2]). */
+static void can_pins_init(void)
+{
+    Cy_GPIO_SetHSIOM(CYBSP_CAN_RX_PORT, CYBSP_CAN_RX_PIN, P12_1_CANFD0_TTCAN_RX2);
+    Cy_GPIO_SetDrivemode(CYBSP_CAN_RX_PORT, CYBSP_CAN_RX_PIN, CY_GPIO_DM_HIGHZ);
+
+    Cy_GPIO_Set(CYBSP_CAN_TX_PORT, CYBSP_CAN_TX_PIN);   /* recessive before the mux switches */
+    Cy_GPIO_SetHSIOM(CYBSP_CAN_TX_PORT, CYBSP_CAN_TX_PIN, P12_0_CANFD0_TTCAN_TX2);
+    Cy_GPIO_SetDrivemode(CYBSP_CAN_TX_PORT, CYBSP_CAN_TX_PIN, CY_GPIO_DM_STRONG_IN_OFF);
+}
+
 void can_task_create(void)
 {
     s_raw_q = xQueueCreateStatic(RAW_FRAME_QDEPTH, sizeof(can_raw_frame_t),
@@ -249,6 +264,8 @@ void can_task_create(void)
      * before the scheduler. secoc_crypto_port_init() (main.c) must run first. */
     actuator_fsm_init();
     secoc_app_init();
+
+    can_pins_init();
 
     cy_en_canfd_status_t st = Cy_CANFD_Init(CAN_HW_INSTANCE, CAN_HW_CHANNEL,
                                             &CAN_CHANNEL_CONFIG, &s_canfd_context);
