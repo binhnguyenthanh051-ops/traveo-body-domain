@@ -31,6 +31,8 @@
 #include "actuator_fsm.h"   /* actuate only on VALID commands */
 #include "body_msgs.h"      /* MSG_ID_*, body_msg_t */
 #include "port_crypto.h"    /* secoc_crypto_bringup_report (bench Stage 3) */
+#include "tb_log.h"         /* log_evt */
+#include "log_events.h"     /* LOG_EVT_DBG_U32 */
 #include "cy_pdl.h"     /* Cy_CANFD_*, Cy_SysInt_* */
 #include "cybsp.h"      /* generated CANFD config + IRQ names via cycfg */
 #include <string.h>
@@ -253,6 +255,20 @@ static void can_pins_init(void)
     Cy_GPIO_SetDrivemode(CYBSP_CAN_TX_PORT, CYBSP_CAN_TX_PIN, CY_GPIO_DM_STRONG_IN_OFF);
 }
 
+/* Nominal bit timing, overriding the configurator's. Node B's design.modus set
+ * the nominal phase to 5 x (1+9+4) = 70 CAN clocks per bit = 571 kbit/s at the
+ * 40 MHz CAN clock (100 MHz peri / 2.5), while Node A runs 5 x (1+11+4) = 80 =
+ * 500 kbit/s. Internal loopback agrees with any bitrate, so Phase A never saw it;
+ * on the real bus nobody ACKs Node B. Same values as Node A (ADR-0011: 500 kbit/s,
+ * sample point 12/16 = 75%). The data phase (1 x 20 = 2 Mbit/s) already matched.
+ * TODO: fix CANFD0 CH2 in design.modus too, then drop this override. */
+static const cy_stc_canfd_bitrate_t s_nominal_500k = {
+    .prescaler      = 5U - 1U,
+    .timeSegment1   = 11U - 1U,
+    .timeSegment2   = 4U - 1U,
+    .syncJumpWidth  = 4U - 1U,
+};
+
 void can_task_create(void)
 {
     s_raw_q = xQueueCreateStatic(RAW_FRAME_QDEPTH, sizeof(can_raw_frame_t),
@@ -267,8 +283,18 @@ void can_task_create(void)
 
     can_pins_init();
 
+    /* Bring-up evidence for the bit timing above: the CAN clock actually
+     * delivered to CANFD0 CH2 (expected 40000000). */
+    log_evt(LOG_EVT_DBG_U32,
+            Cy_SysClk_PeriPclkGetFrequency(PCLK_CANFD0_CLOCK_CAN2, CY_SYSCLK_DIV_24_5_BIT, 0U),
+            0x3500U);
+
+    static cy_stc_canfd_config_t s_can_cfg;   /* static: the driver may keep the pointer */
+    s_can_cfg = CAN_CHANNEL_CONFIG;
+    s_can_cfg.bitrate = &s_nominal_500k;
+
     cy_en_canfd_status_t st = Cy_CANFD_Init(CAN_HW_INSTANCE, CAN_HW_CHANNEL,
-                                            &CAN_CHANNEL_CONFIG, &s_canfd_context);
+                                            &s_can_cfg, &s_canfd_context);
     configASSERT(st == CY_CANFD_SUCCESS);
     (void)st;
 
