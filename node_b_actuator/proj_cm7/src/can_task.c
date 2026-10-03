@@ -302,7 +302,8 @@ static void can_pins_init(void)
  * from a door switch on the actuator side, not from the lock state. Pressed =
  * door ajar. The kit button pulls the pin to GND, so it needs a pull-up; the
  * BSP leaves it HIGHZ (floating), so it is set here.
- * LED2 (P5_1, CYBSP_USER_LED2, active LOW) is the courtesy light: on while
+ * USER LED2 (P5_1, CYBSP_USER_LED2, active LOW; silkscreen **LED4** — the
+ * silkscreen "LED2" is the always-on power LED) is the courtesy light: on while
  * actuator_light_pct() > 0. The BSP leaves it ANALOG (undriven).
  * The actuator FSM stays hardware-free; only this file touches the pins. */
 static void demo_io_init(void)
