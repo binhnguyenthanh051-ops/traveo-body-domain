@@ -385,6 +385,62 @@ void test_sync_adopt_is_silent_when_the_epoch_does_not_move(void)
                               "a floor that changes nothing must not report a resync");
 }
 
+/* ---- configured PDU length (W40 bench: CAN FD pads 13..15 B to 16 B) ---- */
+
+static size_t fake_pdu_len(uint32_t can_id)
+{
+    return (can_id == ID_DOOR) ? 1U : 0U;    /* ID_UNKNOWN deliberately unconfigured */
+}
+
+/* @test REQ-SECOC-001 : a genuine frame padded by CAN FD is accepted */
+void test_padded_frame_is_accepted_with_the_pdu_len_lookup(void)
+{
+    secoc_rx_set_pdu_len_of(&g_rx, fake_pdu_len);
+    const uint8_t pdu[1] = { 0x01U };
+    uint8_t frame[32] = { 0U };
+    size_t n = make_frame(ID_DOOR, g_fresh.floor, 3U, pdu, sizeof pdu, frame, sizeof frame);
+    TEST_ASSERT_EQUAL_size_t(13U, n);
+
+    uint8_t out[16]; size_t out_len = 0U;
+    TEST_ASSERT_EQUAL(SECOC_RX_ACCEPT,
+        secoc_rx_process(&g_rx, ID_DOOR, frame, 16U, out, sizeof out, &out_len));
+    TEST_ASSERT_EQUAL_size_t(1U, out_len);
+    TEST_ASSERT_EQUAL_HEX16(LOG_EVT_SECOC_ACCEPT, take_one().evt);
+}
+
+/* The regression the lookup fixes, pinned at the seam where the BVT sees it. */
+/* @test REQ-LOG-009 */
+void test_padded_frame_without_the_lookup_is_a_mac_reject(void)
+{
+    const uint8_t pdu[1] = { 0x01U };
+    uint8_t frame[32] = { 0U };
+    (void)make_frame(ID_DOOR, g_fresh.floor, 3U, pdu, sizeof pdu, frame, sizeof frame);
+
+    uint8_t out[16]; size_t out_len = 0U;
+    TEST_ASSERT_EQUAL(SECOC_RX_DROP_MAC,
+        secoc_rx_process(&g_rx, ID_DOOR, frame, 16U, out, sizeof out, &out_len));
+    rec_t r = take_one();
+    TEST_ASSERT_EQUAL_HEX16(LOG_EVT_SECOC_REJECT_MAC, r.evt);
+    TEST_ASSERT_EQUAL_UINT16((uint16_t)SECOC_BAD_MAC, r.arg1);
+}
+
+/* An ID the lookup does not know keeps the old path, so the unregistered-ID
+ * verdict (a freshness drop, not a length error) is unchanged. */
+/* @test REQ-SECOC-007 */
+void test_unconfigured_id_keeps_the_freshness_drop_with_the_lookup(void)
+{
+    secoc_rx_set_pdu_len_of(&g_rx, fake_pdu_len);
+    const uint8_t pdu[1] = { 0x01U };
+    uint8_t frame[32];
+    size_t n = make_frame(ID_UNKNOWN, g_fresh.floor, 1U, pdu, sizeof pdu, frame, sizeof frame);
+
+    uint8_t out[16]; size_t out_len = 99U;
+    TEST_ASSERT_EQUAL(SECOC_RX_DROP_FRESHNESS,
+        secoc_rx_process(&g_rx, ID_UNKNOWN, frame, n, out, sizeof out, &out_len));
+    TEST_ASSERT_EQUAL_size_t(0U, out_len);
+    TEST_ASSERT_EQUAL_HEX16(LOG_EVT_SECOC_REJECT_FRESHNESS, take_one().evt);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -399,5 +455,8 @@ int main(void)
     RUN_TEST(test_events_and_counters_never_diverge);
     RUN_TEST(test_sync_adopt_emits_resync_with_the_new_epoch);
     RUN_TEST(test_sync_adopt_is_silent_when_the_epoch_does_not_move);
+    RUN_TEST(test_padded_frame_is_accepted_with_the_pdu_len_lookup);
+    RUN_TEST(test_padded_frame_without_the_lookup_is_a_mac_reject);
+    RUN_TEST(test_unconfigured_id_keeps_the_freshness_drop_with_the_lookup);
     return UNITY_END();
 }

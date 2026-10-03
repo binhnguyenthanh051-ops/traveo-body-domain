@@ -292,3 +292,27 @@ MAC latency vs the control budget — are consolidated for bench bring-up; findi
 in ADR-0017/0018. M6 swaps the RAM freshness store for `eeprom_emu` (D8) for real cross-reboot
 anti-replay.
 ```
+
+**Addendum — D2 on a real bus: the receiver uses a configured PDU length (2026-10-03, W40 Stage 5).**
+The first real-bus capture showed every secured frame arriving **16 B**, not 13/14/15 B: CAN FD has
+no 13..15-byte data length, so the controller pads to the next valid one (12, 16, 20, 24, 32, 48,
+64). `secoc_verify` inferred the PDU as `frame_len − 12`, which on a padded frame moves the MAC
+window onto the wrong bytes, so **every genuine frame would have been rejected as `BAD_MAC`**.
+Host tests (exact lengths) and Phase A loopback could not show it.
+*Decision (option B, owner-approved):* the receiver takes the authentic PDU length **per CAN ID
+from configuration** (`body_msg_pdu_len()` in `shared/messages`: 0x120/0x121 = 1, 0x2F0 = 2,
+0x200 = 3), as AUTOSAR SecOC configures the authentic I-PDU length rather than deriving it from
+the DLC. `secoc_verify_len()` accepts exactly PDU + 12 or that length padded to the next CAN FD
+length, rejects anything else as `SECOC_BAD_LENGTH`, and ignores the padding bytes, which are not
+part of the authentic I-PDU and not under the MAC. `secoc_rx` binds the table through an optional
+`pdu_len_of` lookup set by each node's `secoc_app`. SecOC still names no message IDs, and an ID
+the table does not know keeps the previous inference path, so the unregistered-ID verdict
+(freshness drop) is unchanged. The on-wire layout of D2 is unchanged.
+*Alternatives:* (A) sender pads the PDU so PDU + 12 is a valid FD length. No receiver change,
+but the format then depends on the DLC table by accident, the padding falls under the MAC, and
+the next message size breaks it again. (C) trailer first (freshness ∥ MAC ∥ PDU), which is
+non-standard, and the receiver still needs the PDU length to bound decoding.
+*Evidence:* `test_secoc` + `test_secoc_rx` gain 8 cases, `test_body_msgs` 1 (`body_msg_pdu_len`
+matches the packers). The full host suite went from 230 to 239 tests, all passing. Bench capture:
+`docs/bench/2026-10-03/bus_node_b.txt`.
+

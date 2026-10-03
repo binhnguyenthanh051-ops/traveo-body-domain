@@ -9,6 +9,7 @@
 #include "secoc_app.h"
 #include "secoc.h"            /* secoc_secure/verify, secoc_crypto_t, secoc_mac_if_t */
 #include "secoc_freshness.h"  /* tx/rx contexts + accept rule */
+#include "body_msgs.h"         /* body_msg_pdu_len, MSG_ID_* */
 #include "secoc_rx.h"         /* the composed RX verdict + SecOC events (ADR-0023 D11) */
 #include "secoc_key_id.h"     /* SECOC_MAC_KEY_ID (public selector, no secret) */
 #include "crypto_service.h"   /* crypto_mac (M0+ offload client) */
@@ -80,6 +81,8 @@ void secoc_app_init(void)
     (void)secoc_rx_boot(&g_rx, &g_store, (uint8_t)SECOC_DOM_RX_A,
                         g_rx_ids, sizeof g_rx_ids / sizeof g_rx_ids[0]);
     secoc_rx_init(&g_secoc_rx, &g_cy, &g_rx);
+    /* Per-ID PDU lengths, so a CAN FD-padded secured frame verifies (W40 bench). */
+    secoc_rx_set_pdu_len_of(&g_secoc_rx, body_msg_pdu_len);
 }
 
 bool secoc_app_verify_and_decode(const can_raw_frame_t *f, body_msg_t *out)

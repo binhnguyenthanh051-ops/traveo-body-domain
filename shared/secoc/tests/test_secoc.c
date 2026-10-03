@@ -147,6 +147,97 @@ void test_telemetry_round_trip(void)
     TEST_ASSERT_EQUAL_HEX8_ARRAY(rpt, out, sizeof rpt);
 }
 
+/* ---- configured PDU length / CAN FD padding (W40 bench finding) ---------- */
+
+/* @test REQ-SECOC-003 */
+void test_fd_frame_len_rounds_up_to_valid_canfd_lengths(void)
+{
+    TEST_ASSERT_EQUAL_size_t(0U,  secoc_fd_frame_len(0U));
+    TEST_ASSERT_EQUAL_size_t(8U,  secoc_fd_frame_len(8U));
+    TEST_ASSERT_EQUAL_size_t(12U, secoc_fd_frame_len(9U));
+    TEST_ASSERT_EQUAL_size_t(16U, secoc_fd_frame_len(13U));   /* 1 B cmd + trailer */
+    TEST_ASSERT_EQUAL_size_t(16U, secoc_fd_frame_len(15U));   /* 3 B telemetry + trailer */
+    TEST_ASSERT_EQUAL_size_t(16U, secoc_fd_frame_len(16U));
+    TEST_ASSERT_EQUAL_size_t(20U, secoc_fd_frame_len(17U));
+    TEST_ASSERT_EQUAL_size_t(64U, secoc_fd_frame_len(64U));
+    TEST_ASSERT_EQUAL_size_t(0U,  secoc_fd_frame_len(65U));
+}
+
+/* The bench bug, pinned: a 13 B secured frame arrives as 16 B. Inferring the PDU
+ * as frame_len - 12 = 4 B puts the MAC window on the wrong bytes, so the
+ * legacy path rejects a GENUINE frame. secoc_verify_len() exists for this. */
+/* @test REQ-SECOC-001 */
+void test_inferred_length_rejects_a_genuine_padded_frame(void)
+{
+    const uint8_t pdu[1] = { 0x01U };
+    uint8_t frame[32] = { 0U };
+    size_t n = secoc_secure(&g_cy, ID_DOOR, 1U, 5U, pdu, sizeof pdu, frame, sizeof frame);
+    TEST_ASSERT_EQUAL_size_t(13U, n);
+    uint16_t e = 0U, c = 0U; uint8_t out[8]; size_t out_len = 0U;
+    TEST_ASSERT_EQUAL(SECOC_BAD_MAC,
+        secoc_verify(&g_cy, ID_DOOR, frame, 16U, &e, &c, out, sizeof out, &out_len));
+}
+
+/* @test REQ-SECOC-001 */
+/* @test REQ-SECOC-003 */
+void test_configured_length_accepts_padded_and_exact_frames(void)
+{
+    const uint8_t pdu[3] = { 0x02U, 0x00U, 0x01U };
+    uint8_t frame[32];
+    (void)memset(frame, 0xCC, sizeof frame);   /* padding value must not matter */
+    size_t n = secoc_secure(&g_cy, ID_TELEM, 1U, 0x1BF2U, pdu, sizeof pdu, frame, sizeof frame);
+    TEST_ASSERT_EQUAL_size_t(15U, n);
+
+    uint16_t e = 0U, c = 0U; uint8_t out[8]; size_t out_len = 0U;
+    TEST_ASSERT_EQUAL(SECOC_OK, secoc_verify_len(&g_cy, ID_TELEM, frame, 16U, sizeof pdu,
+                                                 &e, &c, out, sizeof out, &out_len));
+    TEST_ASSERT_EQUAL_size_t(sizeof pdu, out_len);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(pdu, out, sizeof pdu);
+    TEST_ASSERT_EQUAL_UINT16(1U, e);
+    TEST_ASSERT_EQUAL_UINT16(0x1BF2U, c);
+
+    out_len = 0U;
+    TEST_ASSERT_EQUAL(SECOC_OK, secoc_verify_len(&g_cy, ID_TELEM, frame, n, sizeof pdu,
+                                                 &e, &c, out, sizeof out, &out_len));
+    TEST_ASSERT_EQUAL_size_t(sizeof pdu, out_len);
+}
+
+/* @test REQ-SECOC-003 */
+void test_configured_length_rejects_frames_this_sender_cannot_produce(void)
+{
+    const uint8_t pdu[1] = { 0x01U };
+    uint8_t frame[32] = { 0U };
+    (void)secoc_secure(&g_cy, ID_DOOR, 1U, 5U, pdu, sizeof pdu, frame, sizeof frame);
+    uint16_t e = 0U, c = 0U; uint8_t out[8]; size_t out_len = 0U;
+
+    TEST_ASSERT_EQUAL(SECOC_BAD_LENGTH,     /* shorter than PDU + trailer */
+        secoc_verify_len(&g_cy, ID_DOOR, frame, 12U, 1U, &e, &c, out, sizeof out, &out_len));
+    TEST_ASSERT_EQUAL(SECOC_BAD_LENGTH,     /* longer than the padded length (16) */
+        secoc_verify_len(&g_cy, ID_DOOR, frame, 20U, 1U, &e, &c, out, sizeof out, &out_len));
+    TEST_ASSERT_EQUAL(SECOC_BAD_LENGTH,     /* configured PDU larger than the caller's buffer */
+        secoc_verify_len(&g_cy, ID_DOOR, frame, 16U, 1U, &e, &c, out, 0U, &out_len));
+    TEST_ASSERT_EQUAL_size_t(0U, out_len);
+}
+
+/* Padding is outside the MAC (it is not part of the authentic I-PDU), so
+ * changing it is harmless; changing the MAC is not. */
+/* @test REQ-SECOC-001 */
+void test_configured_length_still_rejects_a_tampered_mac(void)
+{
+    const uint8_t pdu[1] = { 0x01U };
+    uint8_t frame[32] = { 0U };
+    (void)secoc_secure(&g_cy, ID_DOOR, 1U, 5U, pdu, sizeof pdu, frame, sizeof frame);
+    uint16_t e = 0U, c = 0U; uint8_t out[8]; size_t out_len = 0U;
+
+    frame[15] ^= 0xFFU;                      /* padding byte */
+    TEST_ASSERT_EQUAL(SECOC_OK,
+        secoc_verify_len(&g_cy, ID_DOOR, frame, 16U, 1U, &e, &c, out, sizeof out, &out_len));
+
+    frame[12] ^= 0x01U;                      /* last MAC byte */
+    TEST_ASSERT_EQUAL(SECOC_BAD_MAC,
+        secoc_verify_len(&g_cy, ID_DOOR, frame, 16U, 1U, &e, &c, out, sizeof out, &out_len));
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -159,5 +250,10 @@ int main(void)
     RUN_TEST(test_oracle_failure_is_fail_safe);
     RUN_TEST(test_short_frame_is_bad_length);
     RUN_TEST(test_telemetry_round_trip);
+    RUN_TEST(test_fd_frame_len_rounds_up_to_valid_canfd_lengths);
+    RUN_TEST(test_inferred_length_rejects_a_genuine_padded_frame);
+    RUN_TEST(test_configured_length_accepts_padded_and_exact_frames);
+    RUN_TEST(test_configured_length_rejects_frames_this_sender_cannot_produce);
+    RUN_TEST(test_configured_length_still_rejects_a_tampered_mac);
     return UNITY_END();
 }

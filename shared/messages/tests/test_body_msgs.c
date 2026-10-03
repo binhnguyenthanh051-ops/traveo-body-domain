@@ -114,6 +114,20 @@ void test_decode_bad_payload_rejected(void)
 
 /* ---- Runner ---- */
 
+/* The secured PDU lengths must match what the packers actually emit, or the
+ * SecOC receiver verifies the wrong byte range (W40 bench finding). */
+void test_pdu_len_matches_the_packers(void)
+{
+    uint8_t buf[8];
+    light_cmd_msg_t lc = { 50u };
+    sensor_report_msg_t sr = { 512u, 1u };
+    TEST_ASSERT_EQUAL_size_t(pack_light_cmd(&lc, buf, sizeof buf), body_msg_pdu_len(MSG_ID_LIGHT_CMD));
+    TEST_ASSERT_EQUAL_size_t(pack_sensor_report(&sr, buf, sizeof buf), body_msg_pdu_len(MSG_ID_SENSOR_RPT));
+    TEST_ASSERT_EQUAL_size_t(1u, body_msg_pdu_len(MSG_ID_DOOR_CMD));
+    TEST_ASSERT_EQUAL_size_t(2u, body_msg_pdu_len(MSG_ID_FRESHNESS_SYNC));
+    TEST_ASSERT_EQUAL_size_t(0u, body_msg_pdu_len(0x7A0u));   /* not a secured ID */
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -126,5 +140,6 @@ int main(void)
     RUN_TEST(test_decode_sensor_report);
     RUN_TEST(test_decode_unknown_id_rejected);
     RUN_TEST(test_decode_bad_payload_rejected);
+    RUN_TEST(test_pdu_len_matches_the_packers);
     return UNITY_END();
 }
