@@ -161,6 +161,33 @@ static int can_tx(const can_raw_frame_t *f)
             == CY_CANFD_SUCCESS) ? 0 : -1;
 }
 
+#if !CAN_LOOPBACK_TEST
+/* Bench Stage 5 diagnosis: the controller's own view of the bus, once a second,
+ * as LOG_EVT_DBG_U32 (no debugger needed):
+ *   tag 0x3510 PSR  bits[2:0] LEC = last error: 0 none, 1 stuff, 2 form,
+ *                   3 ACK (we sent, nobody acked), 4 bit1, 5 bit0, 7 no change;
+ *                   bit 5 EP = error passive, bit 7 BO = bus off
+ *   tag 0x3511 ECR  bits[7:0] TEC (we transmit and fail), bits[14:8] REC
+ *   tag 0x3512 CCCR bit 0 INIT (stuck in config), bit 5 MON (bus monitoring),
+ *                   bit 7 TEST (test/loopback mode still on)
+ * Reading PSR resets LEC to 7, so each record covers the last second. */
+static void can_report_status(void)
+{
+    static TickType_t s_last;
+    const TickType_t now = xTaskGetTickCount();
+    if ((now - s_last) < pdMS_TO_TICKS(1000U))
+    {
+        return;
+    }
+    s_last = now;
+
+    volatile CANFD_CH_M_TTCAN_Type const *tt = &CAN_HW_INSTANCE->CH[CAN_HW_CHANNEL].M_TTCAN;
+    log_evt(LOG_EVT_DBG_U32, tt->PSR,  0x3510U);
+    log_evt(LOG_EVT_DBG_U32, tt->ECR,  0x3511U);
+    log_evt(LOG_EVT_DBG_U32, tt->CCCR, 0x3512U);
+}
+#endif
+
 static void can_task(void *arg)
 {
     (void)arg;
@@ -179,6 +206,7 @@ static void can_task(void *arg)
     for (;;)
     {
 #if !CAN_LOOPBACK_TEST
+        can_report_status();
         /* Phase B: on the real bus, announce our freshness floor once at startup
          * so the gateway raises its command epoch (D5 resync). Task context — the
          * MAC round-trip uses the RTOS-tick clock. */
