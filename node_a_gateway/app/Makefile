@@ -115,6 +115,13 @@ INCLUDES=./config ./include ./logic/include ../../shared/can/include ../../share
 # Add additional defines to the build process (without a leading -D).
 DEFINES=
 
+# Bench toggle: `CAN_ECHO_TEST=1` re-enables the echo of unknown CAN IDs for the
+# single-node echo probe (host_tools/can_echo_probe). Off by default: with both
+# nodes on the bus the two echoes feed each other forever (F-011).
+ifeq ($(CAN_ECHO_TEST),1)
+DEFINES+=CAN_ECHO_TEST=1
+endif
+
 # Select softfp or hardfp floating point. Default is softfp.
 VFP_SELECT=
 
