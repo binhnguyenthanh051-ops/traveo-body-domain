@@ -161,6 +161,11 @@ static int can_tx(const can_raw_frame_t *f)
             == CY_CANFD_SUCCESS) ? 0 : -1;
 }
 
+/* Stage 5.5 demo I/O (defined with can_task_create, below). */
+static void demo_io_init(void);
+static bool door_ajar_switch(void);
+static void light_output_update(void);
+
 #if !CAN_LOOPBACK_TEST
 /* Bench Stage 5 diagnosis: the controller's own view of the bus, once a second,
  * as LOG_EVT_DBG_U32 (no debugger needed):
@@ -233,6 +238,7 @@ static void can_task(void *arg)
                 if (secoc_app_verify_and_decode(&frame, &msg))
                 {
                     actuator_fsm_apply(&msg);
+                    light_output_update();
                 }
             }
 #if !CAN_LOOPBACK_TEST
@@ -256,8 +262,16 @@ static void can_task(void *arg)
             /* Phase B: periodic authenticated telemetry (secured 0x200). The
              * ambient value would come from an ADC read; door_ajar reflects the
              * FSM state. */
+            /* door_ajar from the door switch (SW), logged on change (tag 0x3521). */
+            static bool s_last_ajar = false;
+            const bool ajar = door_ajar_switch();
+            if (ajar != s_last_ajar)
+            {
+                s_last_ajar = ajar;
+                log_evt(LOG_EVT_DBG_U32, ajar ? 1U : 0U, 0x3521U);
+            }
             sensor_report_msg_t rpt = { .ambient_raw = 0u,
-                                        .door_ajar = actuator_door_locked() ? 0u : 1u };
+                                        .door_ajar = ajar ? 1u : 0u };
             can_raw_frame_t tf;
             if (secoc_app_build_telemetry(&rpt, &tf))
             {
@@ -281,6 +295,44 @@ static void can_pins_init(void)
     Cy_GPIO_Set(CYBSP_CAN_TX_PORT, CYBSP_CAN_TX_PIN);   /* recessive before the mux switches */
     Cy_GPIO_SetHSIOM(CYBSP_CAN_TX_PORT, CYBSP_CAN_TX_PIN, P12_0_CANFD0_TTCAN_TX2);
     Cy_GPIO_SetDrivemode(CYBSP_CAN_TX_PORT, CYBSP_CAN_TX_PIN, CY_GPIO_DM_STRONG_IN_OFF);
+}
+
+/* ---- Stage 5.5 demo I/O: door-ajar switch + courtesy light --------------
+ * SW (P5_3, CYBSP_USER_BTN1) is the door-ajar switch: in a car "ajar" comes
+ * from a door switch on the actuator side, not from the lock state. Pressed =
+ * door ajar. The kit button pulls the pin to GND, so it needs a pull-up; the
+ * BSP leaves it HIGHZ (floating), so it is set here.
+ * LED2 (P5_1, CYBSP_USER_LED2, active LOW) is the courtesy light: on while
+ * actuator_light_pct() > 0. The BSP leaves it ANALOG (undriven).
+ * The actuator FSM stays hardware-free; only this file touches the pins. */
+static void demo_io_init(void)
+{
+    Cy_GPIO_SetHSIOM(CYBSP_USER_BTN1_PORT, CYBSP_USER_BTN1_PIN, HSIOM_SEL_GPIO);
+    Cy_GPIO_Set(CYBSP_USER_BTN1_PORT, CYBSP_USER_BTN1_PIN);        /* pull-up level */
+    Cy_GPIO_SetDrivemode(CYBSP_USER_BTN1_PORT, CYBSP_USER_BTN1_PIN, CY_GPIO_DM_PULLUP);
+
+    Cy_GPIO_SetHSIOM(CYBSP_USER_LED2_PORT, CYBSP_USER_LED2_PIN, HSIOM_SEL_GPIO);
+    Cy_GPIO_Set(CYBSP_USER_LED2_PORT, CYBSP_USER_LED2_PIN);        /* off (active low) */
+    Cy_GPIO_SetDrivemode(CYBSP_USER_LED2_PORT, CYBSP_USER_LED2_PIN, CY_GPIO_DM_STRONG_IN_OFF);
+}
+
+static bool door_ajar_switch(void)
+{
+    return (Cy_GPIO_Read(CYBSP_USER_BTN1_PORT, CYBSP_USER_BTN1_PIN) == 0UL);   /* pressed */
+}
+
+/* Drive the light output from the FSM, and log changes (diagnostic, tag 0x3520
+ * = light_pct). Called after every authenticated command is applied. */
+static void light_output_update(void)
+{
+    static uint8_t s_last_pct = 0xFFU;
+    const uint8_t pct = actuator_light_pct();
+    Cy_GPIO_Write(CYBSP_USER_LED2_PORT, CYBSP_USER_LED2_PIN, (pct > 0U) ? 0UL : 1UL);
+    if (pct != s_last_pct)
+    {
+        s_last_pct = pct;
+        log_evt(LOG_EVT_DBG_U32, (uint32_t)pct, 0x3520U);
+    }
 }
 
 /* Nominal bit timing, overriding the configurator's. Node B's design.modus set
@@ -310,6 +362,7 @@ void can_task_create(void)
     secoc_app_init();
 
     can_pins_init();
+    demo_io_init();
 
     /* Bring-up evidence for the bit timing above: the CAN clock actually
      * delivered to CANFD0 CH2 (expected 40000000). */
