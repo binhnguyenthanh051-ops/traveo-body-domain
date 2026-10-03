@@ -62,6 +62,15 @@
                                               * Phase A on-chip loopback: build with CAN_LOOPBACK_TEST=1. */
 #endif
 
+/* Echo of unknown IDs: a single-node bring-up aid (the M2 / Stage 5.1 echo probe),
+ * OFF by default. With both nodes on one bus it is a hazard: each node echoes the
+ * other's echo forever (a bus-saturating storm from any one unknown frame), and
+ * Node A re-transmitted every injected attack frame, so Node B logged each REJECT
+ * twice (W40 Stage 6, F-011). Build with CAN_ECHO_TEST=1 for the echo probe. */
+#ifndef CAN_ECHO_TEST
+#define CAN_ECHO_TEST        0
+#endif
+
 /* Stage counters (read in the debugger to localise a stall — same as Node A):
  *   tx climbs, isr 0     -> TX issued, no interrupt: loopback/routing not engaged.
  *   isr climbs, cb 0     -> ISR fires but IrqHandler sees no RF0N.
@@ -241,10 +250,10 @@ static void can_task(void *arg)
                     light_output_update();
                 }
             }
-#if !CAN_LOOPBACK_TEST
+#if !CAN_LOOPBACK_TEST && CAN_ECHO_TEST
             else
             {
-                (void)can_tx(&frame);   /* Phase B: echo non-command IDs (bring-up aid) */
+                (void)can_tx(&frame);   /* Phase B: echo non-command IDs (bring-up aid, opt-in) */
             }
 #endif
         }

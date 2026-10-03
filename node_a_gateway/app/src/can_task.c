@@ -58,6 +58,15 @@
 #define CAN_LOOPBACK_TEST   0
 #endif
 
+/* Echo of unknown IDs: a single-node bring-up aid (the M2 / Stage 5.1 echo probe),
+ * OFF by default. With both nodes on one bus it is a hazard: each node echoes the
+ * other's echo forever (a bus-saturating storm from any one unknown frame), and
+ * Node A re-transmitted every injected attack frame, so Node B logged each REJECT
+ * twice (W40 Stage 6, F-011). Build with CAN_ECHO_TEST=1 for the echo probe. */
+#ifndef CAN_ECHO_TEST
+#define CAN_ECHO_TEST       0
+#endif
+
 #if CAN_LOOPBACK_TEST
 /* Stage counters — read in the debugger to localise where the path stalls:
  *   tx_count climbs, isr stays 0      -> TX issued but no interrupt: loopback not
@@ -215,10 +224,12 @@ static void can_task(void *arg)
             {
                 (void)secoc_app_handle_sync(&frame);
             }
+#if CAN_ECHO_TEST
             else
             {
-                (void)can_tx(&frame);   /* echo other IDs (bring-up aid) */
+                (void)can_tx(&frame);   /* echo other IDs (bring-up aid, opt-in) */
             }
+#endif
 #endif
         }
         else
