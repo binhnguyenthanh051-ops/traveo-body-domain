@@ -59,7 +59,10 @@ def from_serial(port: str, baud: int, raw: Path | None, out, colour: bool) -> in
         return 2
 
     dec = log_decode.Decoder()
-    raw_fh = open(raw, "wb") if raw else None
+    raw_fh = None
+    if raw:
+        Path(raw).parent.mkdir(parents=True, exist_ok=True)   # e.g. a new docs/bench/<date>/
+        raw_fh = open(raw, "wb")
 
     try:
         with serial.Serial(port, baud, timeout=0.2) as ser:
