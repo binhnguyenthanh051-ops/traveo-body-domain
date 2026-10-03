@@ -80,6 +80,27 @@ secoc_verify_result_t secoc_verify(const secoc_crypto_t *cy, uint16_t can_id,
                                    uint16_t *epoch, uint16_t *counter,
                                    uint8_t *pdu_out, size_t cap, size_t *pdu_len);
 
+/* -------------------------------------------------------------------
+ * RX with a CONFIGURED PDU length (W40 bench finding; ADR-0021 addendum).
+ *
+ * Same verify + strip as secoc_verify(), but the authentic PDU is the first
+ * `pdu_len_cfg` bytes, as configured per CAN ID (body_msg_pdu_len), instead of
+ * being inferred as frame_len - 12. Needed on a real bus: CAN FD pads a 13..15 B
+ * secured frame to 16 B, so inference puts the MAC one or more bytes off and
+ * every genuine frame fails. frame_len must be the exact secured length or that
+ * length padded to the next CAN FD length; anything else is SECOC_BAD_LENGTH.
+ * Padding bytes are not part of the MAC and are ignored.
+ * ----------------------------------------------------------------- */
+secoc_verify_result_t secoc_verify_len(const secoc_crypto_t *cy, uint16_t can_id,
+                                       const uint8_t *frame, size_t frame_len,
+                                       size_t pdu_len_cfg,
+                                       uint16_t *epoch, uint16_t *counter,
+                                       uint8_t *pdu_out, size_t cap, size_t *pdu_len);
+
+/* Smallest CAN FD data-field length that holds n bytes (0..8, 12, 16, 20, 24,
+ * 32, 48, 64), or 0 if n > 64. Exposed for direct test. */
+size_t secoc_fd_frame_len(size_t n);
+
 /* Constant-time equality of two n-byte buffers (ADR-0021 D1): no data-dependent
  * early-out. Exposed for direct test. Returns true iff all n bytes match. */
 bool secoc_ct_equal(const uint8_t *a, const uint8_t *b, size_t n);

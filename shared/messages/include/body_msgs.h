@@ -71,4 +71,12 @@ typedef struct {
  * (out->kind = BODY_MSG_NONE). Pure logic — no hardware, no FreeRTOS. */
 int body_decode(uint32_t id, const uint8_t *buf, size_t len, body_msg_t *out);
 
+/* Authentic (unsecured) PDU length of each SecOC-protected message, in bytes;
+ * 0 for an ID that has no fixed secured PDU. The receiver needs this because a
+ * secured frame is PDU + 12 B trailer and CAN FD pads that up to the next valid
+ * length (13/14/15 B all go out as 16 B), so "frame length - 12" is NOT the PDU
+ * length on a real bus. Configured per ID, as AUTOSAR SecOC does
+ * (W40 bench finding, ADR-0021 addendum). */
+size_t body_msg_pdu_len(uint32_t id);
+
 #endif /* BODY_MSGS_H */

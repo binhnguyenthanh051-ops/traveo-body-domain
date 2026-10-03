@@ -71,6 +71,11 @@ typedef enum {
 typedef struct {
     const secoc_crypto_t *cy;      /* MAC oracle + key_id (ADR-0021 D7) */
     secoc_rx_ctx_t       *fresh;   /* freshness receiver context (ADR-0021 D4) */
+    /* Optional: authentic PDU length per CAN ID (0 = not configured). When set
+     * and non-zero for an ID, the frame is verified with secoc_verify_len(), so
+     * CAN FD padding is handled; otherwise frame_len - 12 is inferred, as before.
+     * The app binds body_msg_pdu_len — SecOC itself names no message IDs. */
+    size_t (*pdu_len_of)(uint32_t can_id);
     uint32_t n_accept;             /* frames released to decode */
     uint32_t n_drop_mac;           /* REQ-SECOC-001: bad-MAC / malformed / unknown-key */
     uint32_t n_drop_fresh;         /* REQ-SECOC-001: stale freshness (replay) */
@@ -81,6 +86,10 @@ typedef struct {
  * state where every frame is dropped as SECOC_RX_DROP_MAC — fail-safe, and
  * loud, because each drop still emits its event. */
 void secoc_rx_init(secoc_rx_t *rx, const secoc_crypto_t *cy, secoc_rx_ctx_t *fresh);
+
+/* Bind the per-ID PDU-length lookup (see secoc_rx_t.pdu_len_of). Call after
+ * secoc_rx_init(), which clears it. NULL restores length inference. */
+void secoc_rx_set_pdu_len_of(secoc_rx_t *rx, size_t (*pdu_len_of)(uint32_t can_id));
 
 /* -------------------------------------------------------------------
  * Process ONE received secured frame (REQ-SECOC-001, 007; REQ-LOG-009).

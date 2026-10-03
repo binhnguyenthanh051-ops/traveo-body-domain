@@ -120,28 +120,14 @@ size_t secoc_secure(const secoc_crypto_t *cy, uint16_t can_id,
     return secured;
 }
 
-secoc_verify_result_t secoc_verify(const secoc_crypto_t *cy, uint16_t can_id,
-                                   const uint8_t *frame, size_t frame_len,
-                                   uint16_t *epoch, uint16_t *counter,
-                                   uint8_t *pdu_out, size_t cap, size_t *pdu_len)
+/* Shared by both entry points: verify the MAC over a frame whose authentic PDU
+ * is the first `plen` bytes, then strip. Length policy is the CALLER's — it
+ * differs between "infer" and "configured" — so this core never decides it. */
+static secoc_verify_result_t verify_core(const secoc_crypto_t *cy, uint16_t can_id,
+                                         const uint8_t *frame, size_t plen,
+                                         uint16_t *epoch, uint16_t *counter,
+                                         uint8_t *pdu_out, size_t *pdu_len)
 {
-    if ((cy == NULL) || (cy->oracle == NULL) || (cy->oracle->mac == NULL) ||
-        (frame == NULL) || (epoch == NULL) || (counter == NULL) ||
-        (pdu_out == NULL) || (pdu_len == NULL))
-    {
-        return SECOC_MAC_ERROR;         /* misuse => fail-safe, no PDU emitted */
-    }
-    if (frame_len < (size_t)SECOC_TRAILER_LEN)
-    {
-        return SECOC_BAD_LENGTH;
-    }
-
-    size_t plen = frame_len - (size_t)SECOC_TRAILER_LEN;
-    if ((plen > (size_t)SECOC_MAX_PDU) || (plen > cap))
-    {
-        return SECOC_BAD_LENGTH;
-    }
-
     const uint8_t *pdu    = &frame[0];
     const uint8_t *fresh  = &frame[plen];
     const uint8_t *rx_mac = &frame[plen + (size_t)SECOC_FRESHNESS_LEN];
@@ -167,4 +153,80 @@ secoc_verify_result_t secoc_verify(const secoc_crypto_t *cy, uint16_t can_id,
     *epoch = get_u16le(&fresh[0]);
     *counter = get_u16le(&fresh[2]);
     return SECOC_OK;
+}
+
+static bool verify_args_ok(const secoc_crypto_t *cy, const uint8_t *frame,
+                           const uint16_t *epoch, const uint16_t *counter,
+                           const uint8_t *pdu_out, const size_t *pdu_len)
+{
+    return (cy != NULL) && (cy->oracle != NULL) && (cy->oracle->mac != NULL) &&
+           (frame != NULL) && (epoch != NULL) && (counter != NULL) &&
+           (pdu_out != NULL) && (pdu_len != NULL);
+}
+
+secoc_verify_result_t secoc_verify(const secoc_crypto_t *cy, uint16_t can_id,
+                                   const uint8_t *frame, size_t frame_len,
+                                   uint16_t *epoch, uint16_t *counter,
+                                   uint8_t *pdu_out, size_t cap, size_t *pdu_len)
+{
+    if (!verify_args_ok(cy, frame, epoch, counter, pdu_out, pdu_len))
+    {
+        return SECOC_MAC_ERROR;         /* misuse => fail-safe, no PDU emitted */
+    }
+    if (frame_len < (size_t)SECOC_TRAILER_LEN)
+    {
+        return SECOC_BAD_LENGTH;
+    }
+
+    size_t plen = frame_len - (size_t)SECOC_TRAILER_LEN;
+    if ((plen > (size_t)SECOC_MAX_PDU) || (plen > cap))
+    {
+        return SECOC_BAD_LENGTH;
+    }
+    return verify_core(cy, can_id, frame, plen, epoch, counter, pdu_out, pdu_len);
+}
+
+size_t secoc_fd_frame_len(size_t n)
+{
+    /* CAN FD data-field lengths: 0..8, then 12, 16, 20, 24, 32, 48, 64. */
+    static const size_t k_fd_len[] = { 12U, 16U, 20U, 24U, 32U, 48U, 64U };
+    if (n <= 8U)
+    {
+        return n;
+    }
+    for (size_t i = 0U; i < (sizeof k_fd_len / sizeof k_fd_len[0]); ++i)
+    {
+        if (n <= k_fd_len[i])
+        {
+            return k_fd_len[i];
+        }
+    }
+    return 0U;                          /* does not fit one CAN FD frame */
+}
+
+secoc_verify_result_t secoc_verify_len(const secoc_crypto_t *cy, uint16_t can_id,
+                                       const uint8_t *frame, size_t frame_len,
+                                       size_t pdu_len_cfg,
+                                       uint16_t *epoch, uint16_t *counter,
+                                       uint8_t *pdu_out, size_t cap, size_t *pdu_len)
+{
+    if (!verify_args_ok(cy, frame, epoch, counter, pdu_out, pdu_len))
+    {
+        return SECOC_MAC_ERROR;         /* misuse => fail-safe, no PDU emitted */
+    }
+    if ((pdu_len_cfg > (size_t)SECOC_MAX_PDU) || (pdu_len_cfg > cap))
+    {
+        return SECOC_BAD_LENGTH;
+    }
+
+    /* Accept exactly the secured length, or that length padded up to the next
+     * CAN FD length — what a real sender's controller puts on the wire. Shorter
+     * cannot hold the trailer; longer is not a frame this ID's sender produces. */
+    size_t secured = pdu_len_cfg + (size_t)SECOC_TRAILER_LEN;
+    size_t padded  = secoc_fd_frame_len(secured);
+    if ((frame_len < secured) || (frame_len > padded))
+    {
+        return SECOC_BAD_LENGTH;
+    }
+    return verify_core(cy, can_id, frame, pdu_len_cfg, epoch, counter, pdu_out, pdu_len);
 }

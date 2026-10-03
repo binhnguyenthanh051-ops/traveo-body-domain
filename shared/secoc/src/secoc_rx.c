@@ -30,9 +30,18 @@ void secoc_rx_init(secoc_rx_t *rx, const secoc_crypto_t *cy, secoc_rx_ctx_t *fre
     }
     rx->cy = cy;
     rx->fresh = fresh;
+    rx->pdu_len_of = NULL;
     rx->n_accept = 0U;
     rx->n_drop_mac = 0U;
     rx->n_drop_fresh = 0U;
+}
+
+void secoc_rx_set_pdu_len_of(secoc_rx_t *rx, size_t (*pdu_len_of)(uint32_t can_id))
+{
+    if (rx != NULL)
+    {
+        rx->pdu_len_of = pdu_len_of;
+    }
 }
 
 /* The two drop paths, factored so the counter and its event cannot be separated
@@ -78,8 +87,12 @@ secoc_rx_verdict_t secoc_rx_process(secoc_rx_t *rx, uint16_t can_id,
 
     /* MAC FIRST. A frame that fails here must never reach the freshness state,
      * or an attacker advances the high-water with garbage (REQ-SECOC-007). */
-    secoc_verify_result_t vr = secoc_verify(rx->cy, can_id, frame, frame_len,
-                                            &epoch, &counter, pdu_out, cap, pdu_len);
+    const size_t cfg_len = (rx->pdu_len_of != NULL) ? rx->pdu_len_of((uint32_t)can_id) : 0U;
+    secoc_verify_result_t vr = (cfg_len != 0U)
+        ? secoc_verify_len(rx->cy, can_id, frame, frame_len, cfg_len,
+                           &epoch, &counter, pdu_out, cap, pdu_len)
+        : secoc_verify(rx->cy, can_id, frame, frame_len,
+                       &epoch, &counter, pdu_out, cap, pdu_len);
     if (vr != SECOC_OK)
     {
         *pdu_len = 0U;                  /* drop-before-decode, restated (ADR-0021 D9) */

@@ -65,3 +65,14 @@ int body_decode(uint32_t id, const uint8_t *buf, size_t len, body_msg_t *out)
             return 0;
     }
 }
+
+size_t body_msg_pdu_len(uint32_t id)
+{
+    switch (id) {
+        case MSG_ID_DOOR_CMD:       return 1u;   /* door_cmd: lock/unlock byte        */
+        case MSG_ID_LIGHT_CMD:      return 1u;   /* pack_light_cmd: brightness_pct    */
+        case MSG_ID_SENSOR_RPT:     return 3u;   /* pack_sensor_report: ambient + ajar */
+        case MSG_ID_FRESHNESS_SYNC: return 2u;   /* epoch floor, u16 LE (secoc_app)   */
+        default:                    return 0u;
+    }
+}
