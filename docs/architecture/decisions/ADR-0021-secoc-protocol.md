@@ -254,11 +254,14 @@ The M4→M7 silicon change (secoc-architecture §9) touches **only** the right c
 
 ## To verify in the TRM / on silicon
 
-- `Cy_Crypto_Core_V2_Cmac` KAT against SP 800-38B on both parts (D1); CYT4BF datasheet MXCRYPTO
-  cross-check (low-risk formality, §7.2).
-- Per-frame MAC round-trip latency vs the control-loop budget (D1/D7, §8.4).
-- Node B mailbox non-cacheable region granularity (ADR-0018 D6) at the crypto seam.
-- `secoc_freshness_store` durability semantics once `eeprom_emu` backs it (D8, M6).
+- ✅ `Cy_Crypto_Core_V2_Cmac` KAT against SP 800-38B on both parts (D1): exact on CYT2B7 and
+  CYT4BF, no byte reversal, no explicit `Aes_Init` (2026-09-28, runbook #9). Both parts compute the
+  same tag with the shared secret (Stage 4.1). MXCRYPTO is present on CYT4BF (the V2 driver links).
+- ⏳ Per-frame MAC round-trip latency vs the control-loop budget (D1/D7, §8.4): **not measured.**
+  Upper bound only: both nodes sustain one secured frame each way every 20 ms with zero drops
+  (Stage 5). A timed measurement (`LOG_EVT_CRYPTO_MAC_US` exists, no emitter yet) is still open.
+- ✅ Node B mailbox non-cacheable region (ADR-0018 D6): verified with the D-cache on (runbook #12).
+- ⏳ `secoc_freshness_store` durability semantics once `eeprom_emu` backs it (D8, M6).
 
 ## Review history
 
@@ -315,4 +318,22 @@ non-standard, and the receiver still needs the PDU length to bound decoding.
 *Evidence:* `test_secoc` + `test_secoc_rx` gain 8 cases, `test_body_msgs` 1 (`body_msg_pdu_len`
 matches the packers). The full host suite went from 230 to 239 tests, all passing. Bench capture:
 `docs/bench/2026-10-03/bus_node_b.txt`.
+
+**Addendum — D1 on silicon: the PDL's one-shot CMAC cannot report failure (2026-09-28, F-010).**
+`Cy_Crypto_Core_V2_Cmac` in mtb-pdl-cat1 3.22.1 tracks a status through Init/Start/Update/Finish,
+then returns `CY_CRYPTO_SUCCESS` unconditionally. Both parts use the V2 driver, so `cmac_compute()`
+on the M0+ can never see a crypto-hardware failure, and `mac_handler` would answer with a tag
+computed from whatever the hardware left, instead of the ERROR verdict REQ-SECOC-010 requires. It
+**stays fail-safe at the receiver**: a wrong tag fails verification and the frame is dropped
+(REQ-SECOC-001). But on the sender it is a silent wrong MAC rather than a reported fault, which is
+not what D1 claims. *Planned fix (F-010):* call `Cy_Crypto_Core_V2_Cmac_Init/Start/Update/Finish`
+directly and check each status. Until then the NIST KAT (Stage 2) is the evidence that the
+primitive works on this silicon.
+
+**M5 bench closed (2026-10-03).** All stages passed on silicon: Stage 2 (KAT), Stage 3 (offload with a
+live D-cache), Stage 4 (same tag on both parts), Stage 5 (real bus both ways, gap-free counters, zero
+rejects, courtesy light end to end), and **Stage 6: forged, bit-flipped, replayed and cross-ID frames
+each refused with exactly one event, and the door never unlocked** (runbook #9–#20). Stage 7 (resync)
+cannot trigger naturally with the RAM-backed store (see the runbook) and is left for M6, when
+`eeprom_emu` makes the floor persistent.
 
