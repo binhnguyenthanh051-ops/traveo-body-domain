@@ -266,69 +266,68 @@
 <!-- BOARD DATA — the only block the Sunday retro task edits. Source of truth: docs/project/ in the repo. -->
 <script id="board-data" type="application/json">
 {
-  "rebuilt": "2026-09-28",
-  "source": "docs/project/plan.md + docs/project/weeks/2026-W40.md",
+  "rebuilt": "2026-10-04",
+  "source": "docs/project/plan.md + docs/project/weeks/2026-W41.md",
   "readyToApply": "2026-10-25",
   "jobSearch": "2026-12-01",
-  "subtitle": "Re-planned at the W39 retro: M5 closes in W40, not late November. Ready to apply by Oct 25; the rest of the autumn goes to posts and interview prep (job search Dec 2026 – Feb 2027).",
+  "subtitle": "M5 closed on Oct 3 (tag m5-secoc), 8 weeks early. W41: tell the M5 story and plan M6. Ready to apply by Oct 25; job search Dec 2026 – Feb 2027.",
   "week": {
-    "code": "W40 · Sep 28–Oct 4",
-    "title": "Close M5",
-    "budget": "~20 h",
-    "delivery": "M5 closed: SecOC done on both nodes, tag `m5`",
+    "code": "W41 · Oct 5–11",
+    "title": "Tell the M5 story, plan M6",
+    "budget": "~14 h",
+    "delivery": "README v1 + M5a post on Medium + M6 design plan",
     "days": [
       {
-        "date": "2026-09-28",
+        "date": "2026-10-05",
         "kind": "work",
         "hours": "2 h",
-        "task": "✅ Done early: Stage 0 builds, Stage 2 (CMAC KAT, both CM0+), Stage 4.1 (same tag on A and B), Stage 3 (CM7→CM0+ MAC, D-cache on)."
+        "task": "README v1, full draft: what it is, one diagram, milestone tags, build + tests, where to read first."
       },
       {
-        "date": "2026-09-29",
-        "kind": "bench",
-        "hours": "2 h",
-        "task": "CAN day 1: Stage 5 prep (EN pin, loopback-off builds, termination, VN1610) + Stage 5.1–5.4 (bus up, SecOC frames visible). Stage 1 rides along."
-      },
-      {
-        "date": "2026-09-30",
-        "kind": "bench",
-        "hours": "2 h",
-        "task": "CAN day 2: Stage 5.5 happy path end to end, zero drops + F-010. Stage 6 injection prep. Cut-off: Stage 5 passed?"
-      },
-      {
-        "date": "2026-10-01",
+        "date": "2026-10-06",
         "kind": "work",
         "hours": "2 h",
-        "task": "Slack for Stage 5 leftovers; else the Stage 6 checklist + fold findings into the ADRs."
+        "task": "M5a post: outline + first half (design → 239 green tests → the real bus rejects every genuine frame)."
       },
       {
-        "date": "2026-10-02",
+        "date": "2026-10-07",
+        "kind": "work",
+        "hours": "2 h",
+        "task": "M5a: complete draft + figures list (frame layout, padding, Stage 6 attack table)."
+      },
+      {
+        "date": "2026-10-08",
+        "kind": "work",
+        "hours": "2 h",
+        "task": "Change B: flash scripts (F-013 flash the stamped image, F-012 probe selector). If time: F-010."
+      },
+      {
+        "date": "2026-10-09",
         "kind": "off",
         "hours": "—",
         "task": "Off."
       },
       {
-        "date": "2026-10-03",
-        "kind": "bench",
-        "hours": "6 h",
-        "task": "Stage 5 (real bus, happy path, zero drops) + Stage 6 (forged / bit-flip / replay / cross-ID all refused, captured)."
+        "date": "2026-10-10",
+        "kind": "work",
+        "hours": "4 h",
+        "task": "M5a edit pass → publish on Medium · M6 design-plan session (scope, stages, ADRs) · 15-min check: flash both kits plugged in."
       },
       {
-        "date": "2026-10-04",
+        "date": "2026-10-11",
         "kind": "retro",
-        "hours": "3 h",
-        "task": "Stage 7 (optional) · fold findings into ADR-0021/0018 · tag `m5` · 10:00 retro + W41 plan."
+        "hours": "2 h",
+        "task": "README v1 final (delivery) · write docs/briefs/M6-brief.md · 10:00 retro + W42 plan."
       }
     ],
     "checklist": {
-      "title": "Bench pass criteria — M5 Stages 1–6",
-      "goal": "Full procedure: `docs/briefs/M5-bringup-plan.md`. Cut-off: Stage 5 passed by Wed 30, or Stage 6 moves to the W41 Saturday.",
+      "title": "W41 pass criteria",
+      "goal": "Priority if the week runs short: README > M5a > M6 plan.",
       "items": [
-        "✅ Mon 28 · Stage 2: CMAC tag = NIST on both CM0+ · Stage 4.1: same tag on A and B.",
-        "✅ Mon 28 · Stage 3: CM7→CM0+ round trip = 0; D-cache on; mailbox non-cacheable.",
-        "Tue 29 · 5.1–5.4: bus terminated, EN pin driven, SecOC frames visible on the VN1610 · 1.1–1.2 secure boot still verifies.",
-        "Wed 30 · 5.5: courtesy light end to end; `g_secoc_drop_*` = 0.",
-        "Sat 3 · 6.1–6.4: forged, bit-flip, replay, cross-ID each refused; one counter each; actuator holds."
+        "README v1: a stranger knows in 2 minutes what this is, what is proven on silicon, and where to look; every claim links to a tag, ADR or capture.",
+        "M5a: published on Medium; every result traceable to the runbook or a capture in docs/bench/.",
+        "M6 plan: scope in/out with reasons, stages with pass criteria, ADR list, weeks on the calendar.",
+        "Changes from the W40 retro: kit sheet ✓ · flash both kits plugged in · reminders + retro pre-fill actually arrive."
       ]
     }
   },
@@ -345,28 +344,28 @@
       "w": "W40",
       "start": "2026-09-28",
       "end": "2026-10-04",
-      "focus": "Close M5 — Stage 0 builds, Stage 5 prep (~20 h)",
-      "bench": "Tue/Wed + Sat: Stages 1–6",
-      "delivery": "M5 closed, tag m5",
+      "focus": "Close M5 — Stages 0–6 on silicon",
+      "bench": "Mon 28 + Sat 3",
+      "delivery": "M5 closed, tag m5-secoc",
       "milestone": true
     },
     {
       "w": "W41",
       "start": "2026-10-05",
       "end": "2026-10-11",
-      "focus": "(burst if the week allows) README v1 · draft the M5a post · findings",
-      "bench": "Reserve — slipped W40 stages",
-      "delivery": "README v1",
-      "buffer": true
+      "focus": "(burst ~14 h) README v1 · M5a post · M6 design plan · flash-script fix",
+      "bench": "Sat: short flash-fix check",
+      "delivery": "README v1 + M5a post",
+      "buffer": false
     },
     {
       "w": "W42",
       "start": "2026-10-12",
       "end": "2026-10-18",
-      "focus": "Publish the M5a post · draft the M5b post (CM7 + cache mailbox)",
-      "bench": "Reserve",
-      "delivery": "M5a post",
-      "buffer": true
+      "focus": "M5b draft · W41 leftovers (F-002, F-005…F-009, MAC latency) · M6 stage 1",
+      "bench": "per the M6 brief",
+      "delivery": "M5b draft",
+      "buffer": false
     },
     {
       "w": "W43",
@@ -394,7 +393,7 @@
       "delivery": ""
     }
   ],
-  "bufferNote": "W41–W42 Saturdays are reserve bench days. If a W40 stage slips, it moves there.",
+  "bufferNote": "M5 closed in W40, so the W41–W42 Saturdays are free for M6 (per the M6 brief).",
   "later": [
     "Threat-model essay — safety + security as one defensive story (EP.21 + EP.24 merged).",
     "Capstone retrospective (EP.26) — what I'd do differently; the overview as centrepiece.",
