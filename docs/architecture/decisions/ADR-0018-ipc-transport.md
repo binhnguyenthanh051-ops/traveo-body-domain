@@ -189,3 +189,22 @@ Cacheability is a **target-only** memory-map property. Host tests bind a plain-b
 (no cache), so the entire host-tested protocol logic is identical across both nodes. **D6 is verified
 on silicon** (Node B bring-up log), not host-testable — a target/`@design-only` item, not a
 `@test`-able unit.
+
+### D6 — verified on silicon (2026-09-28, M5 bench Stage 3; runbook #12)
+
+- **The D-cache really is on**, so the test is meaningful: `SCB->CCR = 0x00070200` (DC, IC, BP set).
+  With the cache off, a passing round trip would have proven the protocol but not D6.
+- **The MPU region is as designed**: region 7 = `0x280E0000`, 128 KB (PMSAv7: power of two, base
+  aligned to size), RASR `0x130C0021` → TEX=1 C=0 B=0 (Normal, Non-cacheable), S=1, XN, full access.
+  MPU on with PRIVDEFENA (`MPU->CTRL = 5`).
+- **The mailbox sits where both images expect it**: `Cy_SecOc_IpcMailbox` = `0x280E0000` in both
+  Node B ELFs, at `ORIGIN(ram_noncache)`, with `.ram_noncache` starting after the reserved `0x100`.
+- **CM7↔CM0+ writes are mutually visible**: `secoc_crypto_bringup_mac()` = 0 (deterministic,
+  input-sensitive, unknown key refused), then thousands of real MAC requests per minute on the
+  bus (Stage 5/6) with no timeout and no garbage.
+- **Finding: the BSP already maps the same window.** Region 0 = `0x280E0000`, 128 KB, RASR
+  `0x13080021`: non-cacheable too, but S=0. Region 7 wins where they overlap (higher number), and
+  for Normal Non-cacheable memory the S bit makes no practical difference on the CM7. **Decision:
+  keep region 7.** D6's guarantee must not rest on BSP configuration that is regenerated from a
+  design file, so the code states its own requirement. It costs one MPU region of 16.
+
