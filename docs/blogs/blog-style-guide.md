@@ -1,127 +1,178 @@
 # Blog Style Guide — Medium posts for this project
 
-Standing rules for drafting the Medium blog posts, captured so they don't have to be
-re-stated each milestone. Each rule has a short **name** so it can be referenced
-("apply *Milestone Lens*", "did you *Ship a User Manual*?").
+Standing rules for the Medium posts, so they never have to be re-stated. Each rule has a
+short **name** to reference ("apply *Short And Visual*", "is it *Ready To Upload*?").
 
-Worked examples in this repo:
-- **Bring-up-log style:** `docs/briefs/M1-bringup_log.md`, `docs/briefs/M2-bringup_log.md`
-- **Design-essay style:** `docs/blogs/m3-reprogramming-blog-draft.md`
+**The reference post is M5** — follow it before anything else:
+- Published: <https://medium.com/@binh.nguyenthanh051/m5-signing-every-can-frame-between-two-mcus-a9d6fa9ca94f>
+- Source: `docs/blogs/m5-secoc-blog-draft.md` · images: `docs/blogs/img/m5/`
+- Previous post in the same format: M4, <https://medium.com/@binh.nguyenthanh051/m4-secure-boot-on-a-dual-core-mcu-8fff4f2015b3>
 
----
+Older worked examples (pre-v2 style, longer): bring-up logs `docs/briefs/M1-bringup_log.md`,
+`M2-bringup_log.md`; design essay `docs/blogs/m3-reprogramming-blog-draft.md`.
 
-## 1. Milestone Lens — pick the post's *type* first
-
-Before writing, decide which lens the milestone deserves:
-
-- **Bring-up log** — chronological, per-seam, *"what the silicon did that the
-  datasheet didn't."* Best when the milestone's value was getting hardware to behave
-  (M1, M2). Format per finding: *what I expected · what the silicon did · the lesson.*
-- **Design essay** — architecture-first, structured around the design rather than the
-  timeline. Best when the milestone's value is a *design* — a layered stack, a
-  protocol, a security boundary (M3 reprogramming). The bring-up findings become
-  supporting colour inside the design narrative, not the spine.
-
-State the lens explicitly in the intro ("the M1/M2 write-ups were bring-up logs; this
-one is a design essay") so the reader knows what they're getting.
-
-## 2. Design-Essay Skeleton — the section order for a design post
-
-When the lens is *design essay*, use roughly this skeleton (adapt as needed):
-
-1. **The shape of the problem** — why this milestone is hard / interesting; the core
-   design tension in one or two sentences.
-2. **Architecture** — the structure, *emphasising the two or three subsystems that
-   carry the milestone* (for M3: CAN + Diag). Name the layers and the dependency
-   rules.
-3. **Key decision structures** — the boot/decision trees, the state machines, the
-   handshakes. The load-bearing logic.
-4. **The main sequence** — the headline flow end-to-end (for M3: the download).
-5. **Performance** — see *Numbers Or It Didn't Happen*.
-6. **User manual** — see *Ship A User Manual*.
-7. **What I'd add / the thesis** — the architectural bet the milestone makes, and the
-   forward link (see *Forward Link + Prediction*).
-
-## 3. Numbers Or It Didn't Happen — always a real performance section
-
-A design/systems post must quantify. Include, with **measured** values (mark clearly
-anything that is estimated or *illustrative*):
-
-- Headline throughput (e.g. MB/min **and** KB/s).
-- The governing sizes: transfer block size, erase size, program/row size, data
-  transfer size, buffer sizes.
-- The governing timing params (e.g. ISO-TP **STmin**, bit rates, block size).
-- **Where the time goes** — split the cost across the real contributors (wire vs.
-  flash vs. round-trip, etc.), so optimisation is reasoned, not guessed.
-- **What would make it faster**, ranked by payoff, including the honest "this is a
-  silicon floor" items.
-
-Put the parameter values in a **table** (see *Tables For Parameters*).
-
-## 4. Ship A User Manual — how to drive, test, and verify
-
-Every post ends with a practical section a reader could follow:
-
-- **How to trigger / start** the thing (all the routes in, if there are several).
-- **How to run / test** it — the exact command(s), and representative output.
-- **How to verify success** — the concrete observable that proves it worked.
-- **The failure / safety demo** — how to deliberately break it and show the safe
-  behaviour. This is often the most valuable paragraph; don't skip it.
-
-## 5. Diagram-Per-Concept — visualize heavily, match the type to the content
-
-Lean on diagrams; a professional post is mostly pictures with prose between them.
-**Match the diagram type to what it shows:**
-
-| Content | Diagram type |
-|---|---|
-| Software architecture / components | **component / layered flowchart** |
-| A protocol or request/response flow | **sequence diagram** |
-| Stateful logic (sessions, locks, modes) | **state machine** (`stateDiagram`) |
-| A decision with branches | **decision-tree flowchart** (clearer than a literal state machine for pure decisions — say so if asked why) |
-| Memory / image / packet layout | **block diagram** |
-| A cost/effort breakdown | **pie or bar chart** |
-
-Conventions:
-- **Use Mermaid.** It matches the repo's other docs and renders on GitHub /
-  [mermaid.live](https://mermaid.live).
-- **Note the Medium caveat once, near the top:** Mermaid doesn't render on Medium —
-  export each diagram to PNG/SVG and insert as an image.
-- **Color-code consistently across all diagrams** so they reinforce each other
-  (e.g. blue = host-testable/pure-logic, amber = target/silicon, green = go/safe,
-  red = stop/fail, purple = next-milestone).
-- A one-line italic caption under each diagram, saying what to take from it.
-
-## 6. Honest Labels — call out demonstration-grade vs. production
-
-Explicitly flag what is mechanism-not-production: e.g. "CRC32 proves integrity, **not**
-authenticity," "this seed/key is not real crypto," "a *simplified* variant of the
-standard." Precision about what's demonstration-grade earns more trust than implying
-certification the project doesn't have. Tie these to where the real version lands
-(usually a later milestone).
-
-## 7. Architect Voice — decisions with reasoning and alternatives
-
-- **Name the patterns** used (Layered architecture, Strategy, State, Command/handler)
-  — they're the vocabulary that makes decisions defensible.
-- For each significant choice, give the **reasoning and at least one alternative
-  considered** — the "why not X" is often more interesting than the "why Y."
-- Connect to the bigger arc: what interview/architecture story each decision supports.
-
-## 8. Tables For Parameters — tabulate config and performance values
-
-Any set of related constants (bit rates, sizes, timing params, allocations) goes in a
-table, not prose. Easier to scan, and it reads as engineering.
-
-## 9. Forward Link + Prediction — end pointing forward
-
-Close by connecting to the next milestone, and — where the architecture makes a
-testable bet — **state the prediction in writing** (e.g. "M4's signature check should
-plug into the verify seam without the download flow changing at all; if it doesn't,
-the seam was in the wrong place"). It makes the series feel designed, and it's honest
-accountability for the architecture.
+*v2, 2026-10-14 — rewritten after the M5 post, from the author's review of the draft.*
 
 ---
 
-*Add rules here as new preferences come up, same as the MISRA deviation log grows —
-a living guide, not a one-time snapshot.*
+## 1. Post Template — the fixed frame of every post
+
+Same frame every time, in this order:
+
+1. **Title:** `Mx — <what it does, in plain words>` (e.g. "M5 — Signing every CAN frame between two MCUs").
+2. **Subtitle (italic, one line):** *Part &lt;Roman numeral&gt; of Traveo II Domain — building an
+   automotive body-domain network from scratch on an Infineon TRAVEO™ T2G, with the design done
+   in the open and Claude used as a visible collaborator.*
+3. **Hero image** (see *Hero Image*).
+4. **Intro, 3 short paragraphs max:** pick up the **previous post's promise** in its own words
+   ("M4 ends with a promise: …"), one line contrasting this milestone with the last one
+   ("M4 checks which code runs. M5 checks which commands that code obeys."), and the plan plus
+   the twist ("the test has a twist: …").
+5. **Numbered sections** (see *Problem-Solution-Implementation-Test*), subheadings phrased as
+   questions where natural ("What can an attacker do to a CAN frame?").
+6. **User manual** (see *Ship A User Manual*).
+7. **Metadata** block, as a code block:
+   ```
+   Board      · …
+   Toolchain  · ModusToolbox, Python
+   RTOS       · …
+   Crypto/Bus · …
+   Repo       · tag mX-…
+   Written    · <Month Year>
+   ```
+8. **Follow along**, exactly:
+   ```
+   💻 GitHub — Traveo II Body Domain
+   🔗 https://github.com/binhnguyenthanh051-ops/traveo-body-domain (tag mX-…)
+   💻 LinkedIn
+   🔗 https://www.linkedin.com/in/binh-nguyen-thanh-2b807714b/
+   ```
+
+Medium tags (5): Embedded Systems, Automotive, Cybersecurity (or the topic's own),
+CAN Bus / the relevant bus, Microcontrollers.
+
+## 2. Problem-Solution-Implementation-Test — the section order
+
+1. **The problem** — what goes wrong without this milestone, shown as a picture first.
+2. **The solution** — the idea/protocol/mechanism, one fix per problem, before any code.
+3. **The implementation** — how it plugs into the platform built so far; what is new vs reused.
+4. **The test** — host first, then silicon. The bench surprise ("all host tests passed, and
+   the first real bus rejected every frame") is the story's peak; put it here, set it up in
+   the intro.
+5. **User manual** — then Metadata and Follow along.
+
+The forward link to the next milestone is **one line** inside an Honest note or the user
+manual's failure demo ("That's exactly what M6 fixes."), not a closing essay.
+
+## 3. Short And Visual — pictures first, few words
+
+- **A diagram per idea.** M5: 9 diagrams + hero in ~1,000 words of prose. Aim for that ratio.
+- **Paragraphs of 1–3 sentences.** If a paragraph needs more, it needs a diagram or a list.
+- **Every figure gets a one-line italic caption** saying what to notice.
+- **No tables** — Medium can't render them. Parameters go in a small **spec block**
+  (a code block with aligned `Name   value` lines, like M4's "The cost"); comparisons go in a
+  diagram or a 3-bullet list.
+- **Cut, don't add:** no "alternatives considered" sections, no design-pattern names, no
+  limitations section. One alternative is fine **inline** when it explains a choice in one line.
+- Target **6–8 min read**.
+
+## 4. Plain Human Voice — write like the author talks
+
+- Simple grammar, everyday words, short sentences. First person ("I expected 15 bytes. The
+  frame had 16.").
+- **Avoid AI phrasing:** "load-bearing", "let's dive in", "it's worth noting", "crucially",
+  "seamless", "robust", "leverage", "delve", "in essence", "not just X but Y", rhetorical
+  question chains, and stacks of em-dashes.
+- One idea per sentence. Bold only the word that carries the point.
+- Keep the author's small personal lines ("The replay is my favourite: …").
+
+## 5. Honest Labels — one line each, two or three per post
+
+Format, exactly as in M4/M5: a plain paragraph starting **`Honest —`**, one sentence, e.g.
+*"Honest — both nodes share one key, built into the M0+ image. Real cars use a key per ECU."*
+Put each next to the thing it qualifies. **No roll-up / limitations section.**
+
+## 6. No Internal IDs — readers don't know our numbering
+
+No requirement IDs (`REQ-…`), ADR numbers, finding numbers (`F-0xx`, runbook `#17`), Jira-style
+references, or repo file paths in the story text. Name the thing instead ("the freshness
+rule", "the attacker script"). Code identifiers only where the reader would type or see them
+(commands in the user manual, a real log line).
+
+## 7. Numbers Or It Didn't Happen — measured, or say so
+
+- Every number comes from a **capture, log or test count** in the repo (`docs/bench/<date>/`,
+  the runbook). Use the count **as it was at the moment described** (M5: 230 tests at the
+  first bus run, 239 after the fix).
+- Not measured → write **"not measured yet"**. Never present an estimate as a measurement
+  (M4's "suppose it takes 5 ms" should have been labelled *estimated*).
+- A demo not yet run on the bench is worded as expected behaviour ("It **should** be
+  accepted"), never as a result.
+- Name the right mechanism (M5: the **FreeRTOS stack-overflow hook** caught it; the watchdog
+  only reset the chip after).
+
+## 8. Ship A User Manual — how to drive, test, and verify
+
+A short practical section a reader could follow:
+- **How to run** it — the exact command, one line.
+- **What success looks like** — the concrete observable, ideally **5 real log lines** from the
+  bench capture, each tagged with what it shows (`← replay`).
+- **The failure demo** — how to break it on purpose and what happens. Often the best paragraph.
+
+## 9. Diagram Conventions — Mermaid source, PNG on Medium
+
+- **Write diagrams in Mermaid** in the draft. Match the type to the content: layered
+  flowchart for architecture, sequence diagram for request/response, decision-tree flowchart
+  for decisions, a row of boxes for a frame/memory layout, before/after pair for a bug.
+- **Same colours in every post:** blue `#dbeafe/#3b82f6` = host-testable logic ·
+  amber `#fff7ed/#f59e0b` = board/silicon · green `#dcfce7/#22c55e` = accept/safe ·
+  red `#fee2e2/#ef4444` = attack/reject · purple `#ede9fe/#8b5cf6` = next milestone ·
+  grey `#f3f4f6/#9ca3af` = padding/unused.
+- Keep labels short (2–4 words per line, `<br/>` for a second line); long labels make
+  Mermaid stretch diagrams sideways. Stack before/after cases vertically
+  (`flowchart TB`, `direction LR` inside each subgraph, `A ~~~ B` to order them).
+- **Check every rendered PNG** before publishing (order, wrapping, colours).
+
+## 10. Hero Image — same look as M4/M5
+
+Dark teal grid background (`#0f1a1f`), amber mono caption **`TRAVEO T2G · MILESTONE Mx`**,
+a big white serif headline (2 short lines), an amber underline, a one-line grey italic
+subtitle, and a small line-art diagram on the right in the post's colours. Template:
+`docs/blogs/img/m5/hero.svg` (1400×734) — copy it, change the words and the diagram.
+**No bench photos** as hero.
+
+## 11. Ready To Upload — the publishing pipeline
+
+A post is ready only when it has **zero `TODO`s** (the author wants an upload-ready file, not
+a list of holes). Then:
+
+1. `python host_tools/blog/render_diagrams.py pages docs/blogs/<post>-blog-draft.md docs/blogs/img/<mx>`
+2. Open `docs/blogs/img/<mx>/_measure.html` in the browser pane; read `window.__sizes` into
+   `docs/blogs/img/<mx>/sizes.json`.
+3. `python host_tools/blog/render_diagrams.py shoot docs/blogs/img/<mx>` — renders `fig-NN.png`
+   (2×) and `hero.png` from `hero.svg` with headless Edge. Look at each PNG.
+4. `python host_tools/blog/md_to_medium.py docs/blogs/<post>-blog-draft.md --img-base https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/<branch>/docs/blogs`
+   — tables → lists, Mermaid → the PNGs, editor notes dropped.
+5. Commit on a `docs/<mx>-blog` branch and **push** (raw URLs only work once pushed); check all
+   image URLs return 200.
+6. The author opens `docs/blogs/<post>-medium.html`, **Ctrl+A → Ctrl+C → paste** into a new
+   Medium story (Medium re-hosts the images), adds the tags, publishes.
+
+Don't rely on mermaid.ink for the paste: it drops images when several are requested at once.
+
+## 12. Review The Last Post — fix it before writing the next
+
+Before drafting a post, skim the previous published one for typos, a wrong board or fact,
+and estimates shown as measurements, and list fixes for the author (M4 had "Coretex",
+"hasing", "Authencicity", and "Body High Kit" for a Body Entry board).
+
+## 13. Milestone Lens — still pick the type, quietly
+
+Design-essay milestones follow *Problem-Solution-Implementation-Test*. A pure bring-up
+milestone can tell the story as findings — *what I expected · what the silicon did · the
+lesson* — inside the same frame (*Post Template*). Don't announce the lens in the intro.
+
+---
+
+*A living guide: when the author gives feedback on a draft, add or change the rule here in the
+same session, so it never has to be said twice.*
