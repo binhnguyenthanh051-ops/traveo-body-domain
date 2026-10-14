@@ -1,0 +1,109 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>M5 — Signing every CAN frame between two MCUs</title>
+<style>body{max-width:720px;margin:2em auto;font:18px/1.6 Georgia,serif;padding:0 16px}img{max-width:100%}pre{background:#f4f4f4;padding:12px;overflow-x:auto;font-size:14px}mark{background:#ffe08a}blockquote{border-left:3px solid #ccc;margin-left:0;padding-left:16px;color:#444}</style></head><body>
+<h1>M5 — Signing every CAN frame between two MCUs</h1>
+<p><em>Part V of Traveo II Domain — building an automotive body-domain network from scratch on an Infineon TRAVEO™ T2G, with the design done in the open and Claude used as a visible collaborator.</em></p>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/m5-blog/docs/blogs/img/m5/hero.png" alt=""></figure>
+<p>M4 ends with a promise: <em>"Symmetric crypto comes in M5 for authenticated messages (a MAC on CAN frames)."</em> This post keeps it.</p>
+<p>M4 checks <strong>which code runs</strong>. M5 checks <strong>which commands that code obeys</strong>. Every frame between the two nodes now carries a MAC and a counter, and someone on the bus without the key can't unlock the door.</p>
+<p>The plan is simple: the problem, the solution, how it's built, and the test. The test has a twist: all host tests passed, and the first real bus rejected every frame.</p>
+<hr>
+<h2>1. The problem</h2>
+<h3>What can an attacker do to a CAN frame?</h3>
+<p>Two nodes talk over CAN FD. Node A (the gateway) sends commands, and Node B (the actuator) drives the door lock and the light.</p>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/m5-blog/docs/blogs/img/m5/fig-01.png" alt="diagram"></figure>
+<p>CAN has no idea who sent a frame. Any node can send any ID. So an attacker with a USB-CAN adapter (but no key) has four options:</p>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/m5-blog/docs/blogs/img/m5/fig-02.png" alt="diagram"></figure>
+<p><em>Before M5, all four end in the red box.</em></p>
+<p>Replay is the sneaky one. The replayed frame <strong>is</strong> real: it came from Node A and nobody changed it. Checking "who sent it" and "was it changed" isn't enough. The receiver also has to ask: <strong>is it new?</strong></p>
+<hr>
+<h2>2. The solution</h2>
+<h3>One fix per attack</h3>
+<p>This is SecOC (Secure Onboard Communication), the AUTOSAR idea, in a simple form.</p>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/m5-blog/docs/blogs/img/m5/fig-03.png" alt="diagram"></figure>
+<ul>
+<li>A <strong>MAC</strong> alone stops spoofing and tampering. A replayed frame still has a valid MAC.</li>
+<li><strong>MAC + freshness</strong> stops replay.</li>
+<li><strong>MAC + freshness + Data ID</strong> stops all four. Without the Data ID, a fresh frame from one ID could pass on another.</li>
+</ul>
+<p>The Data ID wasn't in my first design. I found the masquerade hole while reviewing it on paper, which is a much cheaper place to find it than on the bench.</p>
+<h3>What a secured frame looks like</h3>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/m5-blog/docs/blogs/img/m5/fig-04.png" alt="diagram"></figure>
+<p><em>Door command 0x120. The MAC covers the CAN ID + freshness + PDU, but the CAN ID isn't repeated inside the frame. Remember the grey pad box, it comes back in §4.</em></p>
+<pre><code>MAC        AES-128-CMAC, cut to 8 bytes
+Freshness  epoch (2 B) + counter (2 B)
+Overhead   12 bytes per frame
+Bus        CAN FD, 500 kbit/s / 2 Mbit/s</code></pre>
+<p><strong>Why only 8 bytes of MAC?</strong> Every guess costs the attacker one frame on the bus, and the counter changes the MAC every time. So 8 bytes (1 in 2⁶⁴ per try) is plenty.</p>
+<h3>Is it new? The freshness rule</h3>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/m5-blog/docs/blogs/img/m5/fig-05.png" alt="diagram"></figure>
+<ul>
+<li>The <strong>MAC is checked first</strong>. A fake frame can never move the counter, so an attacker can't block real frames with junk.</li>
+<li>Each ID has its <strong>own counter</strong>, and all IDs share one <strong>epoch</strong> per boot. One flash write per boot, no matter how many IDs.</li>
+</ul>
+<p>Honest — the counter lives in RAM, so replay protection resets when Node B reboots. M6 moves it to flash.</p>
+<h3>Where the key lives</h3>
+<p>The key is on the <strong>M0+</strong>, the same security core M4 uses to check the app. The app core never sees the key. It can only ask the M0+: "give me a MAC over these bytes". That's the opcode M4 kept free for M5.</p>
+<p>Honest — both nodes share one key, built into the M0+ image. Real cars use a key per ECU.</p>
+<hr>
+<h2>3. The implementation</h2>
+<h3>A new brick between two old ones</h3>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/m5-blog/docs/blogs/img/m5/fig-06.png" alt="diagram"></figure>
+<p><em>Blue runs on a PC too. Amber is board code. Purple changes in M6.</em></p>
+<p>SecOC knows nothing about the CAN driver, the IPC mailbox or the flash. It talks to them through a few small interfaces, and each node plugs in its own version. So the <strong>same SecOC code</strong> runs on Node A (Cortex-M4), Node B (Cortex-M7) and my PC for the unit tests.</p>
+<h3>The data path</h3>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/m5-blog/docs/blogs/img/m5/fig-07.png" alt="diagram"></figure>
+<p><em>A frame that fails never reaches the door. A fake command is treated the same as no command.</em></p>
+<h3>Node B has a cache</h3>
+<p>Node B is a different chip: a Cortex-M7, with a data cache. The M7 and the M0+ share the mailbox, and the M0+ can't see what's still sitting in the M7's cache. Instead of cleaning the cache on every call (easy to forget once), the mailbox lives in a memory region the MPU marks <strong>non-cacheable</strong>, set once at startup.</p>
+<hr>
+<h2>4. The test</h2>
+<h3>On the PC: 230 tests, all green</h3>
+<p>Framing, the Data ID, the freshness rule, a power cut in the middle of saving the epoch. All 230 host tests passed.</p>
+<h3>On the real bus: every frame rejected</h3>
+<p>On the first real bus run, Node A rejected <strong>every</strong> frame from Node B. The sniffer showed why:</p>
+<pre><code>200  len=16  TELEMETRY  00 00 00 | epoch 1 ctr 7154 | mac 71b9fa4e9d1e45a7 | pad 00</code></pre>
+<p>I expected 15 bytes (3 B data + 12 B). The frame had <strong>16</strong>. CAN FD has no 13, 14 or 15-byte frames, so the controller pads up to 16.</p>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/m5-blog/docs/blogs/img/m5/fig-08.png" alt="diagram"></figure>
+<p>The receiver guessed the data length as "frame length minus 12". On a padded frame that guess is wrong, so the MAC check reads the wrong bytes.</p>
+<p><strong>The fix:</strong> the data length per CAN ID is now <strong>configuration</strong>, not a guess. That's how AUTOSAR does it, and now I know why. 9 more tests (239), and the bus went green: thousands of frames each way, counters with no gaps, zero rejects.</p>
+<h3>The attacks, on real silicon</h3>
+<p>I wrote a small attacker script that sends frames from the VN1611 the way a keyless attacker would.</p>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/m5-blog/docs/blogs/img/m5/fig-09.png" alt="diagram"></figure>
+<p><em>Five attacks, five rejects, one log event each. The door never unlocked.</em></p>
+<p>The replay is my favourite: the frame was 100% real and the MAC was valid. Only the old counter gave it away.</p>
+<h3>The cost</h3>
+<pre><code>Secured traffic    one frame each way every 20 ms, zero rejects
+Overhead           12 bytes per frame
+MAC on the stack   556 bytes — my CAN task stack overflowed on the first MAC
+MAC round trip     not measured yet</code></pre>
+<p>Adding security changed the stack budget. FreeRTOS caught the overflow on the first run, and the stacks went from 768 B to 1.5 KB.</p>
+<hr>
+<h2>5. User manual — run the attacks yourself</h2>
+<p>Both nodes on the bus, with a VN161x and 120 Ω at each end. Watch the logs (Node A on one COM port, Node B on the other).</p>
+<p>Run all five attacks:</p>
+<pre><code>python host_tools/secoc_attack/secoc_attack.py all</code></pre>
+<p>Success: Node B logs one <code>REJECT</code> per attack, and the light and door don't move.</p>
+<p>What it looks like on Node B (one line per attack):</p>
+<pre><code>[ 5726 ms] LOG_EVT_SECOC_REJECT_MAC        can_id=0x120 reject_reason=0x2   ← spoof, too short
+[ 6228 ms] LOG_EVT_SECOC_REJECT_MAC        can_id=0x120 reject_reason=0x1   ← spoof, fake MAC
+[ 6730 ms] LOG_EVT_SECOC_REJECT_MAC        can_id=0x121 reject_reason=0x1   ← tamper
+[ 8232 ms] LOG_EVT_SECOC_REJECT_FRESHNESS  can_id=0x121 rx_ctr=160          ← replay
+[ 8733 ms] LOG_EVT_SECOC_REJECT_MAC        can_id=0x120 reject_reason=0x1   ← masquerade</code></pre>
+<p>The failure demo — the best part: reset Node B, then replay an old frame. It should be <strong>accepted</strong>, because the counter lives in RAM and starts again after a reset. That's exactly what M6 fixes.</p>
+<hr>
+<h2>Metadata</h2>
+<pre><code>Board      · Node A: TRAVEO™ T2G Body Entry (CYT2B7) · Node B: KIT_T2G-B-H_LITE (CYT4BF, Cortex-M7)
+Toolchain  · ModusToolbox, Python
+RTOS       · FreeRTOS (app) · bare-metal (CM0+)
+Crypto     · AES-128-CMAC via the CRYPTO block, Cy_Crypto_Core_V2_Cmac
+Bus        · CAN FD 500 kbit/s / 2 Mbit/s · Vector VN1611
+Repo       · tag m5-secoc
+Written    · October 2026</code></pre>
+<h2>Follow along</h2>
+<p>💻 GitHub — Traveo II Body Domain</p>
+<p>🔗 https://github.com/binhnguyenthanh051-ops/traveo-body-domain (tag m5-secoc)</p>
+<p>💻 LinkedIn</p>
+<p>🔗 https://www.linkedin.com/in/binh-nguyen-thanh-2b807714b/</p>
+<hr>
+</body></html>

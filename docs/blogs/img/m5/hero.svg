@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="734" viewBox="0 0 1400 734">
+  <defs>
+    <pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse">
+      <path d="M 28 0 L 0 0 0 28" fill="none" stroke="#18292f" stroke-width="1"/>
+    </pattern>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3fb6a8"/>
+    </marker>
+    <marker id="arrRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e2574c"/>
+    </marker>
+  </defs>
+
+  <rect width="1400" height="734" fill="#0f1a1f"/>
+  <rect width="1400" height="734" fill="url(#grid)"/>
+
+  <!-- left: text block -->
+  <text x="90" y="175" font-family="Consolas, 'Courier New', monospace" font-size="17" letter-spacing="4" fill="#d4a24c">TRAVEO T2G · MILESTONE M5</text>
+  <text x="88" y="270" font-family="Georgia, 'Times New Roman', serif" font-size="68" font-weight="bold" fill="#f3f1ea">A lock on every</text>
+  <text x="88" y="350" font-family="Georgia, 'Times New Roman', serif" font-size="68" font-weight="bold" fill="#f3f1ea">CAN frame.</text>
+  <rect x="90" y="385" width="96" height="4" fill="#d4a24c"/>
+  <text x="90" y="440" font-family="Georgia, serif" font-size="23" font-style="italic" fill="#9fb3bb">Anyone can send on the bus —</text>
+  <text x="90" y="472" font-family="Georgia, serif" font-size="23" font-style="italic" fill="#9fb3bb">only the key holder can make it count.</text>
+
+  <!-- right: diagram -->
+  <g font-family="Consolas, 'Courier New', monospace">
+    <!-- Node A -->
+    <rect x="770" y="150" width="210" height="150" rx="4" fill="none" stroke="#3fb6a8" stroke-width="2"/>
+    <text x="785" y="176" font-size="13" letter-spacing="2" fill="#3fb6a8">NODE A · GATEWAY</text>
+    <rect x="788" y="192" width="174" height="36" fill="none" stroke="#d4a24c" stroke-width="1.5"/>
+    <text x="875" y="215" font-size="14" fill="#e8d7b0" text-anchor="middle">CM4 · app</text>
+    <rect x="788" y="242" width="174" height="40" fill="#14303a" stroke="#3fb6a8" stroke-width="1.5"/>
+    <text x="875" y="267" font-size="14" fill="#bfe9e2" text-anchor="middle">CM0+ · AES-CMAC 🔑</text>
+
+    <!-- Node B -->
+    <rect x="1120" y="150" width="210" height="150" rx="4" fill="none" stroke="#3fb6a8" stroke-width="2"/>
+    <text x="1135" y="176" font-size="13" letter-spacing="2" fill="#3fb6a8">NODE B · ACTUATOR</text>
+    <rect x="1138" y="192" width="174" height="36" fill="none" stroke="#d4a24c" stroke-width="1.5"/>
+    <text x="1225" y="215" font-size="14" fill="#e8d7b0" text-anchor="middle">CM7 · app</text>
+    <rect x="1138" y="242" width="174" height="40" fill="#14303a" stroke="#3fb6a8" stroke-width="1.5"/>
+    <text x="1225" y="267" font-size="14" fill="#bfe9e2" text-anchor="middle">CM0+ · AES-CMAC 🔑</text>
+
+    <!-- bus -->
+    <line x1="875" y1="300" x2="875" y2="392" stroke="#5d7a82" stroke-width="2"/>
+    <line x1="1225" y1="300" x2="1225" y2="392" stroke="#5d7a82" stroke-width="2"/>
+    <line x1="760" y1="392" x2="1340" y2="392" stroke="#5d7a82" stroke-width="3"/>
+    <text x="760" y="382" font-size="12" letter-spacing="2" fill="#5d7a82">CAN FD</text>
+
+    <!-- secured frame travelling A -> B -->
+    <rect x="905" y="410" width="44" height="34" fill="#16324a" stroke="#4a90d9" stroke-width="1.5"/>
+    <text x="927" y="432" font-size="12" fill="#a9cdf2" text-anchor="middle">PDU</text>
+    <rect x="949" y="410" width="74" height="34" fill="#143a2c" stroke="#3fbf7f" stroke-width="1.5"/>
+    <text x="986" y="432" font-size="12" fill="#a8e6c6" text-anchor="middle">FRESH</text>
+    <rect x="1023" y="410" width="104" height="34" fill="#143a2c" stroke="#3fbf7f" stroke-width="1.5"/>
+    <text x="1075" y="432" font-size="12" fill="#a8e6c6" text-anchor="middle">MAC</text>
+    <rect x="1127" y="410" width="30" height="34" fill="#1e2a2e" stroke="#5d7a82" stroke-width="1.5"/>
+    <line x1="1165" y1="427" x2="1212" y2="427" stroke="#3fb6a8" stroke-width="2" marker-end="url(#arr)"/>
+    <text x="1031" y="468" font-size="13" fill="#3fbf7f" text-anchor="middle">✓ ACCEPT</text>
+
+    <!-- attacker -->
+    <rect x="880" y="560" width="300" height="64" rx="4" fill="none" stroke="#e2574c" stroke-width="2" stroke-dasharray="6 4"/>
+    <text x="1030" y="586" font-size="13" letter-spacing="2" fill="#e2574c" text-anchor="middle">ATTACKER · NO KEY</text>
+    <text x="1030" y="608" font-size="12" fill="#c98a84" text-anchor="middle">spoof · tamper · replay · masquerade</text>
+    <line x1="1170" y1="560" x2="1225" y2="404" stroke="#e2574c" stroke-width="2" marker-end="url(#arrRed)"/>
+    <g transform="translate(1198,478)">
+      <line x1="-11" y1="-11" x2="11" y2="11" stroke="#e2574c" stroke-width="4"/>
+      <line x1="-11" y1="11" x2="11" y2="-11" stroke="#e2574c" stroke-width="4"/>
+    </g>
+    <text x="1230" y="512" font-size="13" fill="#e2574c">✗ REJECT</text>
+  </g>
+</svg>
