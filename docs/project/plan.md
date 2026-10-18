@@ -59,11 +59,16 @@ About 10–12 hours a week; ~20 in a planned burst week (rule 5).
 |---|---|---|---|---|
 | **W39** | Sep 23–27 | Commit the M5 pile; plan + roadmap in repo | Smoke test: both kits flash, boot and log after 5 weeks away | **Clean repo + plan** ✓ |
 | **W40** | Sep 28–Oct 4 | **Close M5:** Stage 0 builds, Stage 5 prep (EN pin, VN1610, termination) · ~20 h | **Tue/Wed + Sat:** Stages 1–6 (secure-boot regression → CMAC KAT → cross-core MAC → key agreement → real bus → forgery/replay/cross-ID demos), Stage 7 optional | **M5 closed, tag `m5`** |
-| **W41** | Oct 5–11 | *(burst, ~20 h if the week allows)* README v1 "start here" · draft the **M5a post** (SecOC design) · findings | *(reserve — anything that slipped from W40)* | **README v1** |
-| **W42** | Oct 12–18 | Publish **M5a post** · draft the **M5b post** (CM7 bring-up + cache/non-cacheable mailbox) | *(reserve)* | **M5a post** |
-| **W43** | Oct 19–25 | Publish M5b post · series index post · README final | — | **✅ Ready to apply** |
-| **W44** | Oct 26–Nov 1 | **M5 demo post** from the W40 captures (forgery, replay, cross-ID) | — | **M5 demo post** |
-| **W45–W49** | Nov 2–Dec 6 | Interview prep: "10 decisions I can defend" cheat-sheet from the ADRs, mock design questions. M6-lite starts early (see below). Planned week by week at the retros. | — | — |
+| **W41** | Oct 5–11 | ~~README v1 · draft the M5a post · findings~~ **Cancelled**; its work moved one week back | — | — |
+| **W42** | Oct 12–18 | Publish **M5a post** | *(reserve)* | **M5a post** ✓ |
+| **W43** | Oct 19–25 | **README v1** "start here" (it was never drafted in W41) · F-010 | — | **✅ Ready to apply** (README v1 on `main`) |
+| **W44** | Oct 26–Nov 1 | Draft + publish the **M5b post** (CM7 bring-up + cache/non-cacheable mailbox) · series index post · F-012/F-013 flash scripts | **Sat:** verify F-010, F-012/F-013; triage F-006/F-008 | **M5b post** |
+| **W45** | Nov 2–8 | **M5 demo post** from the W40 captures (forgery, replay, cross-ID) | — | **M5 demo post** |
+| **W46–W49** | Nov 9–Dec 6 | Interview prep: "10 decisions I can defend" cheat-sheet from the ADRs, mock design questions. M6-lite starts early (see below). Planned week by week at the retros. | — | — |
+
+**Shifted 2026-10-18 (W42 retro):** W41 was cancelled, so the M5b post and the M5 demo post each
+moved back one week, and interview prep loses one of its five weeks. The Oct 25 ready-to-apply
+gate holds, because README v1 takes the W43 slot.
 
 **Buffer logic:** W41–W42 Saturdays are reserve bench days. If a W40 stage slips, it moves there.
 The cut-off is Wednesday of W40: if Stage 3 has not passed by then, W40 ends at Stages 0–4, and
