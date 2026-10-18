@@ -41,7 +41,11 @@ ci: require host build + static analysis before merge
 
 ## Tags — one per milestone
 
-Annotated tags mark publishable milestones (M0–M6) and pair with blog posts.
+Annotated tags mark publishable milestones (M0–M6) and pair with blog posts. A milestone is
+tagged only when its Definition of Done holds (`docs/project/plan.md` rule 11): merged to `main`
+by a PR with CI green, the generated traceability report and the `docs/review/M<n>-review.md`
+record committed, and the tag set **on `main`**, followed by a GitHub Release from the tag (short
+notes + the report).
 ```
 git tag -a m1-bootloader -m "FBL boots, verifies, jumps to app"
 git push origin m1-bootloader
