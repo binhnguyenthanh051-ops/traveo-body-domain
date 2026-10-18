@@ -34,6 +34,30 @@ Linux/AP). If staying MCU/AUTOSAR, Sitara is a breadth side-project, not the mai
 moving toward Linux/AP, it becomes the primary portfolio and gets scoped like this project did
 (roadmap, ADRs, CI, the works).
 
+## Embedded profiling toolkit (static stack analysis + RAM/ROM report)
+**Status:** parked — separate repo + blog series. Start after Dec 6.
+
+**The idea:** an ELF-based profiling toolkit every embedded project could use:
+- **Static stack analysis**: disassembly-based (works for C and C++, any compiler that emits
+  an ELF). Walk each task and ISR entry point to its deepest call path; report estimated and
+  suggested stack size.
+- **RAM/ROM report**: section/symbol breakdown per module, diff between two builds.
+
+**Why it's worth it:** reusable beyond Traveo, and the Traveo boards give a built-in
+validation set: CM4 + CM7 + CM0+, with `-fstack-usage` and the M2 on-silicon high-water
+marks as the reference. The story is *static estimate vs. measured high-water, and why they
+differ*.
+
+**Blog series seeds:** Thumb-2 prologues (`push`/`sub sp`/`vpush`), AAPCS (R0–R3 args,
+R4–R11 callee-saved), LR and `bl`/`blx`, indirect calls and why they need annotations,
+ISR stack cost (exception frame 8 / 26 words with FPU, nesting by priority).
+
+**MVP:** GCC Cortex-M, one ELF in → size report + stack tree out. Everything else
+(other compilers, annotations for indirect calls, CI integration) comes after.
+
+**Rule:** clean-room. Design from public sources (Arm docs, objdump/ELF), not from
+memory of any employer's tool.
+
 ## Other parked ideas
 - Body High (Cortex-M7) board — unlocks cache + symmetric multicore hands-on (already noted in
   the roadmap's open items).
