@@ -62,6 +62,11 @@ Toolchain: Infineon ModusToolbox for firmware. GCC for host-side tests.
    solution must break an advisory rule (e.g. 15.5 single-exit), do it deliberately and
    note it as a deviation rather than contorting the code. Host test harnesses in `*/tests/`
    are exempt and may use `printf`/macros.
+6. **Definition of Done** (`docs/project/plan.md` rule 11, 9 checks): requirement → ADR →
+   `@impl` → `@test` → silicon evidence in `docs/bench/`, a gap-free traceability report, PR
+   merged with CI green + tag and Release on `main`, a reviewed post draft, and a review record
+   in `docs/review/`. New code that serves a `REQ-*` carries its tag. Never call a milestone
+   "done" or suggest tagging while any check fails.
 
 ## How I want to use you (Claude Code)
 
