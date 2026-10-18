@@ -58,9 +58,9 @@ About 10–12 hours a week; ~20 in a planned burst week (rule 5).
 | Week | Dates | Weekday focus | Bench | Delivery |
 |---|---|---|---|---|
 | **W39** | Sep 23–27 | Commit the M5 pile; plan + roadmap in repo | Smoke test: both kits flash, boot and log after 5 weeks away | **Clean repo + plan** ✓ |
-| **W40** | Sep 28–Oct 4 | **Close M5:** Stage 0 builds, Stage 5 prep (EN pin, VN1610, termination) · ~20 h | **Tue/Wed + Sat:** Stages 1–6 (secure-boot regression → CMAC KAT → cross-core MAC → key agreement → real bus → forgery/replay/cross-ID demos), Stage 7 optional | **M5 closed, tag `m5`** |
-| **W41** | Oct 5–11 | ~~README v1 · draft the M5a post · findings~~ **Cancelled**; its work moved one week back | — | — |
-| **W42** | Oct 12–18 | Publish **M5a post** | *(reserve)* | **M5a post** ✓ |
+| **W40** | Sep 28–Oct 4 | **Close M5** — Stages 0–6 on silicon, findings into the ADRs | Mon 28 + Sat 3 | **M5 closed, tag `m5-secoc`** ✓ |
+| **W41** | Oct 5–11 | ~~*(burst, ~14 h)* README v1 · M5a post · M6 design plan · flash-script fix (F-012/F-013)~~ **Cancelled**; its work moved one week back | — | — |
+| **W42** | Oct 12–18 | Publish **M5a post** (restart week, ~8 h) | *(none)* | **M5a post** ✓ |
 | **W43** | Oct 19–25 | **README v1** "start here" (it was never drafted in W41) · F-010 | — | **✅ Ready to apply** (README v1 on `main`) |
 | **W44** | Oct 26–Nov 1 | Draft + publish the **M5b post** (CM7 bring-up + cache/non-cacheable mailbox) · series index post · F-012/F-013 flash scripts | **Sat:** verify F-010, F-012/F-013; triage F-006/F-008 | **M5b post** |
 | **W45** | Nov 2–8 | **M5 demo post** from the W40 captures (forgery, replay, cross-ID) | — | **M5 demo post** |
@@ -70,7 +70,8 @@ About 10–12 hours a week; ~20 in a planned burst week (rule 5).
 moved back one week, and interview prep loses one of its five weeks. The Oct 25 ready-to-apply
 gate holds, because README v1 takes the W43 slot.
 
-**Buffer logic:** W41–W42 Saturdays are reserve bench days. If a W40 stage slips, it moves there.
+**Buffer logic:** M5 closed in W40, so the W41–W42 reserve Saturdays weren't needed. The M6 design
+plan planned for W41 was never written (there is no `docs/briefs/M6-brief.md` yet).
 The cut-off is Wednesday of W40: if Stage 3 has not passed by then, W40 ends at Stages 0–4, and
 Stages 5–6 take the W41 Saturday.
 
