@@ -9,6 +9,8 @@
 #include "secoc_app.h"
 #include "secoc.h"
 #include "secoc_freshness.h"
+#include "secoc_store.h"     /* ADR-0024 work-flash store */
+#include "wflash_port.h"     /* its target HAL instance */
 #include "body_msgs.h"         /* body_msg_pdu_len, MSG_ID_* */
 #include "secoc_rx.h"         /* the composed RX verdict + SecOC events (ADR-0023 D11) */
 #include "secoc_key_id.h"     /* SECOC_MAC_KEY_ID (public selector) */
@@ -21,36 +23,33 @@ volatile uint32_t g_secoc_drop_decode;
 static const secoc_mac_if_t g_oracle = { crypto_mac };
 static const secoc_crypto_t g_cy = { &g_oracle, SECOC_MAC_KEY_ID };
 
-/* RAM freshness store (M5; eeprom_emu in M6 — same honest caveat as Node B). */
-enum { SECOC_DOM_TX_SELF = 0u, SECOC_DOM_RX_B = 1u, SECOC_STORE_DOMAINS = 4u };
+/* --- freshness store: two-slot record in work flash (ADR-0024), behind the
+ * ADR-0021 D8 port. Persistent: the sender epoch and the receiver floor survive
+ * a power cycle (REQ-SECOC-006/007/008). Slots are 2 KB apart in the small-
+ * sector region, so they're separate sectors whether a small sector is 128 B
+ * (Body Entry TRM) or larger (ADR-0024 V1). --- */
+enum { SECOC_DOM_TX_SELF = 0u, SECOC_DOM_RX_B = 1u };
 
-static struct {
-    bool     valid;
-    uint16_t epoch;
-} s_store[SECOC_STORE_DOMAINS];
+#define SECOC_STORE_SLOT0   (CY_WFLASH_SM_SBM_BASE)
+#define SECOC_STORE_SLOT1   (CY_WFLASH_SM_SBM_BASE + 0x800u)
+#define SECOC_WF_SECTOR     128u    /* small sector; Body Entry TRM value, see ADR-0024 V1 */
 
-static bool store_load(uint8_t domain, uint16_t *epoch)
-{
-    if ((domain >= (uint8_t)SECOC_STORE_DOMAINS) || !s_store[domain].valid)
-    {
-        return false;
-    }
-    *epoch = s_store[domain].epoch;
-    return true;
-}
+/* DMA- and CM0+-visible scratch for the port. The CM4 has no data
+ * cache, so plain RAM is coherent with the DMA and the CM0+. */
+static wflash_port_shared_t s_wf_shared CY_ALIGN(32);
 
-static bool store_commit(uint8_t domain, uint16_t epoch)
-{
-    if (domain >= (uint8_t)SECOC_STORE_DOMAINS)
-    {
-        return false;
-    }
-    s_store[domain].valid = true;
-    s_store[domain].epoch = epoch;
-    return true;
-}
+static const wflash_port_cfg_t g_wf_cfg = {
+    .dmac        = DMAC,
+    .channel     = 0u,                      /* M-DMA ch 0: unused elsewhere */
+    .sw_trigger  = (uint32_t)TRIG_OUT_MUX_2_MDMA_TR_IN0,
+    .sector_size = SECOC_WF_SECTOR,
+    .shared      = &s_wf_shared,
+};
 
-static const secoc_freshness_store_if_t g_store = { store_load, store_commit };
+/* Mount result, for the debugger: 0 OK, 1 FACTORY, 2 BROKEN (no SecOC). */
+volatile uint32_t g_secoc_store_status = 0xFFFFFFFFu;
+
+static const secoc_freshness_store_if_t *const g_store = &g_secoc_store;
 
 /* Gateway SENDS commands 0x120/0x121 (one sender epoch); RECEIVES B's telemetry
  * 0x200 + sync 0x2F0 (one receiver context tracking B's sender epoch). */
@@ -62,15 +61,23 @@ static const uint16_t g_rx_ids[] = { MSG_ID_SENSOR_RPT, MSG_ID_FRESHNESS_SYNC };
 
 void secoc_app_init(void)
 {
-    for (uint32_t i = 0u; i < (uint32_t)SECOC_STORE_DOMAINS; ++i)
+    const secoc_store_cfg_t sc = {
+        .flash     = wflash_port_init(&g_wf_cfg),
+        .slot_addr = { SECOC_STORE_SLOT0, SECOC_STORE_SLOT1 },
+    };
+    secoc_store_status_t st = secoc_store_mount(&sc);
+    g_secoc_store_status = (uint32_t)st;
+
+    /* BROKEN fails closed (ADR-0024 D3): no sender boot, so nothing goes out
+     * authenticated; no receiver boot, so every frame is dropped as an unknown
+     * ID. Booting the receiver cold here would accept every old epoch. */
+    if (st != SECOC_STORE_BROKEN)
     {
-        s_store[i].valid = false;
-        s_store[i].epoch = 0u;
+        (void)secoc_tx_boot(&g_tx, g_store, (uint8_t)SECOC_DOM_TX_SELF,
+                            g_tx_ids, sizeof g_tx_ids / sizeof g_tx_ids[0]);
+        (void)secoc_rx_boot(&g_rx, g_store, (uint8_t)SECOC_DOM_RX_B,
+                            g_rx_ids, sizeof g_rx_ids / sizeof g_rx_ids[0]);
     }
-    (void)secoc_tx_boot(&g_tx, &g_store, (uint8_t)SECOC_DOM_TX_SELF,
-                        g_tx_ids, sizeof g_tx_ids / sizeof g_tx_ids[0]);
-    (void)secoc_rx_boot(&g_rx, &g_store, (uint8_t)SECOC_DOM_RX_B,
-                        g_rx_ids, sizeof g_rx_ids / sizeof g_rx_ids[0]);
     secoc_rx_init(&g_secoc_rx, &g_cy, &g_rx);
     /* Per-ID PDU lengths, so a CAN FD-padded secured frame verifies (W40 bench). */
     secoc_rx_set_pdu_len_of(&g_secoc_rx, body_msg_pdu_len);

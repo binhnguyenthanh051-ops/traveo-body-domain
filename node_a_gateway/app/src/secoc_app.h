@@ -25,7 +25,9 @@ extern secoc_rx_t g_secoc_rx;
  * a SecOC verdict, so it carries no contract event. */
 extern volatile uint32_t g_secoc_drop_decode;
 
-/* Boot the freshness contexts + store. No crypto; safe before the scheduler. */
+/* Mount the work-flash freshness store (ADR-0024) and boot the freshness
+ * contexts. No crypto; the flash ops are blocking SROM calls via the CM0+, so
+ * this is safe before the scheduler. A BROKEN store leaves SecOC off. */
 void secoc_app_init(void);
 
 /* RX: verify secured telemetry (0x200). On VALID+fresh, decode into *out

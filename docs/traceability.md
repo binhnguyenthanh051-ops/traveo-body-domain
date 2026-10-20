@@ -127,4 +127,4 @@ opportunistically (`docs/traceability-convention.md` §6).
 | ADR-0020 | TCB isolation — enforcing the CM0+ crypto boundary with protection units (M4 Seam 5) | accepted | 0 | 0 | no test tag |
 | ADR-0021 | SecOC protocol — framing, freshness, resync, and symmetric-key handling (M5) | accepted | 17 | 11 |  |
 | ADR-0023 | Target logging channel — structured events over UART, assertable by the BVT | proposed | 3 | 1 |  |
-| ADR-0024 | Persistent freshness store — a two-slot record in work flash (M5B) | proposed | 4 | 10 |  |
+| ADR-0024 | Persistent freshness store — a two-slot record in work flash (M5B) | proposed | 6 | 10 |  |
