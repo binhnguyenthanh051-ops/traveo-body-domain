@@ -85,7 +85,8 @@ static const crypto_handler_if_t g_handlers[] = {
 /* One-row keystore: the shared AES-CMAC secret. Unknown key_id => NULL => fail
  * (never key 0). No ECDSA key — Node B verifies no images.
  * @impl ADR-0021 D6 : shared AES secret held only in the M0+ image
- * @impl REQ-SECOC-011 : app never holds key bytes; secret resides in this image */
+ * @impl REQ-SECOC-011 : app never holds key bytes; secret resides in this image
+ * @design-only REQ-SECOC-011 : residency is image composition, shown on target only */
 static const crypto_key_entry_t g_keys[] = {
     { .key_id = SECOC_MAC_KEY_ID, .type = CRYPTO_KEY_AES_SECRET,
       .secret = secoc_shared_secret, .secret_len = SECOC_AES128_KEY_BYTES }

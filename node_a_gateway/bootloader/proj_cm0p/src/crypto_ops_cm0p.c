@@ -221,7 +221,8 @@ static const crypto_handler_if_t g_handlers[] = {
 /* Keystore (ADR-0019 D3): the ECDSA verify key AND the M5 AES-CMAC secret.
  * Unknown key_id => lookup NULL => fail (never key 0).
  * @impl ADR-0021 D6 : shared AES secret held only in the M0+ image
- * @impl REQ-SECOC-011 : app never holds key bytes; secret resides in this image */
+ * @impl REQ-SECOC-011 : app never holds key bytes; secret resides in this image
+ * @design-only REQ-SECOC-011 : residency is image composition, shown on target only */
 static const crypto_key_entry_t g_keys[] = {
     { .key_id = CRYPTO_DEV_KEY_ID, .pubkey = crypto_pubkey_dev,
       .pubkey_len = sizeof crypto_pubkey_dev },  /* .type defaults to ECDSA_PUBLIC */

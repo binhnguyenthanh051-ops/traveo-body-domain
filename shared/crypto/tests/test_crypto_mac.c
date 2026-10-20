@@ -28,6 +28,7 @@ void tearDown(void) {}
 
 /* ---- MAC request framing ---- */
 /* @test REQ-SECOC-012 */
+/* @test REQ-SECOC-011 : the oracle request is key_id + msg only, never key bytes */
 void test_mac_request_round_trip(void)
 {
     const uint8_t msg[5] = { 0xAAU, 0xBBU, 0xCCU, 0xDDU, 0xEEU };

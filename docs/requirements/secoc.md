@@ -3,7 +3,12 @@
 Normative requirements for the A↔B Secure Onboard Communication layer. Each traces **up** to an
 ADR-0021 sub-decision (the *why*) and **down** to the `@impl`/`@test` tags that prove it
 (`docs/traceability-convention.md`). "shall" is normative; a requirement with no `@test` on disk
-is a coverage gap the `checks/` pipeline flags.
+is a coverage gap the `checks/` pipeline flags. `host_tools/trace_report.py` checks the
+matrix against the tags and generates `docs/traceability.md`.
+
+**On silicon** (DoD rule 11) names the bench capture that shows the requirement on target,
+as a backticked path under `docs/bench/`, or `n/a — <reason>` / `deferred — <reason>`.
+`⏳` means no evidence yet, and the report counts it as a gap.
 
 Design context: `docs/architecture/secoc-architecture.md`. Decisions: `ADR-0021` (protocol),
 `ADR-0017` (crypto offload), `ADR-0018` (IPC transport + D6 cache), `ADR-0019` (keys),
@@ -11,21 +16,21 @@ Design context: `docs/architecture/secoc-architecture.md`. Decisions: `ADR-0021`
 
 ## Coverage matrix
 
-| ID | Requirement (short) | Traces | Verified by |
-|---|---|---|---|
-| REQ-SECOC-001 | Protected messages authenticated; unauthenticated dropped before decode | D1, D9 | `test_secoc`, `test_secoc_rx` |
-| REQ-SECOC-002 | MAC is AES-CMAC truncated to 8 B, constant-time compared | D1 | `test_crypto_mac`, `test_secoc` |
-| REQ-SECOC-003 | Secured frame layout `PDU∥freshness(4)∥MAC(8)`, one CAN FD frame, LE wire | D2 | `test_secoc` |
-| REQ-SECOC-004 | MAC input binds a Data ID: `CMAC(DataID∥freshness∥PDU)` | D2 | `test_secoc` |
-| REQ-SECOC-005 | Freshness = `epoch(u16)∥counter(u16)`; counter is per CAN-ID | D3 | `test_secoc_freshness` |
-| REQ-SECOC-006 | Epoch shared per-node, persisted, `++`/boot; `commit(E+1)` durable **before** spend | D3, D8 | `test_secoc_freshness`, `test_freshness_store` |
-| REQ-SECOC-007 | Receiver accept rule (floor + per-ID high-water); MAC-check before freshness update | D4 | `test_secoc_freshness`, `test_secoc`, `test_secoc_rx` |
-| REQ-SECOC-008 | Receiver-reset resync via authenticated `FRESHNESS_SYNC` (0x2F0); `floor=persisted+1` | D5 | `test_secoc_resync`, `test_secoc_rx` |
-| REQ-SECOC-009 | Counter rollover bumps the epoch (durable) and resets counters | D3 | `test_secoc_freshness` |
-| REQ-SECOC-010 | `key_id`-selected key; unknown `key_id` ⇒ fail (never key 0) | D6 | `test_crypto_mac` |
-| REQ-SECOC-011 | Secret key resides only in the M0+ image; app uses the MAC oracle only | D6, D7 | `@design-only` + `test_crypto_mac` |
-| REQ-SECOC-012 | `CRYPTO_OP_MAC=0x03` generic op: `key_id∥len∥msg ⇒ tag[16]` | D7 | `test_crypto_mac` |
-| REQ-SECOC-013 | Telemetry `0x200` (B→A) is authenticated on the same path | D7 | `test_secoc` |
+| ID | Requirement (short) | Traces | Verified by | On silicon |
+|---|---|---|---|---|
+| REQ-SECOC-001 | Protected messages authenticated; unauthenticated dropped before decode | D1, D9 | `test_secoc`, `test_secoc_rx` | ⏳ |
+| REQ-SECOC-002 | MAC is AES-CMAC truncated to 8 B, constant-time compared | D1 | `test_crypto_mac`, `test_secoc` | ⏳ |
+| REQ-SECOC-003 | Secured frame layout `PDU∥freshness(4)∥MAC(8)`, one CAN FD frame, LE wire | D2 | `test_secoc` | ⏳ |
+| REQ-SECOC-004 | MAC input binds a Data ID: `CMAC(DataID∥freshness∥PDU)` | D2 | `test_secoc` | ⏳ |
+| REQ-SECOC-005 | Freshness = `epoch(u16)∥counter(u16)`; counter is per CAN-ID | D3 | `test_secoc_freshness` | ⏳ |
+| REQ-SECOC-006 | Epoch shared per-node, persisted, `++`/boot; `commit(E+1)` durable **before** spend | D3, D8 | `test_secoc_freshness`, `test_freshness_store` | ⏳ |
+| REQ-SECOC-007 | Receiver accept rule (floor + per-ID high-water); MAC-check before freshness update | D4 | `test_secoc_freshness`, `test_secoc`, `test_secoc_rx` | ⏳ |
+| REQ-SECOC-008 | Receiver-reset resync via authenticated `FRESHNESS_SYNC` (0x2F0); `floor=persisted+1` | D5 | `test_secoc_resync`, `test_secoc_rx` | ⏳ |
+| REQ-SECOC-009 | Counter rollover bumps the epoch (durable) and resets counters | D3 | `test_secoc_freshness` | ⏳ |
+| REQ-SECOC-010 | `key_id`-selected key; unknown `key_id` ⇒ fail (never key 0) | D6 | `test_crypto_mac` | ⏳ |
+| REQ-SECOC-011 | Secret key resides only in the M0+ image; app uses the MAC oracle only | D6, D7 | `@design-only` + `test_crypto_mac` | ⏳ |
+| REQ-SECOC-012 | `CRYPTO_OP_MAC=0x03` generic op: `key_id∥len∥msg ⇒ tag[16]` | D7 | `test_crypto_mac` | ⏳ |
+| REQ-SECOC-013 | Telemetry `0x200` (B→A) is authenticated on the same path | D7 | `test_secoc` | ⏳ |
 
 ## Requirements
 
