@@ -42,7 +42,7 @@
 | REQ-SECOC-003 | Secured frame layout `PDU∥freshness(4)∥MAC(8)`, one CAN FD frame, LE wire | ADR-0021 D2, D3 | `shared/secoc/src/secoc.c` | `shared/secoc/tests/test_secoc.c` ×6 | ⏳ | ❌ no-silicon |
 | REQ-SECOC-004 | MAC input binds a Data ID: `CMAC(DataID∥freshness∥PDU)` | ADR-0021 D2 | `shared/secoc/src/secoc.c` | `shared/secoc/tests/test_secoc.c` | ⏳ | ❌ no-silicon |
 | REQ-SECOC-005 | Freshness = `epoch(u16)∥counter(u16)`; counter is per CAN-ID | ADR-0021 D3 | `shared/secoc/src/secoc_freshness.c` | `shared/secoc/tests/test_secoc_freshness.c` ×2 | ⏳ | ❌ no-silicon |
-| REQ-SECOC-006 | Epoch shared per-node, persisted, `++`/boot; `commit(E+1)` durable **before** spend | ADR-0021 D3, D8 | `shared/secoc/src/secoc_freshness.c` | `shared/secoc/tests/test_freshness_store.c` ×6<br>`shared/secoc/tests/test_secoc_freshness.c` ×2 | ⏳ | ❌ no-silicon |
+| REQ-SECOC-006 | Epoch shared per-node, persisted, `++`/boot; `commit(E+1)` durable **before** spend | ADR-0021 D3, D8 | `shared/secoc/src/secoc_freshness.c`<br>`shared/secoc_store/src/secoc_store.c` ×2 | `shared/secoc/tests/test_freshness_store.c` ×6<br>`shared/secoc/tests/test_secoc_freshness.c` ×2<br>`shared/secoc_store/tests/test_secoc_store.c` ×6 | ⏳ | ❌ no-silicon |
 | REQ-SECOC-007 | Receiver accept rule (floor + per-ID high-water); MAC-check before freshness update | ADR-0021 D4 | `shared/secoc/src/secoc_freshness.c` ×2<br>`shared/secoc/src/secoc_rx.c` | `shared/secoc/tests/test_secoc_freshness.c` ×5<br>`shared/secoc/tests/test_secoc_rx.c` ×3 | ⏳ | ❌ matrix-drift, no-silicon |
 | REQ-SECOC-008 | Receiver-reset resync via authenticated `FRESHNESS_SYNC` (0x2F0); `floor=persisted+1` | ADR-0021 D5; ADR-0002 | `node_a_gateway/app/src/secoc_app.c`<br>`node_b_actuator/proj_cm7/src/secoc_app.c`<br>`shared/secoc/src/secoc_freshness.c` ×2<br>`shared/secoc/src/secoc_rx.c` | `shared/secoc/tests/test_secoc_freshness.c`<br>`shared/secoc/tests/test_secoc_resync.c`<br>`shared/secoc/tests/test_secoc_rx.c` | ⏳ | ❌ no-silicon |
 | REQ-SECOC-009 | Counter rollover bumps the epoch (durable) and resets counters | ADR-0021 D3 | `shared/secoc/src/secoc_freshness.c` | `shared/secoc/tests/test_secoc_freshness.c` | ⏳ | ❌ no-silicon |
@@ -125,6 +125,6 @@ opportunistically (`docs/traceability-convention.md` §6).
 | ADR-0018 | Cross-core IPC transport — shared-RAM mailbox + hardware semaphore (M4) | accepted | 0 | 0 | no test tag |
 | ADR-0019 | Key handling, algorithm, and the signing tool (M4) | accepted | 0 | 0 | no test tag |
 | ADR-0020 | TCB isolation — enforcing the CM0+ crypto boundary with protection units (M4 Seam 5) | accepted | 0 | 0 | no test tag |
-| ADR-0021 | SecOC protocol — framing, freshness, resync, and symmetric-key handling (M5) | accepted | 16 | 11 |  |
+| ADR-0021 | SecOC protocol — framing, freshness, resync, and symmetric-key handling (M5) | accepted | 17 | 11 |  |
 | ADR-0023 | Target logging channel — structured events over UART, assertable by the BVT | proposed | 3 | 1 |  |
-| ADR-0024 | Persistent freshness store — a two-slot record in work flash (M5B) | proposed | 0 | 0 |  |
+| ADR-0024 | Persistent freshness store — a two-slot record in work flash (M5B) | proposed | 4 | 10 |  |

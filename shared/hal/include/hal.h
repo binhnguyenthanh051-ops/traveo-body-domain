@@ -31,6 +31,13 @@ typedef struct {
     /* Program-row size, for chunking a multi-row write against the flash
      * geometry. 0 if not applicable to this instance. */
     uint32_t program_row_size;
+    /* Optional (NULL if unsupported), added for the work-flash freshness store
+     * (ADR-0024 D4). blank_check: 1 = every word in [addr, addr+len) is erased,
+     * 0 = at least one is not, <0 = error. read_checked: a read that can never
+     * fault the CPU -- an uncorrectable ECC error returns <0 instead (on target:
+     * a DMA transfer, ADR-0024 D3). Existing instances leave both NULL. */
+    int  (*blank_check)(uint32_t addr, size_t len);
+    int  (*read_checked)(uint32_t addr, uint8_t *dst, size_t len);
 } hal_flash_if_t;
 
 /* Crypto service the security layer calls (offloaded to the M0+ on target). */
