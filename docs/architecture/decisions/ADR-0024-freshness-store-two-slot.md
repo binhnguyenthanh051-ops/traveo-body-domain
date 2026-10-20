@@ -65,8 +65,8 @@ answers from the mirror (`written` bit clear ⇒ cold, as D8 requires).
 ### D2. Save order: erase the older slot, program body then mark, read back, then return
 
 `commit` = (1) pick the **target** = the slot that is *not* the newest valid one; (2) erase
-it; (3) program words 0–3; (4) program word 4 (`COMMIT_MARK`); (5) read the target back and
-check it as D3 would; (6) only then return `true`. Any failure ⇒ `false`, and the mirror is
+it; (3) program words 0–3; (4) program word 4 (`COMMIT_MARK`); (5) read the target back **by DMA**
+and check it as D3 would; (6) only then return `true`. Any failure ⇒ `false`, and the mirror is
 rolled back to the newest valid record.
 
 **Power-loss argument:** the newest valid record is never touched by a save, and the
@@ -75,20 +75,23 @@ the previous record as the newest valid one, so `load` returns the pre-save valu
 `commit` never returned, that value was never spent (REQ-SECOC-006 "commit before spend"). At
 worst one epoch is wasted. Never reused.
 
-### D3. Load order: blank-check the mark, read the mark by DMA, then read the body by CPU
+### D3. Load order: blank-check the mark, then read the whole record by DMA
 
 For each slot:
 
 1. **`Cy_Flash_BlankCheck`** on word 4. Blank ⇒ the save never reached its last step ⇒ slot
    **empty**. Nothing else in the slot is read (hazard 1).
-2. Not blank ⇒ read word 4 with a **single-word DMA transfer**, ECC left **on** (TRM §9.3.1
-   measure 1). An uncorrectable error is reported as a DMA error status (M-DMA
-   `DMAC_CHx_INTR.SRC_BUS_ERROR`, or P-DMA `CH_STATUS.INTR_CAUSE = 2`), not as a CPU fault.
-   DMA error, or a value `!= COMMIT_MARK` ⇒ the mark itself was torn ⇒ slot **torn**
-   (hazard 2). A single-bit error in the mark is still corrected by ECC on this path.
-3. Mark intact ⇒ words 0–3 were fully programmed before it (D2 order) ⇒ read them with **ECC
-   on** (single-bit errors corrected) and check the CRC. Bad CRC ⇒ slot **corrupt**.
-4. Otherwise the slot is **valid**.
+2. Not blank ⇒ read words 0–4 (the whole 20 B record) in **one DMA transfer**, ECC left **on**
+   (TRM §9.3.1 measure 1). ECC still checks every word on this path. What changes is who gets
+   an uncorrectable error: on a CPU read it's a bus fault, on a DMA read it's the channel's
+   error status (M-DMA `DMAC_CHx_INTR.SRC_BUS_ERROR`, P-DMA `CH_STATUS.INTR_CAUSE = 2`), which
+   software reads as data. Single-bit errors are corrected on both paths.
+3. Classify: DMA error ⇒ slot **torn** (hazard 2, anywhere in the record). Word 4
+   `!= COMMIT_MARK` ⇒ **torn** (the mark was mid-program). Bad CRC over words 0–2 ⇒
+   **corrupt**. Otherwise **valid**.
+
+The CPU never reads a store slot directly, so no state of work flash (erased, torn or
+decayed) can fault the CPU.
 
 Result: two valid ⇒ the higher `seq` wins. One valid ⇒ use it. None valid and **both empty** ⇒
 factory-fresh: every domain cold (D8's existing "cold ⇒ E = 0" path). None valid and **any
@@ -98,10 +101,12 @@ existing fail-safe applies (`secoc_tx_boot` / `secoc_rx_boot` return false ⇒ n
 restart the epoch at 0 and reuse every epoch, which is exactly what REQ-SECOC-006 forbids.
 
 **Owner decision (2026-10-20):** blank check is the primary mechanism wherever the driver
-supports it (it does, on both PDL versions). For what blank check can't cover, a torn mark,
-the mark is read by **DMA with ECC on** rather than by disabling work-flash ECC. ECC stays
-enabled throughout, so single-bit errors are corrected and nothing is toggled globally. The
-DMA read covers one word per slot (the mark), never the body.
+supports it (it does, on both PDL versions). For what blank check can't cover, a torn or
+decayed word, the record is read by **DMA with ECC on** rather than by disabling work-flash
+ECC. ECC stays enabled throughout, so single-bit errors are corrected and nothing is toggled
+globally. **Revised the same day:** the first draft read only the mark by DMA and the body by
+CPU, which left a multi-bit body error as a CPU fault at boot. The whole record now goes by DMA
+(16 more bytes in the same transfer).
 
 ### D4. Behind the HAL: `hal_flash_if_t` gets two optional entries
 
@@ -116,7 +121,7 @@ int (*read_checked)(uint32_t addr, uint8_t *dst, size_t len);
 The same pattern as `erase_range` (ADR-0012 D6): existing instances (the M3 download flash) set
 them to NULL and are unaffected. The store logic (`shared/secoc_store/` or a new file in
 `shared/secoc/`, decided at implementation) is **host-testable** (rule 1): the host fake flash
-models erased words, torn words (a word that faults on an ECC-on read) and power loss at any
+models erased words, torn words (`read_checked` returns <0 over them) and power loss at any
 program/erase step. The target port wraps `Cy_Flash_*` and one DMA channel for
 `read_checked`. The interface names what the read guarantees (fault-safe), not how, so the
 port could switch mechanism without changing the store.
@@ -141,18 +146,11 @@ the SROM erase/program on the app core's behalf (TRM §9.3.2) but never reads th
   it fires once per adopted epoch, not per frame.
 - (−) **Residual risk, stated plainly:** a record can decay *after* it was written correctly.
   Every word has SECDED and retention is specified at 10 years, so only a multi-bit error
-  matters, and it plays out in two ways:
-  - **In the mark** (read by DMA): the slot reads as torn and `load` falls back to the older
-    record. For the sender, the D5 resync heals it (the peer's floor pushes the epoch past the
-    lost value). For the receiver, its floor drops by one save, so frames from the lost epoch
-    would be accepted again until the next adoption.
-  - **In the body** (read by the CPU, D3 step 3): an uncorrectable ECC fault on the CPU at
-    boot, not a fallback. If the fault handler resets, the node can boot-loop. Reading the
-    whole 20 B record by DMA, not just the mark, would turn this into the fallback case too;
-    it's left as an open follow-up (the ADR scope follows the owner's decision for the mark
-    word). Cost: 16 more bytes in the same DMA transfer.
-
-  Both are accepted for a portfolio node and noted, not engineered away.
+  matters. With the whole record read by DMA, it makes the newest slot read as torn or corrupt,
+  and `load` falls back to the older record. For the sender, the D5 resync heals it (the peer's
+  floor pushes the epoch past the lost value). For the receiver, its floor drops by one save,
+  so frames from the lost epoch would be accepted again until the next adoption. Accepted for
+  a portfolio node and noted, not engineered away.
 - **Wear:** about 10 saves a day per sector (two slots) against 250 k cycles is decades. The
   binding limit is the **u16 epoch** (ADR-0021 D3): 65 536 increments at ~20 a day is under 9
   years. The store doesn't change that limit, but it makes it real, so ADR-0021 D3's "on the
@@ -172,10 +170,10 @@ the SROM erase/program on the app core's behalf (TRM §9.3.2) but never reads th
   power-off, so REQ-SECOC-006 fails the power-cycle test. It would only cover a warm reset.
 - **No persistence: a receiver nonce at boot, or per-session keys.** Removes the store
   entirely. Out of scope: it's the post-M5 session-key milestone.
-- **Disable work-flash ECC for the mark read** (`FLASHC_FLASH_CTL.WORK_ECC_EN = 0`, interrupts
+- **Disable work-flash ECC for the read** (`FLASHC_FLASH_CTL.WORK_ECC_EN = 0`, interrupts
   masked, restored right after). No DMA channel needed, a few register writes. Not chosen
   (owner decision, 2026-10-20): `WORK_ECC_EN` is a global switch shared by every core and
-  master, a single-bit error in the mark is no longer corrected (so a healthy record can be
+  master, a single-bit error is no longer corrected (so a healthy record can be
   rejected and the older one used, the residual-risk case below), and the toggle window is one
   more thing that can go wrong. DMA keeps ECC on. Revisit if a DMA channel can't be spared on
   a node.
@@ -194,8 +192,9 @@ the SROM erase/program on the app core's behalf (TRM §9.3.2) but never reads th
   Our CM0+ images service SecOC/crypto IPC, so confirm the system-call IPC still reaches SROM
   (Node A did erase/program from the CM4 in M3; Node B is unproven). Wed 21.
 - **V3** DMA read of work flash: which DMA (M-DMA or P-DMA) is free on each node, that a
-  single-word transfer from work flash reports an uncorrectable error in its status as TRM
-  §9.3.1 says, and that a torn mark can be simulated on target with the fault-injection registers
+  20 B transfer from work flash stops and reports an uncorrectable error in its status as TRM
+  §9.3.1 says, that the flash controller's fault-subsystem entry for the same error isn't set
+  to reset the device, and that a torn word can be simulated on target with the fault-injection registers
   (`WORK_ECC_INJ_EN`, `FLASHC_ECC_CTL`) for a bench test. Wed 21.
 - **V4** Commit latency (erase + program) measured on both nodes. Sat 24, with the MAC latency if
   time.
