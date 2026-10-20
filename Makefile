@@ -109,6 +109,15 @@ SECOC_RESYNC_TEST := shared/secoc/tests/test_secoc_resync.c
 FRESH_STORE_SRC  := shared/secoc/tests/secoc_freshness_store_fake.c
 FRESH_STORE_TEST := shared/secoc/tests/test_freshness_store.c
 
+# --- secoc_store (M5B): the work-flash backing of the freshness-store port
+# (ADR-0024). Links the real secoc_freshness.c so the brown-out test drives the
+# actual sender boot path over the store. ---
+SECOC_STORE_INC  := -Ishared/secoc_store/include -Ishared/secoc_store/tests \
+                    -Ishared/secoc/include -Ishared/hal/include
+SECOC_STORE_SRC  := shared/secoc_store/src/secoc_store.c shared/secoc/src/secoc_freshness.c \
+                    shared/secoc_store/tests/wflash_fake.c
+SECOC_STORE_TEST := shared/secoc_store/tests/test_secoc_store.c
+
 # The composed RX verdict seam (ADR-0023 D11): MAC + freshness + accept with the
 # per-reason counters and the LOG_EVT_SECOC_* events emitted together. It is the
 # one secoc suite that links shared/log — that dependency IS the decision, so the
@@ -151,7 +160,7 @@ REPROG_TEST  := node_a_gateway/app/logic/tests/test_reprogram.c
         test_crypto_msg test_ipc_mailbox test_crypto_dispatch test_crypto_keystore \
         test_crypto_verify test_crypto_mac test_prot_region \
         test_secoc test_secoc_freshness test_secoc_resync test_freshness_store \
-        test_secoc_rx test_log clean lint
+        test_secoc_store test_secoc_rx test_log clean lint
 
 test: test_messages test_scheduler test_boot test_boot_secure test_bodyctl test_reprogram \
       test_isotp test_uds_session test_uds_security_access test_uds_download \
@@ -159,7 +168,7 @@ test: test_messages test_scheduler test_boot test_boot_secure test_bodyctl test_
       test_crypto_msg test_ipc_mailbox test_crypto_dispatch test_crypto_keystore \
       test_crypto_verify test_crypto_mac test_prot_region \
       test_secoc test_secoc_freshness test_secoc_resync test_freshness_store \
-      test_secoc_rx test_log
+      test_secoc_store test_secoc_rx test_log
 
 test_messages: $(BUILD)/test_messages
 	@echo "== messages =="
@@ -249,6 +258,10 @@ test_freshness_store: $(BUILD)/test_freshness_store
 	@echo "== freshness_store (persistence port contract / M5) =="
 	@$(BUILD)/test_freshness_store
 
+test_secoc_store: $(BUILD)/test_secoc_store
+	@echo "== secoc_store (two-slot work-flash freshness store / M5B) =="
+	@$(BUILD)/test_secoc_store
+
 test_secoc_rx: $(BUILD)/test_secoc_rx
 	@echo "== secoc_rx (RX verdict + SecOC events / M5 Step 7) =="
 	@$(BUILD)/test_secoc_rx
@@ -270,6 +283,7 @@ LINT_SRC := shared/messages/src shared/messages/include \
             shared/can/src shared/can/include shared/diag/src shared/diag/include \
             shared/sysmgr/src shared/sysmgr/include \
             shared/crypto/src shared/crypto/include shared/secoc/src shared/secoc/include \
+            shared/secoc_store/src shared/secoc_store/include \
             shared/log/src shared/log/include \
             shared/prot/src shared/prot/include \
             shared/eeprom_emu/src shared/eeprom_emu/include security/src security/include \
@@ -282,7 +296,7 @@ lint:
 	         -I shared/messages/include -I shared/hal/include -I scheduler/include \
 	         -I shared/boot/include -I shared/can/include -I shared/diag/include \
 	         -I shared/sysmgr/include -I shared/prot/include -I shared/log/include \
-	         -I shared/secoc/include -I shared/crypto/include \
+	         -I shared/secoc/include -I shared/secoc_store/include -I shared/crypto/include \
 	         -I node_a_gateway/app/logic/include -I node_a_gateway/app/include \
 	         $(LINT_SRC)
 	@echo "(MISRA addon: add '--addon=misra.json' once the licensed rule-texts file is in place)"
@@ -362,6 +376,9 @@ $(BUILD)/test_secoc_resync: $(SECOC_RESYNC_SRC) $(SECOC_RESYNC_TEST) $(UNITY_SRC
 
 $(BUILD)/test_freshness_store: $(FRESH_STORE_SRC) $(FRESH_STORE_TEST) $(UNITY_SRC) | $(BUILD)
 	$(CC) $(CFLAGS) $(UNITY_INC) $(SECOC_INC) $(UNITY_SRC) $(FRESH_STORE_SRC) $(FRESH_STORE_TEST) -o $@
+
+$(BUILD)/test_secoc_store: $(SECOC_STORE_SRC) $(SECOC_STORE_TEST) $(UNITY_SRC) | $(BUILD)
+	$(CC) $(CFLAGS) $(UNITY_INC) $(SECOC_STORE_INC) $(UNITY_SRC) $(SECOC_STORE_SRC) $(SECOC_STORE_TEST) -o $@
 
 $(BUILD):
 	@mkdir -p $(BUILD)

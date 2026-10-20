@@ -95,10 +95,24 @@ decayed) can fault the CPU.
 
 Result: two valid ⇒ the higher `seq` wins. One valid ⇒ use it. None valid and **both empty** ⇒
 factory-fresh: every domain cold (D8's existing "cold ⇒ E = 0" path). None valid and **any
-torn or corrupt** ⇒ `load` **fails** and the node treats the store as broken. The caller's
-existing fail-safe applies (`secoc_tx_boot` / `secoc_rx_boot` return false ⇒ no SecOC traffic,
-`LOG_EVT_CRYPTO_ERROR`-style report). A store that falls back to "cold" after corruption would
-restart the epoch at 0 and reuse every epoch, which is exactly what REQ-SECOC-006 forbids.
+torn or corrupt** ⇒ the store is **BROKEN** and fails closed. A store that fell back to "cold"
+after corruption would restart the epoch at 0 and reuse every epoch, which is exactly what
+REQ-SECOC-006 forbids.
+
+**How BROKEN reaches the caller (implementation, 2026-10-20):** the D8 port can't carry it,
+because `load` returning false already means *cold*. So the scan runs once in
+`secoc_store_mount()`, which returns `OK` / `FACTORY` / `BROKEN`. On BROKEN, `load` and `commit`
+both return false, so `secoc_tx_boot` fails (its commit fails). But `secoc_rx_boot` only
+*loads*, and would boot cold with floor 1 and accept every old epoch. The app therefore
+**must check the mount status** and not start SecOC at all on BROKEN. The D8 port is unchanged.
+
+**A brown-out during the very first save** (factory flash) depends on the step: interrupted
+while programming the body, the mark is still blank, so both slots read empty and the store is
+still FACTORY (nothing was spent). Interrupted during the erase or the mark program, it leaves
+a non-blank torn slot next to an empty one. That's BROKEN, because it can't be told apart from
+"the only record decayed". Recovery is erasing both slots (debugger or a future UDS routine).
+Writing an initial record at production programming time would remove this window. Not done
+for M5B; noted as a provisioning step.
 
 **Owner decision (2026-10-20):** blank check is the primary mechanism wherever the driver
 supports it (it does, on both PDL versions). For what blank check can't cover, a torn or

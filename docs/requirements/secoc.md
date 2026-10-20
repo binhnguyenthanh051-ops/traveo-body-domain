@@ -23,7 +23,7 @@ Design context: `docs/architecture/secoc-architecture.md`. Decisions: `ADR-0021`
 | REQ-SECOC-003 | Secured frame layout `PDU∥freshness(4)∥MAC(8)`, one CAN FD frame, LE wire | D2 | `test_secoc` | ⏳ |
 | REQ-SECOC-004 | MAC input binds a Data ID: `CMAC(DataID∥freshness∥PDU)` | D2 | `test_secoc` | ⏳ |
 | REQ-SECOC-005 | Freshness = `epoch(u16)∥counter(u16)`; counter is per CAN-ID | D3 | `test_secoc_freshness` | ⏳ |
-| REQ-SECOC-006 | Epoch shared per-node, persisted, `++`/boot; `commit(E+1)` durable **before** spend | D3, D8 | `test_secoc_freshness`, `test_freshness_store` | ⏳ |
+| REQ-SECOC-006 | Epoch shared per-node, persisted, `++`/boot; `commit(E+1)` durable **before** spend | D3, D8 | `test_secoc_freshness`, `test_freshness_store`, `test_secoc_store` | ⏳ |
 | REQ-SECOC-007 | Receiver accept rule (floor + per-ID high-water); MAC-check before freshness update | D4 | `test_secoc_freshness`, `test_secoc`, `test_secoc_rx` | ⏳ |
 | REQ-SECOC-008 | Receiver-reset resync via authenticated `FRESHNESS_SYNC` (0x2F0); `floor=persisted+1` | D5 | `test_secoc_resync`, `test_secoc_rx` | ⏳ |
 | REQ-SECOC-009 | Counter rollover bumps the epoch (durable) and resets counters | D3 | `test_secoc_freshness` | ⏳ |
