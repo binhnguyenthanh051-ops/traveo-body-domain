@@ -34,8 +34,10 @@ extern secoc_rx_t g_secoc_rx;
  * message-definition bug, not an attack. */
 extern volatile uint32_t g_secoc_drop_decode;
 
-/* Boot the freshness contexts (sender + receiver) and the store. No crypto here,
- * so it is safe to call before the scheduler starts. */
+/* Mount the work-flash freshness store (ADR-0024) and boot the freshness
+ * contexts (sender + receiver). No crypto here; the flash ops are blocking SROM
+ * calls via the CM0+, so it is safe before the scheduler. A BROKEN store leaves
+ * SecOC off. */
 void secoc_app_init(void);
 
 /* RX: verify a received command frame (MAC + freshness) and, only if authentic

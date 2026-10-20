@@ -99,6 +99,7 @@ SOURCES=../../shared/messages/src/body_msgs.c ../../shared/boot/src/boot.c \
         ../../shared/crypto/src/crypto_service.c \
         ../../shared/secoc/src/secoc.c ../../shared/secoc/src/secoc_freshness.c \
         ../../shared/secoc/src/secoc_rx.c \
+        ../../shared/secoc_store/src/secoc_store.c ../../shared/secoc_store/port/wflash_port.c \
         ../../shared/log/src/log.c
 
 # Exclude host-only test sources and the pre-FreeRTOS bring-up stub main; the
@@ -110,6 +111,7 @@ CY_IGNORE=logic/tests src/app_main.c
 # FreeRTOSConfig.h wins over library templates.
 INCLUDES=./config ./include ./logic/include ../../shared/can/include ../../shared/messages/include ../../shared/boot/include ../../shared/hal/include \
          ../../shared/crypto/include ../../shared/secoc/include ../../security/include \
+         ../../shared/secoc_store/include ../../shared/secoc_store/port \
          ../../shared/log/include
 
 # Add additional defines to the build process (without a leading -D).

@@ -198,18 +198,51 @@ the SROM erase/program on the app core's behalf (TRM §9.3.2) but never reads th
 - **Defer to M6** (REQ-SECOC-006/007/008 "host-only, deferred"). Rejected at the W42 retro:
   breaks the published M5a promise for longer, and the reset-then-replay demo stays broken.
 
+## Target ports (2026-10-21)
+
+One port source, `shared/secoc_store/port/wflash_port.c`, serves both nodes. What differs is
+config data in each `secoc_app.c` (ADR-0004), not `#ifdef`:
+
+| | Node A (CYT2B7, CM4) | Node B (CYT4BF, CM7_0) |
+|---|---|---|
+| Slots | `CY_WFLASH_SM_SBM_BASE` (`0x1401_2000`) and +2 KB | `CY_WFLASH_SM_SBM_BASE` (`0x1403_0000`) and +2 KB |
+| Small sector | 128 B (Body Entry TRM §9) | 128 B assumed, **unverified** (V1) |
+| M-DMA trigger | `TRIG_OUT_MUX_2_MDMA_TR_IN0`, channel 0 | `TRIG_OUT_MUX_3_MDMA_TR_IN0`, channel 0 |
+| DMA/SROM scratch | plain RAM (no D-cache) | `.cy_sharedmem` → `ram_noncache` (ADR-0018 D6) |
+
+- **Slots 2 KB apart** in the small-sector region, so they're separate sectors whether a small
+  sector is 128 B or 2 KB. That makes the Node B layout safe before V1 is answered.
+- **PDL calls:** `Cy_Flash_EraseSector`, `Cy_Flash_Program_WorkFlash` (one 32-bit word per call,
+  with the SROM's own blank check, so a non-erased word is refused), `Cy_Flash_BlankCheck`
+  (`CY_FLASH_DRV_SUCCESS` = blank, `CY_FLASH_DRV_FLASH_NOT_ERASED` = not blank, TRM SROM status
+  `0xF00000A4`), and one M-DMA 1D transfer for `read_checked`. `Cy_Flashc_WorkWriteEnable()`
+  lifts the work-flash write gate at init, like M3's `MainWriteEnable`.
+- **Interrupts stay enabled** around erase and program. M3's code-flash port masks them because
+  an ISR fetching from the busy code-flash macro faults; nothing runs from work flash.
+- **Cache (Node B):** the M-DMA reads the descriptor and writes the read buffer, and the CM0+
+  (SROM) reads the program source word. None of them sees the CM7's D-cache, so all three live
+  in `.cy_sharedmem`. Compiled: the 0x60-byte scratch lands in `.cy_sharedmem` at 32-byte
+  alignment.
+- **BROKEN at boot:** `secoc_app_init()` skips `secoc_tx_boot`/`secoc_rx_boot`, so nothing goes
+  out authenticated and every received frame is dropped as an unknown ID.
+  `g_secoc_store_status` (0 OK, 1 FACTORY, 2 BROKEN) is there for the debugger.
+- **Builds:** Node A app builds and links (39.6 KB flash, store and port symbols present).
+  Node B: the three changed files compile clean (CM7 flags of the last good build, plus
+  `-Wextra`), but the full `build_proj` couldn't run from Claude's shell (the device-configurator
+  step fails before compiling). **The Node B link is still to be done** from ModusToolbox.
+
 ## To verify in the TRM / on silicon
 
-- **V1** Node B (CYT4BF) small-sector size, endurance, ECC width and SROM path: Body High TRM
-  (add it to `docs/references/`). Wed 21.
-- **V2** `Cy_Flash_BlankCheck` from the app core goes through the CM0+ SROM path on both nodes.
-  Our CM0+ images service SecOC/crypto IPC, so confirm the system-call IPC still reaches SROM
-  (Node A did erase/program from the CM4 in M3; Node B is unproven). Wed 21.
-- **V3** DMA read of work flash: which DMA (M-DMA or P-DMA) is free on each node, that a
-  20 B transfer from work flash stops and reports an uncorrectable error in its status as TRM
-  §9.3.1 says, that the flash controller's fault-subsystem entry for the same error isn't set
-  to reset the device, and that a torn word can be simulated on target with the fault-injection registers
-  (`WORK_ECC_INJ_EN`, `FLASHC_ECC_CTL`) for a bench test. Wed 21.
+- **V1** Node B (CYT4BF) small-sector size, endurance and ECC width: Body High TRM (add it to
+  `docs/references/`). The slot layout above doesn't depend on the answer; `SECOC_WF_SECTOR`
+  in Node B's `secoc_app.c` should match it.
+- **V2** The SROM calls (erase, program, blank check) from the app core reach the CM0+ and
+  succeed on both nodes. Node A did erase/program from the CM4 in M3 (code flash); work flash
+  and Node B are unproven. Read `g_wflash_raw_status` on the first boot.
+- **V3** The M-DMA read: a 20 B work-flash transfer completes on both nodes
+  (`g_wflash_raw_dma_intr` shows COMPLETION), an uncorrectable error reports `SRC_BUS_ERROR`
+  as TRM §9.3.1 says, the fault subsystem isn't set to reset on the same error, and a torn word
+  can be simulated with the fault-injection registers (`WORK_ECC_INJ_EN`, `FLASHC_ECC_CTL`).
 - **V4** Commit latency (erase + program) measured on both nodes. Sat 24, with the MAC latency if
   time.
 - **V5** Power-cycle both nodes: epoch advances and never repeats (G1). Reset Node B and replay
