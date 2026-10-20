@@ -199,6 +199,8 @@ typedef struct {
 - **Host fake now** (a volatile map with a settable "power-cycle" to test cold boot and
   brown-out-between-commit-and-spend); **`eeprom_emu` backing in M6**. Target-only, behind the
   port — `shared/secoc` never sees flash (the `secoc_core` layer rule in `checks/rules.yml`).
+- **Backing revised (2026-10-20, M5B):** the target backing is now a dedicated two-slot record in
+  work flash (**ADR-0024**), not `eeprom_emu` in M6. The port itself is unchanged.
 
 ### D9. Verify failure is fail-safe: drop, count, hold last safe state
 
