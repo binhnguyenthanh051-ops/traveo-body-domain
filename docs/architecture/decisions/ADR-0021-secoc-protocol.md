@@ -38,8 +38,10 @@ and reconstruction).
 ### D1. MAC primitive: AES-CMAC, computed on the M0+, truncated to 8 bytes, compared constant-time
 
 - **Algorithm:** AES-128 CMAC (NIST SP 800-38B). Vetted primitive, no hand-rolled subkey/padding
-  (ADR-0006). On target it is the PDL's **Crypto Core V2 CMAC** (`Cy_Crypto_Core_V2_Cmac`);
-  `CY_IP_MXCRYPTO` is present on `cyt4bf8cds.h` (Node B) and on CYT2B7 (Node A). mbedTLS
+  (ADR-0006). On target it is the PDL's **Crypto Core V2 CMAC**, called step by step
+  (`Cy_Crypto_Core_Cmac_Init/Start/Update/Finish/Free`) with the Crypto block's error flags checked
+  after, not through the one-shot `Cy_Crypto_Core_Cmac`, which cannot report a failure (F-010, see the
+  addendum below); `CY_IP_MXCRYPTO` is present on `cyt4bf8cds.h` (Node B) and on CYT2B7 (Node A). mbedTLS
   `mbedtls_cipher_cmac` is the documented software fallback, not expected. On-silicon correctness
   is proven against SP 800-38B known-answer vectors at bring-up.
 - **Truncation:** the full CMAC tag is 16 B; the wire carries the **first 8 B**. 64-bit forgery
@@ -259,6 +261,8 @@ The M4→M7 silicon change (secoc-architecture §9) touches **only** the right c
 - ✅ `Cy_Crypto_Core_V2_Cmac` KAT against SP 800-38B on both parts (D1): exact on CYT2B7 and
   CYT4BF, no byte reversal, no explicit `Aes_Init` (2026-09-28, runbook #9). Both parts compute the
   same tag with the shared secret (Stage 4.1). MXCRYPTO is present on CYT4BF (the V2 driver links).
+- ⏳ F-010 fix on silicon (D1): the KAT image must read `g_kat_result == 15` on both parts, where
+  bit 3 is the injected Crypto bus error refused, then the next MAC correct (bench, W43 Sat).
 - ⏳ Per-frame MAC round-trip latency vs the control-loop budget (D1/D7, §8.4): **not measured.**
   Upper bound only: both nodes sustain one secured frame each way every 20 ms with zero drops
   (Stage 5). A timed measurement (`LOG_EVT_CRYPTO_MAC_US` exists, no emitter yet) is still open.
@@ -331,6 +335,41 @@ computed from whatever the hardware left, instead of the ERROR verdict REQ-SECOC
 not what D1 claims. *Planned fix (F-010):* call `Cy_Crypto_Core_V2_Cmac_Init/Start/Update/Finish`
 directly and check each status. Until then the NIST KAT (Stage 2) is the evidence that the
 primitive works on this silicon.
+
+**Addendum — D1 fix: step-by-step CMAC plus a hardware error check (2026-10-22, F-010).**
+Reading the PDL source for the planned fix showed that checking each step's status is **not enough
+on its own**. In mtb-pdl-cat1 3.22.1 (Node A) and 3.23.0 (Node B, same CMAC code) the steps fail
+only on bad parameters: `Cmac_Init` on a NULL pointer, the multi-step `Cy_Crypto_Core_Cmac_*` on a
+V1 block (`NOT_SUPPORTED`). `Aes_Init` (inside `Start`), `Aes_Ecb` (inside `Update`) and `Finish`
+return `CY_CRYPTO_SUCCESS` on every path. A hardware fault shows only in the Crypto block's `INTR`
+error bits (bus error, instruction opcode/condition-code, TRNG health: `CY_CRYPTO_INTR_ERROR_MASK`),
+which is where the PDL's own crypto server looks (`Cy_Crypto_Server_ErrorHandler`). We do not run
+that server: our M0+ uses its own dispatch (ADR-0017), so nothing else reads those bits.
+The one-shot also never calls `Cmac_Free`, so the subkeys stay on the M0+ stack.
+*Decision:* `cmac_compute()` on both M0+ images calls the public multi-step API
+`Cy_Crypto_Core_Cmac_Init/Start/Update/Finish`, checks each status, always calls `Cmac_Free` after
+a good `Init`, then reads `INTR & CY_CRYPTO_INTR_ERROR_MASK`. Any error bit fails the MAC
+(`CY_CRYPTO_HW_ERROR` → `mac_handler` answers with the ERROR verdict, REQ-SECOC-010) and is
+cleared, so one fault costs one frame, not every frame after it. A bit left over from an earlier
+operation (Node A's boot-time SHA/ECDSA) fails the next MAC once, which is fail-closed.
+*Tradeoffs:* the state and buffer types (`cy_stc_crypto_v2_cmac_state_t/_buffers_t`) are marked
+`\cond INTERNAL` in the PDL docs, but the public multi-step functions take them as `void *` and
+there is no public alternative. The PDL is pinned per node, and a PDL bump must re-run the KAT.
+`Cmac_Free` in these versions clears `k` twice and never clears `temp` (it reads `cmacState->k`
+for both), so the last CBC chaining block stays on the stack. That block is not key material, and
+finishing a MAC from it still needs the AES key, which `Free` does clear. We use the PDL as is
+and do not patch `mtb_shared`.
+*Alternatives:* (A) keep the one-shot and only read the error bits after it. That is smaller, but
+it still loses the step statuses and the scrub. (B) Use the `Cy_Crypto_Core_V2_Cmac_*` functions
+directly, as the plan said. They are the same code without the V1/V2 dispatch, so a wrong block
+would run V2 code and not fail with `NOT_SUPPORTED`. (C) mbedTLS software CMAC, the D1 fallback.
+It reports errors properly, but it moves AES off the accelerator and puts more code on the
+trusted core for no gain in correctness.
+*Evidence:* target-only code, so there are no host tests (the host fake `secoc_mac_fake.h` already
+covers the ERROR path above the M0+). The `CRYPTO_BRINGUP_KAT` image gains bit 3 (`KAT_FAULT_OK`):
+it raises `INTR_SET.BUS_ERROR` the way a fault would, needs the next MAC to **fail** and the one
+after to give the NIST D.1 tag, so the pass value moves from 7 to **15**. The silicon capture is
+planned for the W43 Saturday bench (`docs/bench/2026-10-24/`).
 
 **M5 bench closed (2026-10-03).** All stages passed on silicon: Stage 2 (KAT), Stage 3 (offload with a
 live D-cache), Stage 4 (same tag on both parts), Stage 5 (real bus both ways, gap-free counters, zero

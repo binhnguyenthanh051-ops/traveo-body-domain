@@ -162,18 +162,43 @@ static bool verify_handler(const crypto_msg_t *req, crypto_msg_t *resp)
 static bool cmac_compute(const uint8_t *key, const uint8_t *msg, uint16_t len,
                          uint8_t tag[CRYPTO_CMAC_TAG_LEN])
 {
-    /* Vetted PDL CMAC (ADR-0006 — no hand-rolled subkey/padding). One-shot form;
-     * aes_state is the required scratch workspace. AES-CMAC is byte-oriented, so
-     * — unlike the ECDSA path (S3-2) — key/message/tag need NO endianness
-     * reversal. VERIFY at bring-up (ADR-0021 D1): the exact prototype / whether
-     * an explicit Cy_Crypto_Core_Aes_Init is needed is mtb-pdl-cat1-version-
-     * specific, and correctness is proven against the NIST SP 800-38B KAT. */
-    cy_stc_crypto_aes_state_t aes_state;
-    (void)memset(&aes_state, 0, sizeof aes_state);
+    /* Vetted PDL CMAC (ADR-0006 — no hand-rolled subkey/padding), called step by
+     * step and NOT through the one-shot Cy_Crypto_Core_Cmac: in mtb-pdl-cat1
+     * 3.22.1/3.23.0 the one-shot returns CY_CRYPTO_SUCCESS whatever its steps
+     * report, and never scrubs the subkeys (F-010, ADR-0021 D1 addendum).
+     * AES-CMAC is byte-oriented, so — unlike the ECDSA path (S3-2) — key/message/
+     * tag need NO endianness reversal. The state and buffers are the PDL's V2
+     * types; this CM0+ has no D-cache, so they need no cache-line alignment. */
+    cy_stc_crypto_v2_cmac_state_t   state;
+    cy_stc_crypto_v2_cmac_buffers_t buffers;
 
-    cy_en_crypto_status_t st = Cy_Crypto_Core_Cmac(CRYPTO, msg, (uint32_t)len, key,
-                                                   CY_CRYPTO_KEY_AES_128,
-                                                   tag, &aes_state);
+    cy_en_crypto_status_t st = Cy_Crypto_Core_Cmac_Init(CRYPTO, &state, &buffers);
+    if (st == CY_CRYPTO_SUCCESS)
+    {
+        st = Cy_Crypto_Core_Cmac_Start(CRYPTO, &state, key, CY_CRYPTO_KEY_AES_128);
+        if (st == CY_CRYPTO_SUCCESS)
+        {
+            st = Cy_Crypto_Core_Cmac_Update(CRYPTO, &state, msg, (uint32_t)len);
+        }
+        if (st == CY_CRYPTO_SUCCESS)
+        {
+            st = Cy_Crypto_Core_Cmac_Finish(CRYPTO, &state, tag);
+        }
+        /* Scrub the key copy and the subkeys, pass or fail. Only after a good
+         * Init: Free follows the buffer pointers that Init set up. */
+        (void)Cy_Crypto_Core_Cmac_Free(CRYPTO, &state);
+    }
+
+    /* The steps report parameter errors only. A hardware fault (bus error, bad
+     * instruction) shows only in the block's error interrupt bits, which is how
+     * the PDL's own crypto server detects it. Read and clear them, so one fault
+     * fails this MAC and not every later one. */
+    uint32_t hw_err = Cy_Crypto_Core_GetInterruptStatus(CRYPTO) & CY_CRYPTO_INTR_ERROR_MASK;
+    if (hw_err != 0U)
+    {
+        Cy_Crypto_Core_ClearInterrupt(CRYPTO, hw_err);
+        st = CY_CRYPTO_HW_ERROR;
+    }
     return (st == CY_CRYPTO_SUCCESS);
 }
 
@@ -243,7 +268,7 @@ void cm0p_crypto_service_init(void)
  *
  * Compiled only with DEFINES=CRYPTO_BRINGUP_KAT=1. Runs once at boot, before
  * the other core is released, and parks everything in globals for the
- * debugger — the CM0+ has no log sink. Pass: g_kat_result == KAT_PASS_ALL (7).
+ * debugger — the CM0+ has no log sink. Pass: g_kat_result == KAT_PASS_ALL (15).
  * The tags are kept even on a pass, so a mismatch can be read as "stable
  * and input-sensitive" (the vector is suspect) vs "random" (wiring is wrong).
  *
@@ -255,7 +280,8 @@ void cm0p_crypto_service_init(void)
 #define KAT_PASS_EMPTY  (0x1U)
 #define KAT_PASS_16B    (0x2U)
 #define KAT_SHARED_OK   (0x4U)
-#define KAT_PASS_ALL    (KAT_PASS_EMPTY | KAT_PASS_16B | KAT_SHARED_OK)
+#define KAT_FAULT_OK    (0x8U)
+#define KAT_PASS_ALL    (KAT_PASS_EMPTY | KAT_PASS_16B | KAT_SHARED_OK | KAT_FAULT_OK)
 
 volatile uint32_t g_kat_result = 0U;   /* 0 = not run; KAT_PASS_ALL = pass */
 volatile uint8_t  g_kat_tag_empty[CRYPTO_CMAC_TAG_LEN];
@@ -310,6 +336,18 @@ void cm0p_cmac_kat(void)
     {
         kat_park(g_kat_shared_tag, tag);
         result |= KAT_SHARED_OK;
+    }
+    /* F-010: raise the Crypto bus-error flag the way a hardware fault would.
+     * The next MAC must fail (the ERROR-verdict path), and the one after must
+     * pass with the right tag (the flag is cleared, not sticky). */
+    Cy_Crypto_Core_SetInterrupt(CRYPTO, CRYPTO_V2_INTR_SET_BUS_ERROR_Msk);
+    if (!cmac_compute(key, msg16, (uint16_t)sizeof msg16, tag))
+    {
+        if (cmac_compute(key, msg16, (uint16_t)sizeof msg16, tag) &&
+            (memcmp(tag, exp_16b, sizeof tag) == 0))
+        {
+            result |= KAT_FAULT_OK;
+        }
     }
     g_kat_result = result;
 }
