@@ -7,6 +7,8 @@ Node B with exactly one REJECT event and the actuator holding its state.
 
     python host_tools/secoc_attack/secoc_attack.py all
     python host_tools/secoc_attack/secoc_attack.py replay
+    python host_tools/secoc_attack/secoc_attack.py replay --save old_0x121.json
+    python host_tools/secoc_attack/secoc_attack.py replay --load old_0x121.json
 
 Cases (M5 bring-up plan Stage 6):
   forged      0x120 "unlock" (01), no trailer     -> REJECT_MAC reason 2 (bad length)
@@ -15,10 +17,15 @@ Cases (M5 bring-up plan Stage 6):
   replay      genuine 0x121, resent ~1 s later     -> REJECT_FRESHNESS (stale counter)
   crossid     genuine 0x121 bytes sent on 0x120    -> REJECT_MAC reason 1 (Data ID bound)
 
+Replay across a reset (M5B, G2): `replay --save FILE` captures a genuine 0x121 and
+writes it to FILE without sending it. Reset Node B, wait for the resync, then
+`replay --load FILE` sends that frame -> REJECT_FRESHNESS (epoch below the floor).
+
 Node A only ever sends 0x121 (courtesy light), so the captured genuine frame is a
 0x121; the forgeries target 0x120, the door. Reuses can_echo_probe's config.json.
 """
 import argparse
+import datetime
 import json
 import os
 import pathlib
@@ -65,6 +72,28 @@ def counter_of(genuine: bytes, pdu_len: int = LIGHT_PDU_LEN) -> int:
     return int.from_bytes(genuine[pdu_len + 2:pdu_len + 4], "little")
 
 
+def epoch_of(genuine: bytes, pdu_len: int = LIGHT_PDU_LEN) -> int:
+    """Freshness epoch (u16 LE) of a secured frame."""
+    return int.from_bytes(genuine[pdu_len:pdu_len + 2], "little")
+
+
+def frame_record(arb_id: int, data: bytes, captured_at: str) -> dict:
+    """A saved frame, readable in the bench folder. epoch/counter are for the
+    reader; only id + data are sent back."""
+    return {"id": f"0x{arb_id:03X}", "data": data.hex(),
+            "epoch": epoch_of(data), "counter": counter_of(data),
+            "captured_at": captured_at}
+
+
+def frame_from_record(rec: dict) -> tuple[int, bytes]:
+    """(id, data) from a saved record; refuses anything that isn't a secured 0x121."""
+    arb_id = int(rec["id"], 16)
+    data = bytes.fromhex(rec["data"])
+    if arb_id != ID_LIGHT or len(data) < LIGHT_PDU_LEN + TRAILER_LEN:
+        raise ValueError(f"not a secured 0x121 frame: id {rec['id']}, {len(data)} B")
+    return arb_id, data
+
+
 # ---- bus side ----------------------------------------------------------------
 
 def open_bus(cfg: dict) -> can.BusABC:
@@ -99,6 +128,29 @@ def send(bus: can.BusABC, arb_id: int, data: bytes, label: str) -> None:
     print(f"  sent {arb_id:03X} len={len(data):2d}  {data.hex(' ')}   <- {label}")
 
 
+def save_genuine(bus: can.BusABC, path: pathlib.Path) -> bool:
+    """replay --save: capture one genuine 0x121 and write it to path. Sends nothing."""
+    genuine = capture(bus, ID_LIGHT)
+    if genuine is None:
+        print("  no genuine 0x121 seen in 2 s -- is Node A on the bus and running?")
+        return False
+    stamp = datetime.datetime.now().isoformat(timespec="seconds")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(frame_record(ID_LIGHT, genuine, stamp), indent=2) + "\n",
+                    encoding="utf-8")
+    print(f"  saved genuine 0x121 (epoch {epoch_of(genuine)} ctr {counter_of(genuine)})"
+          f" -> {path}")
+    return True
+
+
+def replay_saved(bus: can.BusABC, path: pathlib.Path) -> bool:
+    """replay --load: send a frame saved earlier, e.g. before a Node B reset."""
+    arb_id, data = frame_from_record(json.loads(path.read_text(encoding="utf-8")))
+    send(bus, arb_id, data,
+         f"expect REJECT_FRESHNESS 0x121 (saved epoch {epoch_of(data)} ctr {counter_of(data)})")
+    return True
+
+
 def run_case(bus: can.BusABC, case: str) -> bool:
     print(f"\n[{case}]")
     if case == "forged":
@@ -130,7 +182,19 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("case", choices=CASES + ("all",))
     ap.add_argument("--config", type=pathlib.Path, default=DEFAULT_CONFIG)
+    keep = ap.add_mutually_exclusive_group()
+    keep.add_argument("--save", type=pathlib.Path, metavar="FILE",
+                      help="replay only: capture a genuine 0x121 to FILE, send nothing")
+    keep.add_argument("--load", type=pathlib.Path, metavar="FILE",
+                      help="replay only: send the frame saved in FILE")
     args = ap.parse_args()
+    if (args.save or args.load) and args.case != "replay":
+        ap.error("--save/--load only go with the 'replay' case")
+    if args.load is not None:
+        try:
+            frame_from_record(json.loads(args.load.read_text(encoding="utf-8")))
+        except (OSError, ValueError, KeyError) as exc:
+            ap.error(f"--load {args.load}: {exc}")
 
     cfg = json.loads(args.config.read_text(encoding="utf-8"))
     try:
@@ -140,11 +204,21 @@ def main() -> int:
         return 1
     ok = True
     try:
-        for case in (CASES if args.case == "all" else (args.case,)):
-            ok = run_case(bus, case) and ok
-            time.sleep(0.5)   # keep each case's log event apart
+        if args.save is not None:
+            print("\n[replay --save]")
+            ok = save_genuine(bus, args.save)
+        elif args.load is not None:
+            print("\n[replay --load]")
+            ok = replay_saved(bus, args.load)
+        else:
+            for case in (CASES if args.case == "all" else (args.case,)):
+                ok = run_case(bus, case) and ok
+                time.sleep(0.5)   # keep each case's log event apart
     finally:
         bus.shutdown()
+    if args.save is not None:
+        print("\nNow reset Node B, wait for the resync, then run: replay --load", args.save)
+        return 0 if ok else 2
     print("\nNow check Node B's log: one REJECT per case, no ACCEPT on 0x120, door still locked.")
     return 0 if ok else 2
 
