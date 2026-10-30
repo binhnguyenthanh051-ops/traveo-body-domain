@@ -193,10 +193,26 @@ static void can_task(void *arg)
     (void)arg;
     can_raw_frame_t frame;
     body_msg_t      msg;
+#if !CAN_LOOPBACK_TEST
+    bool sync_sent = false;
+#endif
 
     for (;;)
     {
         g_hw_can = uxTaskGetStackHighWaterMark(NULL);
+#if !CAN_LOOPBACK_TEST
+        /* Phase B: announce our telemetry floor once at startup, so the actuator
+         * raises its telemetry epoch after a gateway reboot (F-014, the mirror of
+         * B's 0x2F0). Task context: the MAC round trip needs the scheduler. */
+        if (!sync_sent)
+        {
+            can_raw_frame_t sync;
+            if (secoc_app_build_boot_sync(&sync) && (can_tx(&sync) == 0))
+            {
+                sync_sent = true;
+            }
+        }
+#endif
 
         if (xQueueReceive(s_raw_q, &frame, pdMS_TO_TICKS(APP_PERIOD_CAN_MS)) == pdTRUE)
         {

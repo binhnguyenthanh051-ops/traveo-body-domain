@@ -5,6 +5,7 @@
  * @impl ADR-0021 D7 : SecOC oracle bound to the M0+ crypto_mac client
  * @impl REQ-SECOC-001 : outgoing commands secured; incoming telemetry verified
  * @impl REQ-SECOC-008 : adopt the receiver floor from FRESHNESS_SYNC
+ * @impl REQ-SECOC-008 : boot GW_FRESHNESS_SYNC (0x1F0) carries our telemetry floor (F-014)
  */
 #include "secoc_app.h"
 #include "secoc.h"
@@ -51,12 +52,14 @@ volatile uint32_t g_secoc_store_status = 0xFFFFFFFFu;
 
 static const secoc_freshness_store_if_t *const g_store = &g_secoc_store;
 
-/* Gateway SENDS commands 0x120/0x121 (one sender epoch); RECEIVES B's telemetry
- * 0x200 + sync 0x2F0 (one receiver context tracking B's sender epoch). */
+/* Gateway SENDS commands 0x120/0x121 + its boot sync 0x1F0 (one sender epoch);
+ * RECEIVES B's telemetry 0x200 + sync 0x2F0 (one receiver context tracking B's
+ * sender epoch). */
 static secoc_tx_ctx_t g_tx;
 static secoc_rx_ctx_t g_rx;
 
-static const uint16_t g_tx_ids[] = { MSG_ID_DOOR_CMD, MSG_ID_LIGHT_CMD };
+static const uint16_t g_tx_ids[] = { MSG_ID_DOOR_CMD, MSG_ID_LIGHT_CMD,
+                                     MSG_ID_GW_FRESHNESS_SYNC };
 static const uint16_t g_rx_ids[] = { MSG_ID_SENSOR_RPT, MSG_ID_FRESHNESS_SYNC };
 
 void secoc_app_init(void)
@@ -192,4 +195,21 @@ bool secoc_app_build_light_cmd(uint8_t brightness_pct, can_raw_frame_t *out)
         return false;
     }
     return build_secured(MSG_ID_LIGHT_CMD, pdu, plen, out);
+}
+
+bool secoc_app_build_boot_sync(can_raw_frame_t *out)
+{
+    if (out == NULL)
+    {
+        return false;
+    }
+    /* PDU = this receiver's telemetry floor for the actuator (u16 LE). The
+     * mirror of B's 0x2F0 (F-014): after a reboot on our own, the floor is above
+     * B's telemetry epoch, and this is what raises it. B verifies the frame and
+     * adopts max(current, floor). */
+    uint16_t floor = g_rx.floor;
+    uint8_t pdu[2];
+    pdu[0] = (uint8_t)(floor & 0xFFu);
+    pdu[1] = (uint8_t)((floor >> 8) & 0xFFu);
+    return build_secured(MSG_ID_GW_FRESHNESS_SYNC, pdu, sizeof pdu, out);
 }

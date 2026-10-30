@@ -125,6 +125,7 @@ void test_pdu_len_matches_the_packers(void)
     TEST_ASSERT_EQUAL_size_t(pack_sensor_report(&sr, buf, sizeof buf), body_msg_pdu_len(MSG_ID_SENSOR_RPT));
     TEST_ASSERT_EQUAL_size_t(1u, body_msg_pdu_len(MSG_ID_DOOR_CMD));
     TEST_ASSERT_EQUAL_size_t(2u, body_msg_pdu_len(MSG_ID_FRESHNESS_SYNC));
+    TEST_ASSERT_EQUAL_size_t(2u, body_msg_pdu_len(MSG_ID_GW_FRESHNESS_SYNC));
     TEST_ASSERT_EQUAL_size_t(0u, body_msg_pdu_len(0x7A0u));   /* not a secured ID */
 }
 

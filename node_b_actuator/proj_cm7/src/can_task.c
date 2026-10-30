@@ -250,6 +250,12 @@ static void can_task(void *arg)
                     light_output_update();
                 }
             }
+            else if (frame.id == MSG_ID_GW_FRESHNESS_SYNC)
+            {
+                /* The gateway rebooted: adopt its telemetry floor (F-014). Verified
+                 * inside, so a forged or replayed sync moves nothing. */
+                (void)secoc_app_handle_gw_sync(&frame);
+            }
 #if !CAN_LOOPBACK_TEST && CAN_ECHO_TEST
             else
             {

@@ -421,6 +421,11 @@ for M5, for the same reason.
 floor, telemetry is accepted again) and a replayed `0x1F0` from an earlier A epoch refused;
 `test_body_msgs` checks `body_msg_pdu_len(0x1F0)`. Silicon: the F section of the W44 bench
 checklist (re-dated to W45), with three A-only resets and a replayed `0x1F0` refused.
+*Built (2026-10-30):* as decided, with no change in `shared/secoc` beyond a comment.
+`MSG_ID_GW_FRESHNESS_SYNC` in `shared/messages`, Node A sends it once from `can_task` at startup,
+Node B verifies it and calls `secoc_rx_sync_adopt()`. Host tests:
+`test_gateway_reboot_deadlocks_telemetry_then_resyncs` and `test_replayed_gateway_sync_is_refused`
+(`test_secoc_resync`). Both images build. Silicon evidence still to come.
 
 **Addendum — D4/D8: a receiver persists a new epoch before adopting it (2026-10-30, F-015 / M5-R5).**
 The M5 review found that `secoc_rx_accept()` adopted a newer epoch in RAM and then ignored the
