@@ -1,6 +1,7 @@
 # Review record — M5 SecOC (closed as M5B)
 
-**Opened:** 2026-10-20 · **Status:** open, sections in progress (W43)
+**Opened:** 2026-10-20 · **Status:** three verdicts given 2026-10-30, all **pass with findings**.
+Open before the tag: M5-R5 (= F-015), M5-R6, M5-R8 (W45), plus F-014.
 **Reviewers:** owner review, with Claude as adversarial reviewer. This is a solo project, so this
 is not an independent review (plan.md rule 11, check 9).
 **Inputs:** `docs/requirements/secoc.md`, `ADR-0021`, `ADR-0024` (when written),
@@ -68,32 +69,131 @@ Copilot handoff rule).
 
 ## 1. Requirements: complete, testable, unambiguous
 
-**Planned:** Thu 22 (moved from Mon 19). **Verdict:** pending.
+**Reviewed:** 2026-10-30. **Verdict:** **pass with findings.** M5-R5 and M5-R8 block the
+`m5b-secoc` tag; M5-R7 doesn't.
 
-- [ ] All 13 REQ-SECOC have a single, testable "shall"
-- [ ] Each REQ traces to an existing ADR-0021 sub-decision (the report's `bad-trace` check passes)
-- [ ] No REQ depends on an unstated assumption (CAN IDs, key IDs, byte order)
-- [ ] Target-only behaviour is identified, and each one has an "On silicon" entry or a deferral
+- [x] All 13 REQ-SECOC have a single, testable "shall". The one exception is REQ-SECOC-002's
+      "constant time", which only inspection can verify (see section 3). Accepted, and said so.
+- [x] Each REQ traces to an existing ADR-0021 sub-decision. `bad-trace` passes (2026-10-30 run;
+      the earlier D1 `bad-trace` came from a damaged working copy, not from the REQs).
+- [ ] No REQ depends on an unstated assumption. CAN IDs, `key_id` and byte order are all stated
+      (`0x1F0` added today). **But** REQ-SECOC-006/007 don't say what happens when `commit`
+      fails → M5-R5.
+- [ ] Target-only behaviour has an "On silicon" entry or a deferral: REQ-SECOC-005, 009 and 011
+      have neither → M5-R8.
 
-Findings: *(none yet)*
+Findings:
+
+#### M5-R5: a failed `commit` on the receiver is ignored, so the replay window reopens after a reboot
+**Status:** open → **F-015** (W45). **Blocks the tag.**
+
+`secoc_rx_accept()` adopts a newer epoch in RAM and then discards the result of
+`store->commit()` (`shared/secoc/src/secoc_freshness.c:212`, `(void)`). If that save fails (work
+flash fault, brown-out mid-save, ADR-0024 D2), the receiver keeps running in epoch E with E not
+persisted. After the next reboot it loads E − 1, so floor = E, high-water is 0, and **any captured
+frame from epoch E is accepted again**. That is exactly the window REQ-SECOC-007/008 exist to
+close. The sender side does it right (`secoc_tx_boot`/`_next`/`_adopt_floor` return false on a
+failed commit), but neither REQ says what a failed commit must do.
+**Fix:** REQ-SECOC-006/007 gain one sentence each (sender: send nothing authenticated;
+receiver: don't accept a frame whose new epoch couldn't be persisted). `secoc_rx_accept()`
+returns `bool`, and `secoc_rx_process` drops on false with a reason, which is fail-closed.
+`secoc_freshness_store_fake` gains failure injection, so the tests can also cover the sender's
+fail paths, which no test reaches today.
+
+#### M5-R7: D3 and REQ-SECOC-009 describe the counter start and rollover rate wrongly
+**Status:** open, wording only (W45). Doesn't block.
+
+D3 says the transmitted counter is the "pre-increment (spent) value", and REQ-SECOC-009 says
+counters "reset to 0". The code sends **1** first (`test_tx_next_counter_is_per_id`), and it must:
+the receiver accepts iff `ctr > high-water`, and high-water resets to 0, so a 0 would be
+rejected. D3's "a wrap is ~1.8 h away at 100 ms" is also stale. The bus runs `0x200` every 20 ms,
+so a wrap is **~22 min** away. **Fix:** "the first counter in an epoch is 1", and the rate.
+
+#### M5-R8: REQ-SECOC-005, 009 and 011 have no silicon evidence and no deferral
+**Status:** open (W45). **Blocks the tag** (rule 11 check 5).
+
+- **005** (per-ID counter): likely already in `docs/bench/2026-10-24/bus_round2.txt` (`0x120` and
+  `0x121` counters stepping separately). Check it and cite it.
+- **009** (rollover): about 22 min of normal traffic wraps `0x200`'s counter. One long bench run
+  shows the epoch bump; otherwise defer it explicitly as host-only.
+- **011** (key residency): it's `@design-only`, so the evidence is a build-artifact check:
+  the CM4/CM7 app ELFs don't contain the secret's bytes and the CM0+ ELFs do. A short host
+  script on the build output does it, with no bench needed.
 
 ## 2. Design: each ADR decision covers its REQs, alternatives recorded
 
-**Planned:** Tue 20 with ADR-0024. **Verdict:** pending.
+**Reviewed:** 2026-10-30. **Verdict:** **pass with findings.** M5-R4 is closed by the F-014
+addendum; M5-R5 (above) is the one design gap left, in D4/D8.
 
-- [ ] ADR-0021 D1–D9: each decision covers the REQs that trace to it
-- [ ] ADR-0024 (freshness store backing) records the alternatives and the power-loss argument
-- [ ] ADR-0021's prose "Review history" is folded into this record
+- [x] ADR-0021 D1–D9: each decision covers the REQs that trace to it. Two gaps were found: D5
+      covered one receiver (M5-R4, closed 2026-10-30), and D4 doesn't handle a failed
+      persist (M5-R5).
+- [x] ADR-0024 records eight alternatives (append-only log, full `eeprom_emu`, vendor EEPROM emulation,
+      `.noinit` RAM, no persistence, ECC-off read, ECC fault handling, defer to M6) and the
+      power-loss argument (D2 save order, D3 load order, the first-save brown-out case), and it
+      is tested step by step (`test_secoc_store`, power loss at every erase/program step).
+- [x] ADR-0021's "Review history" stays in the ADR as history (the 2026-07-25 owner decisions on
+      D2 Data ID, D3 rollover and u16 epoch). This record is the review from M5B on. Also fixed
+      today: a stray code fence after the review history made every later addendum render as
+      one code block.
 
-Findings: *(none yet)*
+Findings:
+
+#### M5-R4: ADR-0021 D5 resyncs only one receiver; a Node A reboot deadlocks telemetry (= F-014)
+**Status:** **closed 2026-10-30**, option 1 chosen (ADR-0021 addendum "D5 in both directions"); the
+build and the silicon evidence are tracked as F-014 (W45). Found on the 2026-10-24 bench (`docs/bench/2026-10-24/regression_r.md`).
+
+D5's "receiver reboot does not self-heal" argument applies to *both* receivers, but D5 and
+REQ-SECOC-008 only cover Node B (receiver of `0x120`/`0x121`). Node A is also a receiver, of `0x200`. With
+ADR-0024's persistent floor, a Node A reboot on its own makes every telemetry frame stale until Node B
+reboots (460 rejects in a row on the bench). M5's RAM store hid this, because a cold receiver accepted
+any epoch. A power cycle of both nodes is fine (`epochs_power_cycle.md`).
+
+Options (see F-014): (1) a symmetric sync, A → B, on a new ID (recommended; mirrors D5); (2) Node A's
+telemetry receiver boots at floor = persisted (accepts a replay window for telemetry); (3) a documented
+known limitation. Whatever is chosen, REQ-SECOC-008's wording should state which direction(s) it covers.
+
+**Closes when:** the option is chosen and recorded as an ADR-0021 addendum, and REQ-SECOC-008 is
+reworded. If it's option 1 or 2, the work is tracked as F-014 for W44.
+
+**Decision (2026-10-30):** option 1, a symmetric sync on the new ID `0x1F0` (A → B). REQ-SECOC-008
+now covers both receivers. The build moved to W45 when W44 was re-planned (family week).
 
 ## 3. Tests: each `@test` checks what its REQ says, fail paths included
 
-**Planned:** Thu 22 (moved from Mon 19). **Verdict:** pending.
+**Reviewed:** 2026-10-30, every `@test REQ-SECOC-*` in the seven suites (`test_secoc`,
+`test_secoc_rx`, `test_secoc_freshness`, `test_secoc_resync`, `test_freshness_store`,
+`test_secoc_store`, `test_crypto_mac`). **Verdict:** **pass with findings.** M5-R6 blocks the
+tag. This closes M5-R2.
 
-- [ ] Every `@test REQ-SECOC-*` in `docs/traceability.md` reviewed against the REQ's wording
-- [ ] Each REQ has at least one fail-path test (reject, error, power loss)
-- [ ] Matrix-drift gaps resolved: either tag the test or fix the matrix (REQ-SECOC-002, 007)
-- [ ] `@design-only` uses are justified (REQ-SECOC-011 residency)
+- [x] Every `@test REQ-SECOC-*` reviewed against the REQ's wording. Most tags hold. The ones that
+      don't are below. REQ-SECOC-008's tags cover the B-receiver direction only, and the A
+      direction is F-014.
+- [ ] Each REQ has at least one fail-path test. Missing: REQ-SECOC-007's "a forged frame cannot
+      advance high-water" (M5-R6) and the commit-failure paths (M5-R5).
+- [x] Matrix drift resolved by fixing the matrix and one tag, not by adding tags to tests that
+      don't prove the REQ:
+      - **002:** `test_crypto_mac` tests the op framing (REQ-SECOC-012), not CMAC or truncation,
+        so it's removed from 002's row. `test_ct_equal` gains `@test REQ-SECOC-002`.
+        Constant-time is verified by inspection: `secoc_ct_equal` ORs every byte with no early
+        exit. "The first 8 bytes": the host fake can't tell which 8. The silicon evidence is the
+        cross-node verify plus the NIST KAT (Stage 4).
+      - **007:** `test_secoc` has no freshness case, so it's removed from 007's row
+        (`test_secoc_freshness` + `test_secoc_rx` cover it).
+- [x] `@design-only` for REQ-SECOC-011 residency is justified, since where the key sits is linker
+      composition. The oracle-only half is tested (`test_mac_request_round_trip`: the request is
+      `key_id` + msg, no key bytes). The evidence still owed is M5-R8.
 
-Findings: *(none yet)*
+Findings:
+
+#### M5-R6: nothing tests that a forged frame leaves freshness state alone
+**Status:** open (W45, ~20 min). **Blocks the tag.**
+
+REQ-SECOC-007's last sentence is the anti-DoS property: "a forged frame cannot advance
+high-water". Every forged-frame test (`test_forged_mac_…`, `test_tampered_*`,
+`test_rejected_frame_yields_no_pdu`) checks the **drop**, and none checks what happens after it.
+The worst case is a forged frame carrying a **higher epoch**. If that one reached `accept`, it would
+be *persisted* and would lock the real sender out until a resync. The code is right
+(`secoc_rx_process` verifies before `check`/`accept`), but no test would catch a regression.
+**Fix:** one `test_secoc_rx` case: a forged `(E+5, 50)` is dropped, then the genuine `(E, 8)` is
+accepted, `current` is unchanged, and the store's commit count is unchanged.

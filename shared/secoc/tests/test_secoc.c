@@ -24,6 +24,7 @@ void setUp(void)    {}
 void tearDown(void) {}
 
 /* @test ADR-0021 D1 */
+/* @test REQ-SECOC-002 : compare result only; constant time is by inspection (no early exit) */
 void test_ct_equal(void)
 {
     const uint8_t x[4] = { 1U, 2U, 3U, 4U };
