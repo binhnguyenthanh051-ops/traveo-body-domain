@@ -10,9 +10,9 @@
 | Area | Source | REQs | Fully traced | With gaps |
 |---|---|---|---|---|
 | REQ-LOG | `docs/requirements/logging.md` | 14 | 6 | 8 |
-| REQ-SECOC | `docs/requirements/secoc.md` | 13 | 0 | 13 |
+| REQ-SECOC | `docs/requirements/secoc.md` | 13 | 10 | 3 |
 
-**40 gap(s)** in total — see [Gaps](#gaps).
+**28 gap(s)** in total — see [Gaps](#gaps).
 
 ## REQ-LOG
 
@@ -37,19 +37,19 @@
 
 | REQ | Requirement | Traces | Impl | Test | On silicon | Status |
 |---|---|---|---|---|---|---|
-| REQ-SECOC-001 | Protected messages authenticated; unauthenticated dropped before decode | ADR-0021 D1, D9; ADR-0016; ADR-0023 D11 | `node_a_gateway/app/src/secoc_app.c`<br>`node_b_actuator/proj_cm7/src/secoc_app.c`<br>`shared/secoc/src/secoc.c`<br>`shared/secoc/src/secoc_rx.c` | `shared/secoc/tests/test_secoc.c` ×6<br>`shared/secoc/tests/test_secoc_rx.c` ×6 | ⏳ | ❌ no-silicon |
-| REQ-SECOC-002 | MAC is AES-CMAC truncated to 8 B, constant-time compared | ADR-0021 D1 | `shared/secoc/src/secoc.c` | `shared/secoc/tests/test_secoc.c` | ⏳ | ❌ matrix-drift, no-silicon |
-| REQ-SECOC-003 | Secured frame layout `PDU∥freshness(4)∥MAC(8)`, one CAN FD frame, LE wire | ADR-0021 D2, D3 | `shared/secoc/src/secoc.c` | `shared/secoc/tests/test_secoc.c` ×6 | ⏳ | ❌ no-silicon |
-| REQ-SECOC-004 | MAC input binds a Data ID: `CMAC(DataID∥freshness∥PDU)` | ADR-0021 D2 | `shared/secoc/src/secoc.c` | `shared/secoc/tests/test_secoc.c` | ⏳ | ❌ no-silicon |
+| REQ-SECOC-001 | Protected messages authenticated; unauthenticated dropped before decode | ADR-0021 D1, D9; ADR-0016; ADR-0023 D11 | `node_a_gateway/app/src/secoc_app.c`<br>`node_b_actuator/proj_cm7/src/secoc_app.c`<br>`shared/secoc/src/secoc.c`<br>`shared/secoc/src/secoc_rx.c` | `shared/secoc/tests/test_secoc.c` ×6<br>`shared/secoc/tests/test_secoc_rx.c` ×6 | `docs/bench/2026-10-24/regression_r.md` (R2: 5/5 attacks dropped, no 0x120 accept) | ✅ |
+| REQ-SECOC-002 | MAC is AES-CMAC truncated to 8 B, constant-time compared | ADR-0021 D1 | `shared/secoc/src/secoc.c` | `shared/secoc/tests/test_secoc.c` ×2 | `docs/bench/2026-10-24/regression_r.md` (8 B MAC on the wire, cross-node verify; bit-flipped MAC refused). Constant-time compare: host-verified only | ✅ |
+| REQ-SECOC-003 | Secured frame layout `PDU∥freshness(4)∥MAC(8)`, one CAN FD frame, LE wire | ADR-0021 D2, D3 | `shared/secoc/src/secoc.c` | `shared/secoc/tests/test_secoc.c` ×6 | `docs/bench/2026-10-24/bus_round2.txt` (every secured frame: PDU ∥ epoch/ctr ∥ 8 B MAC, one CAN FD frame, padded to 16 B) | ✅ |
+| REQ-SECOC-004 | MAC input binds a Data ID: `CMAC(DataID∥freshness∥PDU)` | ADR-0021 D2 | `shared/secoc/src/secoc.c` | `shared/secoc/tests/test_secoc.c` | `docs/bench/2026-10-24/regression_r.md` (crossid: genuine 0x121 bytes on 0x120 → REJECT_MAC) | ✅ |
 | REQ-SECOC-005 | Freshness = `epoch(u16)∥counter(u16)`; counter is per CAN-ID | ADR-0021 D3 | `shared/secoc/src/secoc_freshness.c` | `shared/secoc/tests/test_secoc_freshness.c` ×2 | ⏳ | ❌ no-silicon |
-| REQ-SECOC-006 | Epoch shared per-node, persisted, `++`/boot; `commit(E+1)` durable **before** spend | ADR-0021 D3, D8 | `shared/secoc/src/secoc_freshness.c`<br>`shared/secoc_store/src/secoc_store.c` ×2 | `shared/secoc/tests/test_freshness_store.c` ×6<br>`shared/secoc/tests/test_secoc_freshness.c` ×2<br>`shared/secoc_store/tests/test_secoc_store.c` ×6 | ⏳ | ❌ no-silicon |
-| REQ-SECOC-007 | Receiver accept rule (floor + per-ID high-water); MAC-check before freshness update | ADR-0021 D4 | `shared/secoc/src/secoc_freshness.c` ×2<br>`shared/secoc/src/secoc_rx.c` | `shared/secoc/tests/test_secoc_freshness.c` ×5<br>`shared/secoc/tests/test_secoc_rx.c` ×3 | ⏳ | ❌ matrix-drift, no-silicon |
-| REQ-SECOC-008 | Receiver-reset resync via authenticated `FRESHNESS_SYNC` (0x2F0); `floor=persisted+1` | ADR-0021 D5; ADR-0002 | `node_a_gateway/app/src/secoc_app.c`<br>`node_b_actuator/proj_cm7/src/secoc_app.c`<br>`shared/secoc/src/secoc_freshness.c` ×2<br>`shared/secoc/src/secoc_rx.c` | `shared/secoc/tests/test_secoc_freshness.c`<br>`shared/secoc/tests/test_secoc_resync.c`<br>`shared/secoc/tests/test_secoc_rx.c` | ⏳ | ❌ no-silicon |
+| REQ-SECOC-006 | Epoch shared per-node, persisted, `++`/boot; `commit(E+1)` durable **before** spend | ADR-0021 D3, D8 | `shared/secoc/src/secoc_freshness.c`<br>`shared/secoc_store/src/secoc_store.c` ×2 | `shared/secoc/tests/test_freshness_store.c` ×6<br>`shared/secoc/tests/test_secoc_freshness.c` ×2<br>`shared/secoc_store/tests/test_secoc_store.c` ×6 | `docs/bench/2026-10-24/epochs_power_cycle.md` (5 power cycles, epochs strictly +1 on both nodes) | ✅ |
+| REQ-SECOC-007 | Receiver accept rule (floor + per-ID high-water); MAC-check before freshness update | ADR-0021 D4 | `shared/secoc/src/secoc_freshness.c` ×2<br>`shared/secoc/src/secoc_rx.c` | `shared/secoc/tests/test_secoc_freshness.c` ×5<br>`shared/secoc/tests/test_secoc_rx.c` ×3 | `docs/bench/2026-10-24/g2_g3_reset_replay.md` (G2: old frame refused after a Node B reset) | ✅ |
+| REQ-SECOC-008 | Receiver-reset resync via authenticated `FRESHNESS_SYNC`, both receivers (0x2F0 B→A, 0x1F0 A→B); `floor=persisted+1` | ADR-0021 D5; ADR-0002 | `node_a_gateway/app/src/secoc_app.c`<br>`node_b_actuator/proj_cm7/src/secoc_app.c`<br>`shared/secoc/src/secoc_freshness.c` ×2<br>`shared/secoc/src/secoc_rx.c` | `shared/secoc/tests/test_secoc_freshness.c`<br>`shared/secoc/tests/test_secoc_resync.c`<br>`shared/secoc/tests/test_secoc_rx.c` | B-receiver: `docs/bench/2026-10-24/g2_g3_reset_replay.md` (G3: 4 Node B resets, A resyncs within 20 ms). A-receiver (0x1F0): ⏳ not built yet, F-014 (W45) | ✅ |
 | REQ-SECOC-009 | Counter rollover bumps the epoch (durable) and resets counters | ADR-0021 D3 | `shared/secoc/src/secoc_freshness.c` | `shared/secoc/tests/test_secoc_freshness.c` | ⏳ | ❌ no-silicon |
-| REQ-SECOC-010 | `key_id`-selected key; unknown `key_id` ⇒ fail (never key 0) | ADR-0021 D6; ADR-0019 D3 | `shared/crypto/src/crypto_keystore.c` | `shared/crypto/tests/test_crypto_mac.c` ×2<br>`shared/secoc/tests/test_secoc.c` | ⏳ | ❌ no-silicon |
+| REQ-SECOC-010 | `key_id`-selected key; unknown `key_id` ⇒ fail (never key 0) | ADR-0021 D6; ADR-0019 D3 | `shared/crypto/src/crypto_keystore.c` | `shared/crypto/tests/test_crypto_mac.c` ×2<br>`shared/secoc/tests/test_secoc.c` | `docs/bench/2026-10-24/kat_f010.md` (a crypto failure reaches the caller as an error). Unknown key_id itself: host-verified only | ✅ |
 | REQ-SECOC-011 | Secret key resides only in the M0+ image; app uses the MAC oracle only | ADR-0021 D6, D7; ADR-0017; ADR-0020 | `node_a_gateway/bootloader/proj_cm0p/src/crypto_ops_cm0p.c`<br>`node_b_actuator/proj_cm0p/src/crypto_ops_cm0p.c`<br>design-only: `node_a_gateway/bootloader/proj_cm0p/src/crypto_ops_cm0p.c`<br>design-only: `node_b_actuator/proj_cm0p/src/crypto_ops_cm0p.c` | `shared/crypto/tests/test_crypto_mac.c` | ⏳ | ❌ no-silicon |
-| REQ-SECOC-012 | `CRYPTO_OP_MAC=0x03` generic op: `key_id∥len∥msg ⇒ tag[16]` | ADR-0021 D7; ADR-0017 D3 | `shared/crypto/src/crypto_msg.c` ×4 | `shared/crypto/tests/test_crypto_mac.c` ×3 | ⏳ | ❌ no-silicon |
-| REQ-SECOC-013 | Telemetry `0x200` (B→A) is authenticated on the same path | ADR-0021 D7 | `node_b_actuator/proj_cm7/src/secoc_app.c`<br>`shared/secoc/src/secoc.c` | `shared/secoc/tests/test_secoc.c` | ⏳ | ❌ no-silicon |
+| REQ-SECOC-012 | `CRYPTO_OP_MAC=0x03` generic op: `key_id∥len∥msg ⇒ tag[16]` | ADR-0021 D7; ADR-0017 D3 | `shared/crypto/src/crypto_msg.c` ×4 | `shared/crypto/tests/test_crypto_mac.c` ×3 | `docs/bench/2026-10-24/kat_f010.md` (op returns an error, not a tag, on a crypto fault; NIST tags on both CM0+) | ✅ |
+| REQ-SECOC-013 | Telemetry `0x200` (B→A) is authenticated on the same path | ADR-0021 D7 | `node_b_actuator/proj_cm7/src/secoc_app.c`<br>`shared/secoc/src/secoc.c` | `shared/secoc/tests/test_secoc.c` | `docs/bench/2026-10-24/nodeA_round2.txt` (Node A SECOC_ACCEPT on 0x200, continuous counters) | ✅ |
 
 ## Gaps
 
@@ -78,21 +78,9 @@
 - **REQ-LOG-015** · `dangling` · tag names an undefined requirement — `shared/log/tests/test_log.c:338`
 - **REQ-LOG-015** · `dangling` · tag names an undefined requirement — `shared/log/tests/test_log.c:349`
 - **REQ-LOG-015** · `dangling` · tag names an undefined requirement — `shared/log/tests/test_log.c:355`
-- **REQ-SECOC-001** · `no-silicon` · no silicon evidence yet — `docs/requirements/secoc.md`
-- **REQ-SECOC-002** · `matrix-drift` · matrix names `test_crypto_mac`, but it has no test tag for REQ-SECOC-002 — `docs/requirements/secoc.md`
-- **REQ-SECOC-002** · `no-silicon` · no silicon evidence yet — `docs/requirements/secoc.md`
-- **REQ-SECOC-003** · `no-silicon` · no silicon evidence yet — `docs/requirements/secoc.md`
-- **REQ-SECOC-004** · `no-silicon` · no silicon evidence yet — `docs/requirements/secoc.md`
 - **REQ-SECOC-005** · `no-silicon` · no silicon evidence yet — `docs/requirements/secoc.md`
-- **REQ-SECOC-006** · `no-silicon` · no silicon evidence yet — `docs/requirements/secoc.md`
-- **REQ-SECOC-007** · `matrix-drift` · matrix names `test_secoc`, but it has no test tag for REQ-SECOC-007 — `docs/requirements/secoc.md`
-- **REQ-SECOC-007** · `no-silicon` · no silicon evidence yet — `docs/requirements/secoc.md`
-- **REQ-SECOC-008** · `no-silicon` · no silicon evidence yet — `docs/requirements/secoc.md`
 - **REQ-SECOC-009** · `no-silicon` · no silicon evidence yet — `docs/requirements/secoc.md`
-- **REQ-SECOC-010** · `no-silicon` · no silicon evidence yet — `docs/requirements/secoc.md`
 - **REQ-SECOC-011** · `no-silicon` · no silicon evidence yet — `docs/requirements/secoc.md`
-- **REQ-SECOC-012** · `no-silicon` · no silicon evidence yet — `docs/requirements/secoc.md`
-- **REQ-SECOC-013** · `no-silicon` · no silicon evidence yet — `docs/requirements/secoc.md`
 
 ## Deferred on silicon
 

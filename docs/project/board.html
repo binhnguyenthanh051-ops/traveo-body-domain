@@ -266,68 +266,69 @@
 <!-- BOARD DATA — the only block the Sunday retro task edits. Source of truth: docs/project/ in the repo. -->
 <script id="board-data" type="application/json">
 {
-  "rebuilt": "2026-10-04",
-  "source": "docs/project/plan.md + docs/project/weeks/2026-W41.md",
-  "readyToApply": "2026-10-25",
+  "rebuilt": "2026-10-25",
+  "source": "docs/project/plan.md + docs/project/weeks/2026-W44.md",
+  "readyToApply": "2026-11-01",
   "jobSearch": "2026-12-01",
-  "subtitle": "M5 closed on Oct 3 (tag m5-secoc), 8 weeks early. W41: tell the M5 story and plan M6. Ready to apply by Oct 25; job search Dec 2026 – Feb 2027.",
+  "subtitle": "M5B (SecOC closed to the Definition of Done) proved on silicon on Oct 24. W44: README v1 and the m5b-secoc tag. Ready to apply by Nov 1; job search Dec 2026 – Feb 2027.",
   "week": {
-    "code": "W41 · Oct 5–11",
-    "title": "Tell the M5 story, plan M6",
-    "budget": "~14 h",
-    "delivery": "README v1 + M5a post on Medium + M6 design plan",
+    "code": "W44 · Oct 26–Nov 1",
+    "title": "Ready to apply: README v1 + M5B done",
+    "budget": "~15 h (burst, agreed at the W43 retro)",
+    "delivery": "README v1 on main (ready to apply) + tag m5b-secoc + GitHub Release",
     "days": [
       {
-        "date": "2026-10-05",
+        "date": "2026-10-26",
         "kind": "work",
         "hours": "2 h",
-        "task": "README v1, full draft: what it is, one diagram, milestone tags, build + tests, where to read first."
+        "task": "Close M5B to main: finish the M5 review record (3 sections, verdicts, M5-R findings incl. F-014), F-014 decision as an ADR-0021 addendum, regenerate the report → PR, CI green."
       },
       {
-        "date": "2026-10-06",
+        "date": "2026-10-27",
         "kind": "work",
         "hours": "2 h",
-        "task": "M5a post: outline + first half (design → 239 green tests → the real bus rejects every genuine frame)."
+        "task": "README v1 \"start here\", full draft: what it is, one diagram, what is proven on silicon (linked), build + host tests, where to read first."
       },
       {
-        "date": "2026-10-07",
+        "date": "2026-10-28",
         "kind": "work",
-        "hours": "2 h",
-        "task": "M5a: complete draft + figures list (frame layout, padding, Stage 6 attack table)."
+        "hours": "2.5 h",
+        "task": "F-014 fix (option 1/2): host tests first, then both nodes; both images build. Option 3: write the deferral and start the post draft."
       },
       {
-        "date": "2026-10-08",
+        "date": "2026-10-29",
         "kind": "work",
-        "hours": "2 h",
-        "task": "Change B: flash scripts (F-013 flash the stamped image, F-012 probe selector). If time: F-010."
+        "hours": "2.5 h",
+        "task": "M5B post draft (reset-then-replay: M5 vs M5B, two-slot store, rule 11, F-014). Both images build clean; finalize Saturday's checklist."
       },
       {
-        "date": "2026-10-09",
+        "date": "2026-10-30",
         "kind": "off",
         "hours": "—",
         "task": "Off."
       },
       {
-        "date": "2026-10-10",
-        "kind": "work",
-        "hours": "4 h",
-        "task": "M5a edit pass → publish on Medium · M6 design-plan session (scope, stages, ADRs) · 15-min check: flash both kits plugged in."
+        "date": "2026-10-31",
+        "kind": "bench",
+        "hours": "3.5 h",
+        "task": "F-014 on silicon (Node A reboots alone, telemetry recovers) + M5B regression + F-006/F-008 triage."
       },
       {
-        "date": "2026-10-11",
+        "date": "2026-11-01",
         "kind": "retro",
-        "hours": "2 h",
-        "task": "README v1 final (delivery) · write docs/briefs/M6-brief.md · 10:00 retro + W42 plan."
+        "hours": "2.5 h",
+        "task": "Captures → report · post draft reviewed · README v1 merged = ready to apply · tag m5b-secoc + Release · 10:00 retro + W45 plan."
       }
     ],
     "checklist": {
-      "title": "W41 pass criteria",
-      "goal": "Priority if the week runs short: README > M5a > M6 plan.",
+      "title": "Sat 31 bench pass criteria",
+      "goal": "Cheapest first. F before R; T is dropped first. Option 3 for F-014 → R + T only.",
       "items": [
-        "README v1: a stranger knows in 2 minutes what this is, what is proven on silicon, and where to look; every claim links to a tag, ADR or capture.",
-        "M5a: published on Medium; every result traceable to the runbook or a capture in docs/bench/.",
-        "M6 plan: scope in/out with reasons, stages with pass criteria, ADR list, weeks on the calendar.",
-        "Changes from the W40 retro: kit sheet ✓ · flash both kits plugged in · reminders + retro pre-fill actually arrive."
+        "P: images from the committed tree, banner build time checked; can_sniff running; replay tool handles 0x200.",
+        "F: reset Node A alone ×3 → bounded REJECT_FRESHNESS (Sat 24: 460, unbounded), telemetry + courtesy light recover without touching Node B.",
+        "F: an old 0x200 replayed after the A reset is refused; a replayed boot sync is refused.",
+        "R: secoc_attack all 5/5 refused; Node B reset → resync + old 0x121 refused; power cycle both → epochs strictly +1.",
+        "T: F-008 one boot on a reset-button boot → reject; F-006 banner count + source tag captured."
       ]
     }
   },
@@ -353,47 +354,61 @@
       "w": "W41",
       "start": "2026-10-05",
       "end": "2026-10-11",
-      "focus": "(burst ~14 h) README v1 · M5a post · M6 design plan · flash-script fix",
-      "bench": "Sat: short flash-fix check",
-      "delivery": "README v1 + M5a post",
-      "buffer": false
+      "focus": "Cancelled; its work moved one week back",
+      "bench": "",
+      "delivery": ""
     },
     {
       "w": "W42",
       "start": "2026-10-12",
       "end": "2026-10-18",
-      "focus": "M5b draft · W41 leftovers (F-002, F-005…F-009, MAC latency) · M6 stage 1",
-      "bench": "per the M6 brief",
-      "delivery": "M5b draft",
-      "buffer": false
+      "focus": "Publish the M5a post (restart week, ~8 h)",
+      "bench": "",
+      "delivery": "M5a post"
     },
     {
       "w": "W43",
       "start": "2026-10-19",
       "end": "2026-10-25",
-      "focus": "Publish M5b · series index post · README final",
-      "bench": "",
-      "delivery": "Ready to apply",
-      "milestone": true
+      "focus": "M5B — SecOC closure (burst ~15 h): persistent freshness store, F-010, traceability report, M5 review record",
+      "bench": "Sat: replay-after-reset refused, Stage 7 resync, Stages 5–6 regression",
+      "delivery": "M5B merged to main"
     },
     {
       "w": "W44",
       "start": "2026-10-26",
       "end": "2026-11-01",
-      "focus": "M5 demo post from the W40 captures",
+      "focus": "M5B post draft reviewed → tag m5b-secoc + Release · README v1 \"start here\" · F-014",
+      "bench": "Sat: F-014 on silicon · triage F-006/F-008",
+      "delivery": "Ready to apply (README v1 on main)",
+      "milestone": true
+    },
+    {
+      "w": "W45",
+      "start": "2026-11-02",
+      "end": "2026-11-08",
+      "focus": "CM7 bring-up post + the M5B story · series index post",
+      "bench": "",
+      "delivery": "CM7 post"
+    },
+    {
+      "w": "W46",
+      "start": "2026-11-09",
+      "end": "2026-11-15",
+      "focus": "M5 demo post from the W40 + W43 captures",
       "bench": "",
       "delivery": "M5 demo post"
     },
     {
-      "w": "W45–49",
-      "start": "2026-11-02",
+      "w": "W47–49",
+      "start": "2026-11-16",
       "end": "2026-12-06",
       "focus": "Interview prep (“10 decisions I can defend”, mock design questions) · M6-lite starts early",
       "bench": "",
       "delivery": ""
     }
   ],
-  "bufferNote": "M5 closed in W40, so the W41–W42 Saturdays are free for M6 (per the M6 brief).",
+  "bufferNote": "Shifted at the W42 retro: W41 was cancelled and W43 became M5B, so the ready-to-apply gate moved from Oct 25 to Nov 1 and interview prep has three weeks, not five.",
   "later": [
     "Threat-model essay — safety + security as one defensive story (EP.21 + EP.24 merged).",
     "Capstone retrospective (EP.26) — what I'd do differently; the overview as centrepiece.",
@@ -431,7 +446,8 @@
     "No new detours before Dec 6. A new idea gets one line in `docs/future-ideas.md`; a finding gets a row in `docs/project/findings.md`.",
     "Commit at the end of every session, even work in progress.",
     "ADR/REQ ceremony only for decisions that will appear in a post.",
-    "Finished early? Offer the next day's task, don't stop. Hard stop 22:30."
+    "Finished early? Offer the next day's task, don't stop. Hard stop 22:30.",
+    "Definition of Done: a milestone is tagged only when all nine checks hold (REQ → ADR → @impl → @test → silicon evidence, gap-free report, PR + CI + Release, reviewed post draft, review record)."
   ]
 }
 </script>

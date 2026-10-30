@@ -248,6 +248,26 @@ config data in each `secoc_app.c` (ADR-0004), not `#ifdef`:
 - **V5** Power-cycle both nodes: epoch advances and never repeats (G1). Reset Node B and replay
   an old `0x120`: refused (G2). Sat 24.
 
+**Status after the 2026-10-24 bench:**
+- **V2 ✅** Both nodes mount OK and every boot commit completes. The last raw status, `0x520008`
+  (`FLASH_NOT_ERASED`), is the read-back blank check of a programmed mark: the success signature,
+  not an error. See `docs/bench/2026-10-24/store_first_boot.md`.
+- **V3 partly ✅** The 20 B M-DMA read completes on both nodes (`g_wflash_raw_dma_intr` = COMPLETION).
+  **Deferred** (2026-10-25): the `SRC_BUS_ERROR` on an uncorrectable ECC error, the fault-subsystem
+  check and torn-word injection (`WORK_ECC_INJ_EN`, `FLASHC_ECC_CTL`). They need a fault-injection
+  bench session; the host tests cover the store's handling of an unreadable slot. Not a REQ, so it
+  doesn't block M5B.
+- **V4 Deferred** (2026-10-25): commit latency isn't measured (no emitter). Order of magnitude only:
+  Node A logs ≈ 12 ms from accepting a `0x2F0` to `SECOC_RESYNC`, which spans two commits plus a
+  MAC verify, at 1 ms log resolution (`g2_g3_reset_replay.md`). Commits happen only at boot and on an
+  epoch change, never per frame, so latency doesn't touch the frame budget.
+- **V5 ✅** 5 real power cycles, epochs strictly +1 on both nodes (`epochs_power_cycle.md`). A Node B
+  reset followed by a replay is refused (`g2_g3_reset_replay.md`). The replayed ID was `0x121`, not
+  `0x120`; it's the same receiver path.
+- Found on the bench: **F-014**. A Node A reboot on its own deadlocks telemetry, because the
+  persistent receiver floor has no resync in the B → A direction (ADR-0021 D5 only covers B as the
+  receiver). See `docs/project/findings.md`.
+
 ## Traceability
 
 - Serves **REQ-SECOC-006** (D1–D3), **REQ-SECOC-007** (receiver floor persisted, D1),

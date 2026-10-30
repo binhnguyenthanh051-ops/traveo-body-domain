@@ -18,19 +18,19 @@ Design context: `docs/architecture/secoc-architecture.md`. Decisions: `ADR-0021`
 
 | ID | Requirement (short) | Traces | Verified by | On silicon |
 |---|---|---|---|---|
-| REQ-SECOC-001 | Protected messages authenticated; unauthenticated dropped before decode | D1, D9 | `test_secoc`, `test_secoc_rx` | ⏳ |
-| REQ-SECOC-002 | MAC is AES-CMAC truncated to 8 B, constant-time compared | D1 | `test_crypto_mac`, `test_secoc` | ⏳ |
-| REQ-SECOC-003 | Secured frame layout `PDU∥freshness(4)∥MAC(8)`, one CAN FD frame, LE wire | D2 | `test_secoc` | ⏳ |
-| REQ-SECOC-004 | MAC input binds a Data ID: `CMAC(DataID∥freshness∥PDU)` | D2 | `test_secoc` | ⏳ |
+| REQ-SECOC-001 | Protected messages authenticated; unauthenticated dropped before decode | D1, D9 | `test_secoc`, `test_secoc_rx` | `docs/bench/2026-10-24/regression_r.md` (R2: 5/5 attacks dropped, no 0x120 accept) |
+| REQ-SECOC-002 | MAC is AES-CMAC truncated to 8 B, constant-time compared | D1 | `test_secoc` | `docs/bench/2026-10-24/regression_r.md` (8 B MAC on the wire, cross-node verify; bit-flipped MAC refused). Constant-time compare: host-verified only |
+| REQ-SECOC-003 | Secured frame layout `PDU∥freshness(4)∥MAC(8)`, one CAN FD frame, LE wire | D2 | `test_secoc` | `docs/bench/2026-10-24/bus_round2.txt` (every secured frame: PDU ∥ epoch/ctr ∥ 8 B MAC, one CAN FD frame, padded to 16 B) |
+| REQ-SECOC-004 | MAC input binds a Data ID: `CMAC(DataID∥freshness∥PDU)` | D2 | `test_secoc` | `docs/bench/2026-10-24/regression_r.md` (crossid: genuine 0x121 bytes on 0x120 → REJECT_MAC) |
 | REQ-SECOC-005 | Freshness = `epoch(u16)∥counter(u16)`; counter is per CAN-ID | D3 | `test_secoc_freshness` | ⏳ |
-| REQ-SECOC-006 | Epoch shared per-node, persisted, `++`/boot; `commit(E+1)` durable **before** spend | D3, D8 | `test_secoc_freshness`, `test_freshness_store`, `test_secoc_store` | ⏳ |
-| REQ-SECOC-007 | Receiver accept rule (floor + per-ID high-water); MAC-check before freshness update | D4 | `test_secoc_freshness`, `test_secoc`, `test_secoc_rx` | ⏳ |
-| REQ-SECOC-008 | Receiver-reset resync via authenticated `FRESHNESS_SYNC` (0x2F0); `floor=persisted+1` | D5 | `test_secoc_resync`, `test_secoc_rx` | ⏳ |
+| REQ-SECOC-006 | Epoch shared per-node, persisted, `++`/boot; `commit(E+1)` durable **before** spend | D3, D8 | `test_secoc_freshness`, `test_freshness_store`, `test_secoc_store` | `docs/bench/2026-10-24/epochs_power_cycle.md` (5 power cycles, epochs strictly +1 on both nodes) |
+| REQ-SECOC-007 | Receiver accept rule (floor + per-ID high-water); MAC-check before freshness update | D4 | `test_secoc_freshness`, `test_secoc_rx` | `docs/bench/2026-10-24/g2_g3_reset_replay.md` (G2: old frame refused after a Node B reset) |
+| REQ-SECOC-008 | Receiver-reset resync via authenticated `FRESHNESS_SYNC`, both receivers (0x2F0 B→A, 0x1F0 A→B); `floor=persisted+1` | D5 + F-014 addendum | `test_secoc_resync`, `test_secoc_rx` | B-receiver: `docs/bench/2026-10-24/g2_g3_reset_replay.md` (G3: 4 Node B resets, A resyncs within 20 ms). A-receiver (0x1F0): ⏳ not built yet, F-014 (W45) |
 | REQ-SECOC-009 | Counter rollover bumps the epoch (durable) and resets counters | D3 | `test_secoc_freshness` | ⏳ |
-| REQ-SECOC-010 | `key_id`-selected key; unknown `key_id` ⇒ fail (never key 0) | D6 | `test_crypto_mac` | ⏳ |
+| REQ-SECOC-010 | `key_id`-selected key; unknown `key_id` ⇒ fail (never key 0) | D6 | `test_crypto_mac` | `docs/bench/2026-10-24/kat_f010.md` (a crypto failure reaches the caller as an error). Unknown key_id itself: host-verified only |
 | REQ-SECOC-011 | Secret key resides only in the M0+ image; app uses the MAC oracle only | D6, D7 | `@design-only` + `test_crypto_mac` | ⏳ |
-| REQ-SECOC-012 | `CRYPTO_OP_MAC=0x03` generic op: `key_id∥len∥msg ⇒ tag[16]` | D7 | `test_crypto_mac` | ⏳ |
-| REQ-SECOC-013 | Telemetry `0x200` (B→A) is authenticated on the same path | D7 | `test_secoc` | ⏳ |
+| REQ-SECOC-012 | `CRYPTO_OP_MAC=0x03` generic op: `key_id∥len∥msg ⇒ tag[16]` | D7 | `test_crypto_mac` | `docs/bench/2026-10-24/kat_f010.md` (op returns an error, not a tag, on a crypto fault; NIST tags on both CM0+) |
+| REQ-SECOC-013 | Telemetry `0x200` (B→A) is authenticated on the same path | D7 | `test_secoc` | `docs/bench/2026-10-24/nodeA_round2.txt` (Node A SECOC_ACCEPT on 0x200, continuous counters) |
 
 ## Requirements
 
@@ -81,11 +81,12 @@ high-water[id]`, then set `high-water[id]=ctr`. The MAC check shall occur **befo
 state is updated, so a forged frame cannot advance high-water. *(ADR-0021 D4.)*
 
 ### REQ-SECOC-008 — receiver-reset resync
-On boot a receiver shall raise `floor = persisted_epoch + 1` (rejecting the entire prior epoch)
-and shall send an **authenticated** `FRESHNESS_SYNC` on CAN ID **`0x2F0`** carrying its new floor.
+On boot **each** receiver shall raise `floor = persisted_epoch + 1` (rejecting the entire prior
+epoch) and shall send an **authenticated** `FRESHNESS_SYNC` carrying its new floor: Node B on CAN
+ID **`0x2F0`** (B→A, for the command epoch), Node A on **`0x1F0`** (A→B, for the telemetry epoch).
 On receipt the peer shall set its sender `epoch = max(current, requested_floor)`. `FRESHNESS_SYNC`
 shall itself be a protected frame (REQ-SECOC-001..004) so a replayed or forged sync is rejected.
-*(ADR-0021 D5; ADR-0002 SecOC-management sub-band extension.)*
+*(ADR-0021 D5 and its F-014 addendum, 2026-10-30; ADR-0002 SecOC-management sub-band extension.)*
 
 ### REQ-SECOC-009 — counter rollover
 When a sender's per-ID counter would advance past `0xFFFF`, the sender shall instead bump the

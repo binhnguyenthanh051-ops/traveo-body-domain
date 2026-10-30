@@ -7,7 +7,7 @@ F-010 fix didn't break M5's end-to-end SecOC (Stage 5) or its attack refusals (S
 **Captures:** `bus_regress.txt` (two can_sniff sessions appended; the timestamps restart at line 5953),
 `nodeA_regress.txt/.bin` (COM4), `nodeB_regress.txt/.bin` (COM6, decoded text is UTF-16).
 
-Node A was handled during this block (the user says when in the retro). Its two dropouts below are therefore
+Node A was reset by hand during this block; the exact times weren't noted. Its two dropouts below are therefore
 bench handling, not unexplained resets.
 
 ## R1 — Stage 5.4/5.5: secured traffic and the courtesy light ✅
@@ -18,6 +18,7 @@ bench handling, not unexplained resets.
   `LIGHT_CMD 64` about 1 ms later; each release gives `00 00 00` → `LIGHT_CMD 00`.
   - Session 1: 17.789 / 20.582 s and 27.827 / 30.095 s.
   - Session 2: 4.979 / 7.122 s and 19.050 / 20.016 s.
+- **LED4 lit on each press and went off on release** (confirmed by eye at the bench).
 - Zero rejects on either node while both were up in a steady state. The `REJECT_FRESHNESS` run on Node A
   is F-014, below.
 

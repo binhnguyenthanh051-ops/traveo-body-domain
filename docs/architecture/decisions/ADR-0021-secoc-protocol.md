@@ -261,11 +261,14 @@ The M4→M7 silicon change (secoc-architecture §9) touches **only** the right c
 - ✅ `Cy_Crypto_Core_V2_Cmac` KAT against SP 800-38B on both parts (D1): exact on CYT2B7 and
   CYT4BF, no byte reversal, no explicit `Aes_Init` (2026-09-28, runbook #9). Both parts compute the
   same tag with the shared secret (Stage 4.1). MXCRYPTO is present on CYT4BF (the V2 driver links).
-- ⏳ F-010 fix on silicon (D1): the KAT image must read `g_kat_result == 15` on both parts, where
-  bit 3 is the injected Crypto bus error refused, then the next MAC correct (bench, W43 Sat).
-- ⏳ Per-frame MAC round-trip latency vs the control-loop budget (D1/D7, §8.4): **not measured.**
-  Upper bound only: both nodes sustain one secured frame each way every 20 ms with zero drops
-  (Stage 5). A timed measurement (`LOG_EVT_CRYPTO_MAC_US` exists, no emitter yet) is still open.
+- ✅ F-010 fix on silicon (D1): `g_kat_result == 15` on both parts. Bit 3 shows an injected Crypto
+  bus error makes the next MAC fail, and the one after it is correct (2026-10-24,
+  `docs/bench/2026-10-24/kat_f010.md`).
+- **Deferred** (2026-10-25): per-frame MAC round-trip latency vs the control-loop budget (D1/D7,
+  §8.4) is **not measured**. Upper bound only: both nodes sustain one secured frame each way every
+  20 ms with zero drops (Stage 5, and the M5B bench on 2026-10-24). A timed measurement needs an
+  emitter for `LOG_EVT_CRYPTO_MAC_US` (defined, unused). This is a design open item, not a REQ, so
+  it doesn't block M5B. Pick it up with the profiling work.
 - ✅ Node B mailbox non-cacheable region (ADR-0018 D6): verified with the D-cache on (runbook #12).
 - ⏳ `secoc_freshness_store` durability semantics once `eeprom_emu` backs it (D8, M6).
 
@@ -300,7 +303,6 @@ region vs BSP, the CAT1C IPC channel, the cross-file mailbox-address invariant, 
 MAC latency vs the control budget — are consolidated for bench bring-up; findings append here as
 in ADR-0017/0018. M6 swaps the RAM freshness store for `eeprom_emu` (D8) for real cross-reboot
 anti-replay.
-```
 
 **Addendum — D2 on a real bus: the receiver uses a configured PDU length (2026-10-03, W40 Stage 5).**
 The first real-bus capture showed every secured frame arriving **16 B**, not 13/14/15 B: CAN FD has
@@ -378,3 +380,44 @@ each refused with exactly one event, and the door never unlocked** (runbook #9�
 cannot trigger naturally with the RAM-backed store (see the runbook) and is left for M6, when
 `eeprom_emu` makes the floor persistent.
 
+
+**Addendum — D5 in both directions: Node A sends its own boot sync (2026-10-30, F-014 / M5-R4).**
+D5's argument ("a receiver reboot does not self-heal") holds for **every** receiver, but D5 only
+built it for Node B. Node A is also a receiver, of telemetry `0x200`. With ADR-0024's persistent
+floor, a Node A reboot on its own raises A's telemetry floor to persisted + 1 while Node B keeps
+sending at its old epoch, so every `0x200` is `REJECT_FRESHNESS` until B happens to reboot (460 in a
+row on the 2026-10-24 bench, `docs/bench/2026-10-24/regression_r.md`). M5's RAM store hid this,
+because a cold receiver accepted any epoch.
+*Decision (option 1 in F-014, owner-approved 2026-10-30):* the mirror of D5, A → B.
+- **New ID `0x1F0` `GW_FRESHNESS_SYNC` (A → B).** It is the top of ADR-0002's gateway → actuator
+  band, as `0x2F0` is the top of the actuator → gateway band. PDU = 2 B, A's new telemetry floor,
+  little-endian, the same layout as `0x2F0`. `body_msg_pdu_len(0x1F0) = 2`.
+- **Node A** boots its `0x200` receiver as today (floor = persisted + 1, ADR-0024), adds `0x1F0` to
+  its sender IDs, and sends one authenticated sync from `can_task` at startup, as B does today.
+- **Node B** adds `0x1F0` to its receiver IDs. On an ACCEPTed sync it calls the existing
+  `secoc_rx_sync_adopt()` on its telemetry sender: epoch = max(current, requested_floor), committed
+  durably before it is spent (D3), all per-ID counters reset. `LOG_EVT_SECOC_RESYNC` now fires on
+  whichever node completes a resync. `arg0` (the sync's CAN ID) tells the two directions apart.
+- **No change in `shared/secoc`.** The adopt path is direction-agnostic already; this is node wiring,
+  one message ID and the PDU-length table.
+*Why a replayed sync is refused:* the sync is a protected frame under A's freshness on `0x1F0`. A
+sends it at the new epoch it has just committed, so B adopts that epoch (D4). A sync captured
+from an earlier A boot carries a lower epoch, which D4 rejects as stale, so an attacker can't
+force B's epoch forwards or backwards. That is the D5 argument, unchanged.
+*Residual, stated honestly:* like D5, the sync is sent once and not acknowledged by the peer app.
+On this 2-node bus a successful `can_tx` means B's controller acked the frame, so the sync can only
+be lost in B's software (RX queue full while B is busy). If that happens, telemetry stays
+deadlocked until the next A or B reboot. It is accepted for now; the cheap fix, if a bench run ever
+shows it, is for A to re-send the sync after N consecutive `REJECT_FRESHNESS` on `0x200`.
+*Alternatives:* (2) A boots its telemetry receiver at floor = persisted, not + 1. No new message,
+but after an A reboot any `0x200` captured in B's current epoch replays into A, so REQ-SECOC-007 is
+deliberately weakened for telemetry. Telemetry drives the courtesy light, not the door, so the
+harm is small, but "authenticated but replayable" is a hard claim to defend in a security post.
+(3) A documented known limitation. That is honest, but it leaves a real deadlock in a milestone
+whose whole point is the persistent store. (4) Nonce challenge-response, which D5 already rejected
+for M5, for the same reason.
+*Requirement:* REQ-SECOC-008 now covers both receivers (`docs/requirements/secoc.md`).
+*Evidence (planned, W45):* `test_secoc_resync` gains the A-reboot direction (B's sender adopts A's
+floor, telemetry is accepted again) and a replayed `0x1F0` from an earlier A epoch refused;
+`test_body_msgs` checks `body_msg_pdu_len(0x1F0)`. Silicon: the F section of the W44 bench
+checklist (re-dated to W45), with three A-only resets and a replayed `0x1F0` refused.
