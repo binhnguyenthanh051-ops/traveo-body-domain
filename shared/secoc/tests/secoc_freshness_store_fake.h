@@ -19,5 +19,8 @@ extern const secoc_freshness_store_if_t g_secoc_store_fake;
 void     secoc_store_fake_reset(void);         /* wipe all domains to cold, zero the counter */
 void     secoc_store_fake_power_cycle(void);   /* keep stored values; only clears the counter */
 unsigned secoc_store_fake_commit_count(void);  /* durable commits since last reset/power_cycle */
+/* While on, every commit fails and stores nothing (a work-flash fault or a
+ * brown-out mid-save, F-015). Cleared by reset, NOT by power_cycle. */
+void     secoc_store_fake_fail_commits(bool fail);
 
 #endif /* SECOC_FRESHNESS_STORE_FAKE_H */

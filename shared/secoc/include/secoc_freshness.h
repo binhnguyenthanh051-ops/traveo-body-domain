@@ -112,13 +112,18 @@ secoc_fresh_verdict_t secoc_rx_check(const secoc_rx_ctx_t *ctx, uint16_t can_id,
                                      uint16_t epoch, uint16_t counter);
 
 /* Commit an accepted (epoch,counter) into receiver state (REQ-SECOC-007/008).
- * If epoch > current, adopt it: current = epoch, reset ALL per-ID high-water
- * (a new epoch starts every counter fresh), and PERSIST the new epoch durably
- * (commit) so a later reboot raises floor above it — this is the durable part
- * of the receiver-reset guard, and it fires once per new epoch (rare), not per
- * frame. Then high[id] = counter. Call ONLY after MAC + _check both passed.
- * No-op for an unknown can_id. */
-void secoc_rx_accept(secoc_rx_ctx_t *ctx, uint16_t can_id,
+ * If epoch > current, PERSIST it durably (commit) FIRST, so a later reboot
+ * raises floor above it — this is the durable part of the receiver-reset guard,
+ * and it fires once per new epoch (rare), not per frame. Only then adopt it:
+ * current = epoch, reset ALL per-ID high-water (a new epoch starts every counter
+ * fresh). Then high[id] = counter. Call ONLY after MAC + _check both passed.
+ *
+ * Returns false, with NO state change, if the commit fails (F-015): an epoch
+ * this receiver cannot persist would reopen the replay window after its next
+ * reboot, so the caller must drop the frame. The next frame of that epoch
+ * retries the commit, because `current` did not move. Also false for an
+ * unknown can_id or a NULL ctx. */
+bool secoc_rx_accept(secoc_rx_ctx_t *ctx, uint16_t can_id,
                      uint16_t epoch, uint16_t counter);
 
 #endif /* SECOC_FRESHNESS_H */

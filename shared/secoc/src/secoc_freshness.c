@@ -192,24 +192,31 @@ secoc_fresh_verdict_t secoc_rx_check(const secoc_rx_ctx_t *ctx, uint16_t can_id,
     return SECOC_FRESH_STALE;
 }
 
-/* @impl REQ-SECOC-007 : commit accepted freshness; persist on epoch adoption */
-void secoc_rx_accept(secoc_rx_ctx_t *ctx, uint16_t can_id,
+/* @impl REQ-SECOC-007 : commit accepted freshness; persist on epoch adoption,
+ *                       before adopting it (F-015) */
+bool secoc_rx_accept(secoc_rx_ctx_t *ctx, uint16_t can_id,
                      uint16_t epoch, uint16_t counter)
 {
     size_t idx = 0U;
     if ((ctx == NULL) || !find_slot(ctx->ids, ctx->id_count, can_id, &idx))
     {
-        return;
+        return false;
     }
 
     if (epoch > ctx->current)
     {
+        /* Durable FIRST: it raises the next-boot floor. A failed commit leaves
+         * everything as it was, so the frame is dropped and the next one retries. */
+        if (!ctx->store->commit(ctx->domain, epoch))
+        {
+            return false;
+        }
         ctx->current = epoch;
         for (size_t i = 0U; i < ctx->id_count; ++i)
         {
             ctx->high[i] = 0U;          /* a new epoch starts every counter fresh */
         }
-        (void)ctx->store->commit(ctx->domain, epoch);   /* durable: raises next-boot floor */
     }
     ctx->high[idx] = counter;
+    return true;
 }

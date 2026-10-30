@@ -110,15 +110,24 @@ secoc_rx_verdict_t secoc_rx_process(secoc_rx_t *rx, uint16_t can_id,
         return drop_fresh(rx, can_id, counter);
     }
 
-    /* Emit BEFORE committing the accept. The event timestamps the VERDICT, not
-     * the persistence: secoc_rx_accept() durably commits on an epoch change, and
-     * once eeprom_emu backs the store (M6) that is a flash write. Logging after
-     * it would smear the accept's ts_ms by however long the write took, on the
-     * one path M5 measures. */
+    /* Commit BEFORE the accept is counted or logged (F-015). On a new epoch
+     * secoc_rx_accept() writes the work-flash store (ADR-0024), and if that
+     * fails the frame must be dropped: an epoch we cannot persist reopens the
+     * replay window after our next reboot. Deciding first keeps "exactly one
+     * event per frame". The cost: on the one frame per epoch that writes flash,
+     * the ACCEPT's ts_ms includes the write. Every other frame does no write.
+     *
+     * A store failure is counted and logged as a freshness drop, not a reason
+     * of its own (owner decision, 2026-10-30): one counter and event fewer, at
+     * the price that a flash fault reads like a replay in the log. */
+    if (!secoc_rx_accept(rx->fresh, can_id, epoch, counter))
+    {
+        *pdu_len = 0U;
+        return drop_fresh(rx, can_id, counter);
+    }
+
     rx->n_accept++;
     log_evt(LOG_EVT_SECOC_ACCEPT, (uint32_t)can_id, counter);
-
-    secoc_rx_accept(rx->fresh, can_id, epoch, counter);
     return SECOC_RX_ACCEPT;
 }
 

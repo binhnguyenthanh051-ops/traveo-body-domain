@@ -159,6 +159,63 @@ void test_rx_unknown_id(void)
     TEST_ASSERT_EQUAL(SECOC_FRESH_UNKNOWN, secoc_rx_check(&rx, 0x777U, 1U, 1U));
 }
 
+/* ---------- store failure (F-015) ---------- */
+
+/* The bug F-015 fixed: the receiver adopted a new epoch in RAM and ignored a
+ * failed commit, so after its next reboot floor = that epoch, high-water = 0,
+ * and a captured frame from it was accepted again. Now nothing moves. */
+/* @test REQ-SECOC-007 : an epoch that cannot be persisted is not adopted */
+void test_rx_accept_store_failure_changes_nothing(void)
+{
+    secoc_rx_ctx_t rx;
+    (void)secoc_rx_boot(&rx, &g_secoc_store_fake, RX_DOM, g_ids, 2U);
+    TEST_ASSERT_TRUE(secoc_rx_accept(&rx, ID_DOOR, 1U, 4U));     /* epoch 1 persisted */
+
+    secoc_store_fake_fail_commits(true);
+    TEST_ASSERT_FALSE(secoc_rx_accept(&rx, ID_DOOR, 2U, 1U));    /* epoch 2: commit fails */
+    TEST_ASSERT_EQUAL_UINT16(1U, rx.current);
+    TEST_ASSERT_EQUAL(SECOC_FRESH_STALE, secoc_rx_check(&rx, ID_DOOR, 1U, 4U));  /* high-water kept */
+    uint16_t persisted = 0U;
+    TEST_ASSERT_TRUE(g_secoc_store_fake.load(RX_DOM, &persisted));
+    TEST_ASSERT_EQUAL_UINT16(1U, persisted);
+
+    /* Store recovers: the next frame of epoch 2 retries the commit and is adopted. */
+    secoc_store_fake_fail_commits(false);
+    TEST_ASSERT_EQUAL(SECOC_FRESH_OK, secoc_rx_check(&rx, ID_DOOR, 2U, 2U));
+    TEST_ASSERT_TRUE(secoc_rx_accept(&rx, ID_DOOR, 2U, 2U));
+    TEST_ASSERT_EQUAL_UINT16(2U, rx.current);
+}
+
+/* @test REQ-SECOC-006 : a sender whose store cannot commit E+1 does not start */
+void test_tx_boot_fails_when_the_store_fails(void)
+{
+    secoc_tx_ctx_t tx;
+    secoc_store_fake_fail_commits(true);
+    TEST_ASSERT_FALSE(secoc_tx_boot(&tx, &g_secoc_store_fake, TX_DOM, g_ids, 2U));
+    uint16_t persisted = 0U;
+    TEST_ASSERT_FALSE(g_secoc_store_fake.load(TX_DOM, &persisted));   /* still cold */
+}
+
+/* @test REQ-SECOC-009 : a rollover whose epoch bump cannot be committed sends nothing */
+void test_tx_rollover_commit_failure_sends_nothing(void)
+{
+    secoc_tx_ctx_t tx;
+    (void)secoc_tx_boot(&tx, &g_secoc_store_fake, TX_DOM, g_ids, 2U);
+    uint16_t e = 0U, c = 0U;
+    for (uint32_t k = 1U; k <= 0xFFFFU; ++k) {
+        (void)secoc_tx_next(&tx, ID_DOOR, &e, &c);                  /* up to (1, 0xFFFF) */
+    }
+
+    secoc_store_fake_fail_commits(true);
+    TEST_ASSERT_FALSE(secoc_tx_next(&tx, ID_DOOR, &e, &c));         /* no wrap, no frame */
+    TEST_ASSERT_EQUAL_UINT16(1U, tx.epoch);
+
+    secoc_store_fake_fail_commits(false);
+    TEST_ASSERT_TRUE(secoc_tx_next(&tx, ID_DOOR, &e, &c));          /* retry succeeds */
+    TEST_ASSERT_EQUAL_UINT16(2U, e);
+    TEST_ASSERT_EQUAL_UINT16(1U, c);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -172,5 +229,8 @@ int main(void)
     RUN_TEST(test_rx_rejects_below_floor);
     RUN_TEST(test_rx_adopts_newer_epoch_and_resets_high_water);
     RUN_TEST(test_rx_unknown_id);
+    RUN_TEST(test_rx_accept_store_failure_changes_nothing);
+    RUN_TEST(test_tx_boot_fails_when_the_store_fails);
+    RUN_TEST(test_tx_rollover_commit_failure_sends_nothing);
     return UNITY_END();
 }
