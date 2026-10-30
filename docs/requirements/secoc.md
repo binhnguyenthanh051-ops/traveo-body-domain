@@ -70,7 +70,8 @@ The `epoch` shall be **shared across all of a node's protected IDs**, persisted 
 `secoc_freshness_store` port, and incremented once per boot. On boot the sender shall
 `load(E)`, then `commit(E+1)` **durably before spending E**. `commit` shall be durable before it
 returns. A brown-out may waste an epoch but shall never cause an epoch value to be reused.
-*(ADR-0021 D3, D8.)*
+If a `commit` fails, the sender shall send nothing authenticated for the epoch it could not
+persist (at boot, on rollover, on a resync). *(ADR-0021 D3, D8; F-015.)*
 
 ### REQ-SECOC-007 — receiver accept rule
 Per remote sender the receiver shall keep one persisted `floor` (epoch) and, in RAM, one
@@ -78,7 +79,9 @@ Per remote sender the receiver shall keep one persisted `floor` (epoch) and, in 
 `(epoch, ctr)` on `id`: reject if `epoch < floor`; if `epoch > current_epoch`, adopt
 (`current_epoch=epoch`, reset all high-water) ; within `current_epoch` accept iff `ctr >
 high-water[id]`, then set `high-water[id]=ctr`. The MAC check shall occur **before** any freshness
-state is updated, so a forged frame cannot advance high-water. *(ADR-0021 D4.)*
+state is updated, so a forged frame cannot advance high-water. A new epoch shall be persisted
+**before** it is adopted; if that `commit` fails, the frame shall be dropped as stale and no
+freshness state shall change. *(ADR-0021 D4; F-015.)*
 
 ### REQ-SECOC-008 — receiver-reset resync
 On boot **each** receiver shall raise `floor = persisted_epoch + 1` (rejecting the entire prior

@@ -332,6 +332,35 @@ void test_forged_frame_leaves_freshness_state_untouched(void)
     TEST_ASSERT_EQUAL_HEX16(LOG_EVT_SECOC_ACCEPT, take_one().evt);
 }
 
+/* F-015 at the seam: a genuine frame whose new epoch cannot be persisted is
+ * dropped, with exactly one event (a freshness reject, by owner decision) and
+ * no PDU. Once the store works again the same epoch is accepted.
+ *
+ * @test REQ-SECOC-007 : a frame whose epoch cannot be persisted is dropped, then retried
+ * @test REQ-SECOC-001 : the store-failure drop is counted, one event, no PDU */
+void test_store_failure_drops_the_frame_then_recovers(void)
+{
+    const uint8_t pdu[1] = { 0x01U };
+    uint8_t frame[32];
+    uint8_t out[16]; size_t out_len = 99U;
+    size_t n = make_frame(ID_DOOR, g_fresh.floor, 1U, pdu, sizeof pdu, frame, sizeof frame);
+
+    secoc_store_fake_fail_commits(true);
+    TEST_ASSERT_EQUAL(SECOC_RX_DROP_FRESHNESS,
+        secoc_rx_process(&g_rx, ID_DOOR, frame, n, out, sizeof out, &out_len));
+    TEST_ASSERT_EQUAL_size_t(0U, out_len);
+    rec_t r = take_one();
+    TEST_ASSERT_EQUAL_HEX16(LOG_EVT_SECOC_REJECT_FRESHNESS, r.evt);
+    TEST_ASSERT_EQUAL_UINT32(1U, g_rx.n_drop_fresh);
+    TEST_ASSERT_EQUAL_UINT32(0U, g_rx.n_accept);
+
+    secoc_store_fake_fail_commits(false);
+    n = make_frame(ID_DOOR, g_fresh.floor, 2U, pdu, sizeof pdu, frame, sizeof frame);
+    TEST_ASSERT_EQUAL(SECOC_RX_ACCEPT,
+        secoc_rx_process(&g_rx, ID_DOOR, frame, n, out, sizeof out, &out_len));
+    TEST_ASSERT_EQUAL_HEX16(LOG_EVT_SECOC_ACCEPT, take_one().evt);
+}
+
 /* ---- the REQ-LOG-009 property itself ------------------------------- */
 
 /* The requirement's actual words: the events "are the observable form of the
@@ -495,6 +524,7 @@ int main(void)
     RUN_TEST(test_unregistered_can_id_is_a_freshness_drop);
     RUN_TEST(test_rejected_frame_yields_no_pdu);
     RUN_TEST(test_forged_frame_leaves_freshness_state_untouched);
+    RUN_TEST(test_store_failure_drops_the_frame_then_recovers);
     RUN_TEST(test_events_and_counters_never_diverge);
     RUN_TEST(test_sync_adopt_emits_resync_with_the_new_epoch);
     RUN_TEST(test_sync_adopt_is_silent_when_the_epoch_does_not_move);

@@ -1,7 +1,7 @@
 # Review record — M5 SecOC (closed as M5B)
 
 **Opened:** 2026-10-20 · **Status:** three verdicts given 2026-10-30, all **pass with findings**.
-Open before the tag: M5-R5 (= F-015), M5-R8, plus F-014. M5-R6 closed 2026-10-30.
+Open before the tag: M5-R8, plus F-014. M5-R5 (F-015) and M5-R6 closed 2026-10-30.
 **Reviewers:** owner review, with Claude as adversarial reviewer. This is a solo project, so this
 is not an independent review (plan.md rule 11, check 9).
 **Inputs:** `docs/requirements/secoc.md`, `ADR-0021`, `ADR-0024` (when written),
@@ -85,7 +85,9 @@ Copilot handoff rule).
 Findings:
 
 #### M5-R5: a failed `commit` on the receiver is ignored, so the replay window reopens after a reboot
-**Status:** open → **F-015** (W45). **Blocks the tag.**
+**Status:** **closed 2026-10-30** (F-015 resolved): commit-before-adopt, reported as a freshness
+drop (owner decision, option B). ADR-0021 addendum "D4/D8: a receiver persists a new epoch
+before adopting it"; REQ-SECOC-006/007 reworded; tests in `test_secoc_freshness` + `test_secoc_rx`.
 
 `secoc_rx_accept()` adopts a newer epoch in RAM and then discards the result of
 `store->commit()` (`shared/secoc/src/secoc_freshness.c:212`, `(void)`). If that save fails (work

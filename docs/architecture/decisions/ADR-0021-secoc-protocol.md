@@ -421,3 +421,29 @@ for M5, for the same reason.
 floor, telemetry is accepted again) and a replayed `0x1F0` from an earlier A epoch refused;
 `test_body_msgs` checks `body_msg_pdu_len(0x1F0)`. Silicon: the F section of the W44 bench
 checklist (re-dated to W45), with three A-only resets and a replayed `0x1F0` refused.
+
+**Addendum — D4/D8: a receiver persists a new epoch before adopting it (2026-10-30, F-015 / M5-R5).**
+The M5 review found that `secoc_rx_accept()` adopted a newer epoch in RAM and then ignored the
+result of `commit`. If that save failed (a work-flash fault, a brown-out mid-save), the receiver
+ran on in epoch E with E not persisted. After its next reboot it loaded E − 1, so floor = E with
+high-water 0, and **any captured frame from epoch E was accepted again**: the window D4/D5 exist
+to close. The sender side was already right (`secoc_tx_boot`/`_next`/`_adopt_floor` fail on a
+failed commit and send nothing).
+*Decision:* on a newer epoch the receiver commits **first** and adopts only if the commit
+succeeded. `secoc_rx_accept()` returns `bool`, and on false `secoc_rx_process` drops the frame
+with no state change. Because `current` didn't move, the next frame of that epoch retries the
+commit, so the link recovers by itself when the store does. The commit now also runs **before**
+the ACCEPT event, so a failed save still gives exactly one event per frame. The cost is that on
+the one frame per epoch that writes flash, the ACCEPT's timestamp includes the write.
+*How it is reported (owner decision):* as a freshness drop (`SECOC_RX_DROP_FRESHNESS`,
+`n_drop_fresh`, `LOG_EVT_SECOC_REJECT_FRESHNESS`), not a reason of its own. That saves one verdict,
+counter and contract event. The price is that a store fault reads like a replay in the log, the
+way a dead oracle would read like a forgery without D9's `SECOC_MAC_ERROR` reason. *Alternatives:*
+(A) a separate `SECOC_RX_DROP_STORE` + counter + event, which a bench run could tell apart from an
+attack, at about 1.5 h more and a new contract event ID; (C) accept anyway and retry the save
+later, which keeps traffic flowing but leaves the replay window open, the bug itself. Rejected.
+*Evidence:* `test_secoc_freshness` (an un-persistable epoch changes nothing and is adopted on
+retry; a sender that can't commit at boot or on rollover sends nothing) and `test_secoc_rx` (the
+frame is dropped as freshness with one event and no PDU, then accepted once the store works),
+through new failure injection in `secoc_freshness_store_fake`. Host-only: a work-flash fault is
+not something the bench can cause on demand.

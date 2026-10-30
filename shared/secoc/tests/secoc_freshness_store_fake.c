@@ -13,6 +13,7 @@ static struct {
 } g_slot[FAKE_MAX_DOMAINS];
 
 static unsigned g_commit_count;
+static bool     g_fail_commits;
 
 static bool fake_load(uint8_t domain, uint16_t *epoch)
 {
@@ -28,7 +29,7 @@ static bool fake_load(uint8_t domain, uint16_t *epoch)
 
 static bool fake_commit(uint8_t domain, uint16_t epoch)
 {
-    if (domain >= FAKE_MAX_DOMAINS) {
+    if ((domain >= FAKE_MAX_DOMAINS) || g_fail_commits) {
         return false;
     }
     /* Durable-before-return: the write completes synchronously here, so by the
@@ -51,6 +52,7 @@ void secoc_store_fake_reset(void)
         g_slot[i].epoch = 0U;
     }
     g_commit_count = 0U;
+    g_fail_commits = false;
 }
 
 void secoc_store_fake_power_cycle(void)
@@ -63,4 +65,9 @@ void secoc_store_fake_power_cycle(void)
 unsigned secoc_store_fake_commit_count(void)
 {
     return g_commit_count;
+}
+
+void secoc_store_fake_fail_commits(bool fail)
+{
+    g_fail_commits = fail;
 }
