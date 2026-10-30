@@ -18,6 +18,9 @@
                                         * (ADR-0002 SecOC-mgmt sub-band; ADR-0021 D5).
                                         * Authenticated; carries the receiver's epoch
                                         * floor (u16 LE) as its PDU. */
+#define MSG_ID_GW_FRESHNESS_SYNC 0x1F0u /* Gateway -> Actuator: the mirror of 0x2F0, sent
+                                        * at Node A boot so B raises its telemetry epoch
+                                        * (ADR-0021 F-014 addendum). Same PDU layout. */
 
 typedef enum { DOOR_LOCK = 0, DOOR_UNLOCK = 1 } door_cmd_t;
 

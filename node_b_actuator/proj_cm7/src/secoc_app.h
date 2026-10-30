@@ -55,4 +55,9 @@ bool secoc_app_build_telemetry(const sensor_report_msg_t *rpt, can_raw_frame_t *
  * false on freshness/oracle failure. Send once, from task context, at startup. */
 bool secoc_app_build_boot_sync(can_raw_frame_t *out);
 
+/* RX: verify the gateway's boot GW_FRESHNESS_SYNC (0x1F0) and, if authentic and
+ * fresh, adopt the floor it carries into our telemetry-sender epoch (F-014, the
+ * mirror of D5). Returns true on a valid sync. Task context (M0+ oracle). */
+bool secoc_app_handle_gw_sync(const can_raw_frame_t *f);
+
 #endif /* SECOC_APP_H */

@@ -4,6 +4,7 @@
  * @impl ADR-0021 D7 : SecOC oracle bound to the M0+ crypto_mac client
  * @impl REQ-SECOC-001 : commands verified (MAC+freshness) before actuation; else dropped
  * @impl REQ-SECOC-008 : boot FRESHNESS_SYNC carries the receiver floor
+ * @impl REQ-SECOC-008 : adopt the gateway's floor from GW_FRESHNESS_SYNC (0x1F0, F-014)
  * @impl REQ-SECOC-013 : telemetry secured on the identical path
  */
 #include "secoc_app.h"
@@ -57,13 +58,15 @@ static const secoc_freshness_store_if_t *const g_store = &g_secoc_store;
 
 /* --- freshness contexts ---
  * Node B SENDS on 0x200 (telemetry) + 0x2F0 (sync): one sender context, one
- * shared epoch (SECOC_DOM_TX_SELF). Node B RECEIVES commands 0x120/0x121 from A:
- * one receiver context tracking A's sender epoch (SECOC_DOM_RX_A). */
+ * shared epoch (SECOC_DOM_TX_SELF). Node B RECEIVES commands 0x120/0x121 and the
+ * gateway's boot sync 0x1F0 from A: one receiver context tracking A's sender
+ * epoch (SECOC_DOM_RX_A). */
 static secoc_tx_ctx_t g_tx;
 static secoc_rx_ctx_t g_rx;
 
 static const uint16_t g_tx_ids[] = { MSG_ID_SENSOR_RPT, MSG_ID_FRESHNESS_SYNC };
-static const uint16_t g_rx_ids[] = { MSG_ID_DOOR_CMD, MSG_ID_LIGHT_CMD };
+static const uint16_t g_rx_ids[] = { MSG_ID_DOOR_CMD, MSG_ID_LIGHT_CMD,
+                                     MSG_ID_GW_FRESHNESS_SYNC };
 
 void secoc_app_init(void)
 {
@@ -113,6 +116,33 @@ bool secoc_app_verify_and_decode(const can_raw_frame_t *f, body_msg_t *out)
         ++g_secoc_drop_decode;
         return false;
     }
+    return true;
+}
+
+bool secoc_app_handle_gw_sync(const can_raw_frame_t *f)
+{
+    if (f == NULL)
+    {
+        return false;
+    }
+    uint8_t pdu[CAN_MAX_DLEN];
+    size_t  pdu_len = 0u;
+    if (secoc_rx_process(&g_secoc_rx, (uint16_t)f->id, f->data, f->len,
+                         pdu, sizeof pdu, &pdu_len) != SECOC_RX_ACCEPT)
+    {
+        return false;                   /* forged or replayed sync: no epoch move */
+    }
+    if (pdu_len < 2u)
+    {
+        ++g_secoc_drop_decode;
+        return false;
+    }
+    /* PDU = the gateway's telemetry floor (u16 LE); adopt it into our telemetry
+     * epoch so A accepts 0x200 again after its reboot (F-014). The resync
+     * completes here, so LOG_EVT_SECOC_RESYNC fires on the actuator for this
+     * direction (arg0 = 0x1F0 tells it apart from A's 0x2F0 resync). */
+    uint16_t floor = (uint16_t)((uint16_t)pdu[0] | ((uint16_t)pdu[1] << 8));
+    (void)secoc_rx_sync_adopt(&g_tx, (uint16_t)f->id, floor);
     return true;
 }
 

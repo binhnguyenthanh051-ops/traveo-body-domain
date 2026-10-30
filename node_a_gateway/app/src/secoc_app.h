@@ -2,8 +2,9 @@
  * secoc_app.h — Node A (gateway) SecOC application glue (M5 seam 3, ADR-0021).
  *
  * The mirror of Node B's secoc_app with the roles swapped: the gateway is the
- * SENDER of commands (0x120 door, 0x121 light) and the RECEIVER of authenticated
- * telemetry (0x200) and the boot FRESHNESS_SYNC (0x2F0). App composition, so it
+ * SENDER of commands (0x120 door, 0x121 light) and of its own boot sync (0x1F0),
+ * and the RECEIVER of authenticated telemetry (0x200) and B's boot
+ * FRESHNESS_SYNC (0x2F0). App composition, so it
  * may name the message IDs, the crypto client, and can_raw_frame_t.
  */
 #ifndef SECOC_APP_H
@@ -44,5 +45,11 @@ bool secoc_app_build_door_cmd(bool locked, can_raw_frame_t *out);
 
 /* TX: build a secured light command (0x121), brightness 0..100 %. */
 bool secoc_app_build_light_cmd(uint8_t brightness_pct, can_raw_frame_t *out);
+
+/* TX: build the boot GW_FRESHNESS_SYNC frame (0x1F0) carrying our telemetry
+ * floor, so the actuator raises its telemetry epoch after a gateway reboot
+ * (ADR-0021 F-014 addendum). Returns false on freshness/oracle failure. Send
+ * once, from task context, at startup. */
+bool secoc_app_build_boot_sync(can_raw_frame_t *out);
 
 #endif /* SECOC_APP_H */

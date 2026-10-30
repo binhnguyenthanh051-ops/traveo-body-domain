@@ -116,9 +116,9 @@ secoc_rx_verdict_t secoc_rx_process(secoc_rx_t *rx, uint16_t can_id,
  * The RX action for an authenticated FRESHNESS_SYNC (ADR-0021 D5 / REQ-SECOC-008).
  *
  * Lives here, with the other verdict emissions, because LOG_EVT_SECOC_RESYNC is
- * a SecOC verdict like the rest — and because it is the one event that does NOT
- * fire on the actuator. B only SENDS the sync; the resync COMPLETES when the
- * gateway raises its sender epoch, so this runs on Node A.
+ * a SecOC verdict like the rest. The resync COMPLETES on the node that raises
+ * its sender epoch: Node A for B's 0x2F0, Node B for A's 0x1F0 (F-014). arg0,
+ * the sync's CAN ID, tells the two directions apart.
  *
  * Adopts epoch = max(current, requested_floor) into `tx` and emits RESYNC
  * (arg0 = the sync's CAN ID, arg1 = the new epoch) IFF the epoch actually

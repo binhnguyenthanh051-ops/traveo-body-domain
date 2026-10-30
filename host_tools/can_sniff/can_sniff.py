@@ -30,6 +30,7 @@ SECURED_IDS = {    # id -> (name, PDU length) — M5 bring-up plan Stage 5.4
     0x121: ("LIGHT_CMD", 1),
     0x200: ("TELEMETRY", 3),
     0x2F0: ("FRESH_SYNC", 2),
+    0x1F0: ("GW_SYNC", 2),       # A -> B boot sync (ADR-0021 F-014 addendum)
 }
 
 

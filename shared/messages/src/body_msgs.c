@@ -73,6 +73,7 @@ size_t body_msg_pdu_len(uint32_t id)
         case MSG_ID_LIGHT_CMD:      return 1u;   /* pack_light_cmd: brightness_pct    */
         case MSG_ID_SENSOR_RPT:     return 3u;   /* pack_sensor_report: ambient + ajar */
         case MSG_ID_FRESHNESS_SYNC: return 2u;   /* epoch floor, u16 LE (secoc_app)   */
+        case MSG_ID_GW_FRESHNESS_SYNC: return 2u; /* same, A -> B (F-014)            */
         default:                    return 0u;
     }
 }
