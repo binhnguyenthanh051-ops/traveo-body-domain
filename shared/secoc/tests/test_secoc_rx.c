@@ -290,6 +290,48 @@ void test_rejected_frame_yields_no_pdu(void)
     (void)take_one();
 }
 
+/* MAC before freshness, observed from the outside (M5-R6). Every other forgery
+ * test checks the DROP; this one checks what the drop left behind. The worst
+ * forgery carries a HIGHER epoch: if it reached secoc_rx_accept() it would be
+ * persisted, and the genuine sender would be locked out until a resync. One
+ * genuine frame afterwards proves both halves: had the forgery moved the epoch,
+ * (floor, 6) would be below current; had it moved the high-water to 50, 6 would
+ * be stale.
+ *
+ * @test REQ-SECOC-007 : a forged frame cannot advance high-water, the epoch, or the store */
+void test_forged_frame_leaves_freshness_state_untouched(void)
+{
+    const uint8_t pdu[1] = { 0x01U };
+    uint8_t frame[32];
+    uint8_t out[16]; size_t out_len = 0U;
+    rec_t r[4];
+
+    /* Genuine (floor, 5): adopts the floor epoch, high-water[DOOR] = 5, one commit. */
+    size_t n = make_frame(ID_DOOR, g_fresh.floor, 5U, pdu, sizeof pdu, frame, sizeof frame);
+    TEST_ASSERT_EQUAL(SECOC_RX_ACCEPT,
+        secoc_rx_process(&g_rx, ID_DOOR, frame, n, out, sizeof out, &out_len));
+    (void)take_records(r, 4U);
+    const uint16_t epoch_before = g_fresh.current;
+    const unsigned commits_before = secoc_store_fake_commit_count();
+
+    /* Forged (floor + 5, 50): a valid frame with one MAC byte flipped. */
+    n = make_frame(ID_DOOR, (uint16_t)(g_fresh.floor + 5U), 50U, pdu, sizeof pdu, frame, sizeof frame);
+    frame[n - 1U] ^= 0xFFU;
+    TEST_ASSERT_EQUAL(SECOC_RX_DROP_MAC,
+        secoc_rx_process(&g_rx, ID_DOOR, frame, n, out, sizeof out, &out_len));
+    TEST_ASSERT_EQUAL_HEX16(LOG_EVT_SECOC_REJECT_MAC, take_one().evt);
+
+    TEST_ASSERT_EQUAL_UINT16(epoch_before, g_fresh.current);
+    TEST_ASSERT_EQUAL_UINT_MESSAGE(commits_before, secoc_store_fake_commit_count(),
+        "a forged frame reached the freshness store");
+
+    /* Genuine (floor, 6) is still fresh. */
+    n = make_frame(ID_DOOR, g_fresh.floor, 6U, pdu, sizeof pdu, frame, sizeof frame);
+    TEST_ASSERT_EQUAL(SECOC_RX_ACCEPT,
+        secoc_rx_process(&g_rx, ID_DOOR, frame, n, out, sizeof out, &out_len));
+    TEST_ASSERT_EQUAL_HEX16(LOG_EVT_SECOC_ACCEPT, take_one().evt);
+}
+
 /* ---- the REQ-LOG-009 property itself ------------------------------- */
 
 /* The requirement's actual words: the events "are the observable form of the
@@ -452,6 +494,7 @@ int main(void)
     RUN_TEST(test_replayed_frame_emits_reject_freshness_with_rx_counter);
     RUN_TEST(test_unregistered_can_id_is_a_freshness_drop);
     RUN_TEST(test_rejected_frame_yields_no_pdu);
+    RUN_TEST(test_forged_frame_leaves_freshness_state_untouched);
     RUN_TEST(test_events_and_counters_never_diverge);
     RUN_TEST(test_sync_adopt_emits_resync_with_the_new_epoch);
     RUN_TEST(test_sync_adopt_is_silent_when_the_epoch_does_not_move);

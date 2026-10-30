@@ -1,7 +1,7 @@
 # Review record — M5 SecOC (closed as M5B)
 
 **Opened:** 2026-10-20 · **Status:** three verdicts given 2026-10-30, all **pass with findings**.
-Open before the tag: M5-R5 (= F-015), M5-R6, M5-R8 (W45), plus F-014.
+Open before the tag: M5-R5 (= F-015), M5-R8, plus F-014. M5-R6 closed 2026-10-30.
 **Reviewers:** owner review, with Claude as adversarial reviewer. This is a solo project, so this
 is not an independent review (plan.md rule 11, check 9).
 **Inputs:** `docs/requirements/secoc.md`, `ADR-0021`, `ADR-0024` (when written),
@@ -187,7 +187,8 @@ tag. This closes M5-R2.
 Findings:
 
 #### M5-R6: nothing tests that a forged frame leaves freshness state alone
-**Status:** open (W45, ~20 min). **Blocks the tag.**
+**Status:** **closed 2026-10-30** by `test_forged_frame_leaves_freshness_state_untouched`
+(`test_secoc_rx`).
 
 REQ-SECOC-007's last sentence is the anti-DoS property: "a forged frame cannot advance
 high-water". Every forged-frame test (`test_forged_mac_…`, `test_tampered_*`,
