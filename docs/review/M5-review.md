@@ -1,7 +1,7 @@
 # Review record — M5 SecOC (closed as M5B)
 
 **Opened:** 2026-10-20 · **Status:** three verdicts given 2026-10-30, all **pass with findings**.
-Open before the tag: M5-R8, plus F-014. M5-R5 (F-015) and M5-R6 closed 2026-10-30.
+Open before the tag: F-014 only. M5-R5 (F-015), M5-R6 and M5-R8 closed 2026-10-30.
 **Reviewers:** owner review, with Claude as adversarial reviewer. This is a solo project, so this
 is not an independent review (plan.md rule 11, check 9).
 **Inputs:** `docs/requirements/secoc.md`, `ADR-0021`, `ADR-0024` (when written),
@@ -112,7 +112,11 @@ rejected. D3's "a wrap is ~1.8 h away at 100 ms" is also stale. The bus runs `0x
 so a wrap is **~22 min** away. **Fix:** "the first counter in an epoch is 1", and the rate.
 
 #### M5-R8: REQ-SECOC-005, 009 and 011 have no silicon evidence and no deferral
-**Status:** open (W45). **Blocks the tag** (rule 11 check 5).
+**Status:** **closed 2026-10-30.** 005 is cited from the 2026-10-24 captures (Node B sends
+`0x2F0` and `0x200` each starting at counter 1 in the same epoch, and A accepts both). 011 has
+build-artifact evidence (`docs/bench/2026-10-30/key_residency.md`, `host_tools/check_key_residency.py`).
+009 is **deferred**, host-verified only, with the reason in `secoc.md`: no capture reached a wrap.
+The report shows REQ-SECOC 13/13 with no gaps.
 
 - **005** (per-ID counter): likely already in `docs/bench/2026-10-24/bus_round2.txt` (`0x120` and
   `0x121` counters stepping separately). Check it and cite it.
