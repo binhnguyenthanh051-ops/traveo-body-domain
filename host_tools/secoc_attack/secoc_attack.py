@@ -21,6 +21,11 @@ Replay across a reset (M5B, G2): `replay --save FILE` captures a genuine 0x121 a
 writes it to FILE without sending it. Reset Node B, wait for the resync, then
 `replay --load FILE` sends that frame -> REJECT_FRESHNESS (epoch below the floor).
 
+`--id` picks what --save captures (F-014 bench): 0x121 (default, Node B refuses),
+0x200 telemetry (Node A refuses), 0x1F0 / 0x2F0 boot syncs. A sync is sent once
+per boot, so give --save a longer `--timeout` and press the sender's reset:
+    replay --save docs/bench/<date>/old_0x1F0.json --id 0x1F0 --timeout 20
+
 Node A only ever sends 0x121 (courtesy light), so the captured genuine frame is a
 0x121; the forgeries target 0x120, the door. Reuses can_echo_probe's config.json.
 """
@@ -44,6 +49,15 @@ TRAILER_LEN = 12           # freshness (4) + truncated MAC (8)
 DOOR_UNLOCK = 0x01
 
 CASES = ("forged", "forged-mac", "bitflip", "replay", "crossid")
+
+# IDs that replay --save/--load handle: id -> (authentic PDU length, the node that
+# must refuse a replay). PDU lengths are body_msg_pdu_len() in shared/messages.
+REPLAY_IDS = {
+    0x121: (1, "Node B"),   # light command, A -> B
+    0x200: (3, "Node A"),   # telemetry, B -> A
+    0x1F0: (2, "Node B"),   # gateway boot sync, A -> B (F-014)
+    0x2F0: (2, "Node A"),   # actuator boot sync, B -> A (D5)
+}
 
 
 # ---- pure frame crafting (unit-tested, no bus) ------------------------------
@@ -80,17 +94,19 @@ def epoch_of(genuine: bytes, pdu_len: int = LIGHT_PDU_LEN) -> int:
 def frame_record(arb_id: int, data: bytes, captured_at: str) -> dict:
     """A saved frame, readable in the bench folder. epoch/counter are for the
     reader; only id + data are sent back."""
+    pdu_len = REPLAY_IDS[arb_id][0]
     return {"id": f"0x{arb_id:03X}", "data": data.hex(),
-            "epoch": epoch_of(data), "counter": counter_of(data),
+            "epoch": epoch_of(data, pdu_len), "counter": counter_of(data, pdu_len),
             "captured_at": captured_at}
 
 
 def frame_from_record(rec: dict) -> tuple[int, bytes]:
-    """(id, data) from a saved record; refuses anything that isn't a secured 0x121."""
+    """(id, data) from a saved record; refuses an ID replay doesn't handle, or a
+    frame too short to be secured."""
     arb_id = int(rec["id"], 16)
     data = bytes.fromhex(rec["data"])
-    if arb_id != ID_LIGHT or len(data) < LIGHT_PDU_LEN + TRAILER_LEN:
-        raise ValueError(f"not a secured 0x121 frame: id {rec['id']}, {len(data)} B")
+    if arb_id not in REPLAY_IDS or len(data) < REPLAY_IDS[arb_id][0] + TRAILER_LEN:
+        raise ValueError(f"not a secured frame on a replay ID: id {rec['id']}, {len(data)} B")
     return arb_id, data
 
 
@@ -128,26 +144,31 @@ def send(bus: can.BusABC, arb_id: int, data: bytes, label: str) -> None:
     print(f"  sent {arb_id:03X} len={len(data):2d}  {data.hex(' ')}   <- {label}")
 
 
-def save_genuine(bus: can.BusABC, path: pathlib.Path) -> bool:
-    """replay --save: capture one genuine 0x121 and write it to path. Sends nothing."""
-    genuine = capture(bus, ID_LIGHT)
+def save_genuine(bus: can.BusABC, path: pathlib.Path, arb_id: int = ID_LIGHT,
+                 timeout: float = 2.0) -> bool:
+    """replay --save: capture one genuine frame on arb_id and write it to path.
+    Sends nothing."""
+    genuine = capture(bus, arb_id, timeout)
     if genuine is None:
-        print("  no genuine 0x121 seen in 2 s -- is Node A on the bus and running?")
+        print(f"  no genuine 0x{arb_id:03X} seen in {timeout:g} s -- is its sender on the bus"
+              " (a boot sync needs a reset)?")
         return False
     stamp = datetime.datetime.now().isoformat(timespec="seconds")
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(frame_record(ID_LIGHT, genuine, stamp), indent=2) + "\n",
-                    encoding="utf-8")
-    print(f"  saved genuine 0x121 (epoch {epoch_of(genuine)} ctr {counter_of(genuine)})"
-          f" -> {path}")
+    rec = frame_record(arb_id, genuine, stamp)
+    path.write_text(json.dumps(rec, indent=2) + "\n", encoding="utf-8")
+    print(f"  saved genuine 0x{arb_id:03X} (epoch {rec['epoch']} ctr {rec['counter']}) -> {path}")
     return True
 
 
 def replay_saved(bus: can.BusABC, path: pathlib.Path) -> bool:
-    """replay --load: send a frame saved earlier, e.g. before a Node B reset."""
-    arb_id, data = frame_from_record(json.loads(path.read_text(encoding="utf-8")))
+    """replay --load: send a frame saved earlier, e.g. before a reset."""
+    rec = json.loads(path.read_text(encoding="utf-8"))
+    arb_id, data = frame_from_record(rec)
+    pdu_len, refuser = REPLAY_IDS[arb_id]
     send(bus, arb_id, data,
-         f"expect REJECT_FRESHNESS 0x121 (saved epoch {epoch_of(data)} ctr {counter_of(data)})")
+         f"expect REJECT_FRESHNESS 0x{arb_id:03X} on {refuser} (saved epoch "
+         f"{epoch_of(data, pdu_len)} ctr {counter_of(data, pdu_len)})")
     return True
 
 
@@ -187,9 +208,18 @@ def main() -> int:
                       help="replay only: capture a genuine 0x121 to FILE, send nothing")
     keep.add_argument("--load", type=pathlib.Path, metavar="FILE",
                       help="replay only: send the frame saved in FILE")
+    ap.add_argument("--id", type=lambda s: int(s, 16), default=ID_LIGHT,
+                    help="with --save: the CAN ID to capture, hex (0x121 0x200 0x1F0 0x2F0)")
+    ap.add_argument("--timeout", type=float, default=2.0,
+                    help="with --save: seconds to wait for the frame (default 2)")
     args = ap.parse_args()
     if (args.save or args.load) and args.case != "replay":
         ap.error("--save/--load only go with the 'replay' case")
+    if args.id not in REPLAY_IDS:
+        ap.error(f"--id 0x{args.id:03X}: replay handles " +
+                 ", ".join(f"0x{i:03X}" for i in REPLAY_IDS))
+    if (args.id != ID_LIGHT or args.timeout != 2.0) and args.save is None:
+        ap.error("--id/--timeout only go with --save (--load takes the ID from the file)")
     if args.load is not None:
         try:
             frame_from_record(json.loads(args.load.read_text(encoding="utf-8")))
@@ -206,7 +236,7 @@ def main() -> int:
     try:
         if args.save is not None:
             print("\n[replay --save]")
-            ok = save_genuine(bus, args.save)
+            ok = save_genuine(bus, args.save, args.id, args.timeout)
         elif args.load is not None:
             print("\n[replay --load]")
             ok = replay_saved(bus, args.load)
@@ -217,7 +247,7 @@ def main() -> int:
     finally:
         bus.shutdown()
     if args.save is not None:
-        print("\nNow reset Node B, wait for the resync, then run: replay --load", args.save)
+        print("\nNow reset the receiver, wait for the resync, then run: replay --load", args.save)
         return 0 if ok else 2
     print("\nNow check Node B's log: one REJECT per case, no ACCEPT on 0x120, door still locked.")
     return 0 if ok else 2

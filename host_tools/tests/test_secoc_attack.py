@@ -42,7 +42,7 @@ def test_frame_record_round_trips_and_names_the_freshness():
 
 
 def test_frame_from_record_refuses_another_id():
-    rec = atk.frame_record(0x120, GENUINE, "t")
+    rec = {"id": "0x120", "data": GENUINE.hex()}   # the door: never a replay target
     try:
         atk.frame_from_record(rec)
     except ValueError:
@@ -87,6 +87,43 @@ def test_save_then_load_sends_the_saved_bytes_unchanged(tmp_path):
     assert len(loader.sent) == 1
     assert loader.sent[0].arbitration_id == 0x121
     assert bytes(loader.sent[0].data) == GENUINE
+
+
+def _secured(pdu: bytes, epoch: int, ctr: int) -> bytes:
+    """PDU || epoch LE || ctr LE || 8 B MAC, padded to 16 B like the bus does."""
+    return (pdu + epoch.to_bytes(2, "little") + ctr.to_bytes(2, "little")
+            + bytes(range(8))).ljust(16, b"\x00")
+
+
+def test_telemetry_save_then_load_reads_freshness_after_a_3_byte_pdu(tmp_path):
+    import can
+    telem = _secured(b"\x00\x64\x01", epoch=7, ctr=4242)
+    path = tmp_path / "old_0x200.json"
+    saver = _FakeBus([can.Message(arbitration_id=0x200, is_extended_id=False,
+                                  is_fd=True, data=telem)])
+    assert atk.save_genuine(saver, path, arb_id=0x200)
+    rec = __import__("json").loads(path.read_text(encoding="utf-8"))
+    assert (rec["id"], rec["epoch"], rec["counter"]) == ("0x200", 7, 4242)
+
+    loader = _FakeBus([])
+    assert atk.replay_saved(loader, path)
+    assert loader.sent[0].arbitration_id == 0x200
+    assert bytes(loader.sent[0].data) == telem
+
+
+def test_save_skips_other_ids_until_the_requested_one():
+    import can
+    sync = _secured(b"\x05\x00", epoch=5, ctr=1)
+    bus = _FakeBus([can.Message(arbitration_id=0x121, data=GENUINE),
+                    can.Message(arbitration_id=0x1F0, data=sync)])
+    assert atk.capture(bus, 0x1F0) == sync
+
+
+def test_gateway_sync_record_round_trips():
+    sync = _secured(b"\x05\x00", epoch=5, ctr=1)
+    rec = atk.frame_record(0x1F0, sync, "t")
+    assert (rec["epoch"], rec["counter"]) == (5, 1)
+    assert atk.frame_from_record(rec) == (0x1F0, sync)
 
 
 def test_save_reports_failure_when_no_genuine_frame(tmp_path, monkeypatch):
