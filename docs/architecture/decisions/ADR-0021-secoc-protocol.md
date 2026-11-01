@@ -425,7 +425,12 @@ checklist (re-dated to W45), with three A-only resets and a replayed `0x1F0` ref
 `MSG_ID_GW_FRESHNESS_SYNC` in `shared/messages`, Node A sends it once from `can_task` at startup,
 Node B verifies it and calls `secoc_rx_sync_adopt()`. Host tests:
 `test_gateway_reboot_deadlocks_telemetry_then_resyncs` and `test_replayed_gateway_sync_is_refused`
-(`test_secoc_resync`). Both images build. Silicon evidence still to come.
+(`test_secoc_resync`). Both images build.
+*On silicon (2026-11-01):* three Node A-only resets. Each time the `0x1F0` sync was on the bus,
+Node B raised its telemetry epoch 28 ms later, and Node A accepted telemetry 35–36 ms after its
+app started, with 0, 0 and 1 rejects (Sat 24: 460 in a row and no recovery). A `0x1F0` captured at
+one A boot and replayed after the next was refused, and B's epoch did not move
+(`docs/bench/2026-11-01/f014_gateway_reboot.md`).
 
 **Addendum — D4/D8: a receiver persists a new epoch before adopting it (2026-10-30, F-015 / M5-R5).**
 The M5 review found that `secoc_rx_accept()` adopted a newer epoch in RAM and then ignored the

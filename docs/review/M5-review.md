@@ -1,7 +1,9 @@
 # Review record — M5 SecOC (closed as M5B)
 
 **Opened:** 2026-10-20 · **Status:** three verdicts given 2026-10-30, all **pass with findings**.
-Open before the tag: F-014 only. M5-R5 (F-015), M5-R6 and M5-R8 closed 2026-10-30.
+Every finding is closed: M5-R5 (F-015), M5-R6 and M5-R8 on 2026-10-30, F-014 on silicon
+2026-11-01 (`docs/bench/2026-11-01/f014_gateway_reboot.md`). Left for the tag: the M5B post draft
+reviewed against the report (DoD check 8), the PR to `main` with CI green.
 **Reviewers:** owner review, with Claude as adversarial reviewer. This is a solo project, so this
 is not an independent review (plan.md rule 11, check 9).
 **Inputs:** `docs/requirements/secoc.md`, `ADR-0021`, `ADR-0024` (when written),
