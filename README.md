@@ -47,14 +47,16 @@ the core-to-core mailbox on Node B has to live in an MPU non-cacheable region
 | **M3** reprogramming | UDS over ISO-TP on CAN FD: a new app image is downloaded into the FBL | tag [`m3-reprogramming`](https://github.com/binhnguyenthanh051-ops/traveo-body-domain/tree/m3-reprogramming) · [ADR-0012](docs/architecture/decisions/ADR-0012-uds-diagnostic-stack.md), [ADR-0013](docs/architecture/decisions/ADR-0013-isotp-transport.md) |
 | **M4** secure boot | the FBL refuses an app whose ECDSA signature fails; verification runs on the CM0+ | tag [`m4-secure-boot`](https://github.com/binhnguyenthanh051-ops/traveo-body-domain/tree/m4-secure-boot) · [post](https://medium.com/@binh.nguyenthanh051/m4-secure-boot-on-a-dual-core-mcu-8fff4f2015b3) · [ADR-0016](docs/architecture/decisions/ADR-0016-app-signature-verification.md), [ADR-0017](docs/architecture/decisions/ADR-0017-crypto-service-m0plus.md) |
 | **M5** SecOC | every command and telemetry frame carries a CMAC + freshness; forged, bit-flipped, replayed and cross-ID frames are each refused, and the door never unlocks | tag [`m5-secoc`](https://github.com/binhnguyenthanh051-ops/traveo-body-domain/tree/m5-secoc) · [post](https://medium.com/@binh.nguyenthanh051/m5-signing-every-can-frame-between-two-mcus-a9d6fa9ca94f) · [`docs/bench/2026-10-03/`](docs/bench/2026-10-03/) |
-| **M5B** persistent freshness | epochs survive power cycles; an old frame replayed after a Node B reset is refused; resync within 20 ms | on `main`, not tagged yet · [`g2_g3_reset_replay.md`](docs/bench/2026-10-24/g2_g3_reset_replay.md), [`epochs_power_cycle.md`](docs/bench/2026-10-24/epochs_power_cycle.md) · [traceability report](docs/traceability.md) |
+| **M5B** persistent freshness | epochs survive power cycles; an old frame replayed after a reset of **either** node is refused; each node resyncs the other after a reboot (telemetry back within 36 ms) | on `main`, tag pending · [`g2_g3_reset_replay.md`](docs/bench/2026-10-24/g2_g3_reset_replay.md), [`epochs_power_cycle.md`](docs/bench/2026-10-24/epochs_power_cycle.md), [`f014_gateway_reboot.md`](docs/bench/2026-11-01/f014_gateway_reboot.md) · [traceability report](docs/traceability.md) |
 
 **Honest gaps.** The capture folders in `docs/bench/` start in September 2026, so for M1–M4 the
-evidence is the tagged code and the post; the bench runs then were not archived. M5B is not
-tagged: the review ([`docs/review/M5-review.md`](docs/review/M5-review.md)) found a telemetry
-deadlock after a Node A reboot (F-014) and a missed save-failure path (F-015). Both are open in
-[`docs/project/findings.md`](docs/project/findings.md), and the report shows 3 SecOC requirements
-without silicon evidence yet.
+evidence is the tagged code and the post; the bench runs then were not archived. The M5B review
+([`docs/review/M5-review.md`](docs/review/M5-review.md)) found a telemetry deadlock after a Node A
+reboot (F-014) and a missed save-failure path (F-015). Both are fixed, F-014 on silicon, but the
+failed-save path is host-tested only, since the bench can't cause a flash fault on demand. One
+SecOC requirement, counter rollover, is deferred to host-only for the same kind of reason: no
+capture ran long enough to wrap a counter. Open findings are in
+[`docs/project/findings.md`](docs/project/findings.md).
 
 ## Where to read first
 
