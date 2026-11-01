@@ -84,19 +84,19 @@ About 10–12 hours a week; ~20 in a planned burst week (rule 5).
 | **W42** | Oct 12–18 | Publish **M5a post** (restart week, ~8 h) | *(none)* | **M5a post** ✓ |
 | **W43** | Oct 19–25 | **M5B — SecOC closure** *(burst ~14 h)*: persistent freshness store (REQ-SECOC-006/007/008), F-010, traceability report, M5 review record (rule 11) | **Sat:** replay-after-reset refused, Stage 7 resync, Stages 5–6 regression | **M5B merged to `main`** (report + review record) |
 | **W44** | Oct 26–Nov 1 | M5B post draft reviewed → **tag `m5b-secoc` + GitHub Release** (DoD done) · **README v1** "start here" · F-012/F-013 · F-002, F-005, F-007, F-009 | **Sat:** triage F-006/F-008 | **✅ Ready to apply** (README v1 on `main`) |
-| **W45** | Nov 2–8 | README v1 merged (W44 slip) · **M5B post** (the reset-then-replay story, F-014/F-015 from the review) → **tag `m5b-secoc` + GitHub Release** (DoD done) · F-006 | — | **M5B post + tag** |
-| **W46** | Nov 9–15 | Draft + publish the **CM7 bring-up post** (cache/non-cacheable mailbox) · series index post · F-012/F-013, F-002/F-007/F-009 | — | **CM7 post** |
-| **W47** | Nov 16–22 | **M5 demo post** from the W40 + W43 + W44 captures (forgery, replay, cross-ID, replay-after-reset, gateway reboot) | — | **M5 demo post** |
-| **W48–W49** | Nov 23–Dec 6 | Interview prep: "10 decisions I can defend" cheat-sheet from the ADRs, mock design questions. M6-lite starts early (see below). Planned week by week at the retros. | — | — |
+| **W45** | Nov 2–8 | **M5B post** → **tag `m5b-secoc` + GitHub Release** (DoD done, Mon) · findings sweep (F-002/005/006/007/009/012/013) · **CM7 bring-up post** (cache/non-cacheable mailbox) + series index post · *stretch:* M5 demo post draft | — | **M5B tag + CM7 post** |
+| **W46** | Nov 9–15 | **M5 demo post** from the W40 + W43 + W44 captures (forgery, replay, cross-ID, replay-after-reset, gateway reboot) | — | **M5 demo post** |
+| **W47–W49** | Nov 16–Dec 6 | Interview prep: "10 decisions I can defend" cheat-sheet from the ADRs, mock design questions. M6-lite starts early (see below). Planned week by week at the retros. | — | — |
 
 **Shifted 2026-10-18 (W42 retro), twice:** W41 was cancelled, which pushed everything back one week.
 Then the requirements audit found REQ-SECOC-006/007/008 not satisfied on target, so W43 became
 **M5B** (close SecOC under the new rule 11) and README v1 moved to W44. The ready-to-apply gate
 slips from Oct 25 to **Nov 1**, and interview prep has three weeks, not five.
 
-**Shifted 2026-11-01 (W44 retro):** a family week took Mon 26–Thu 29. The M5B fixes and evidence
-still landed, but README v1 and the M5B post slipped. W45 is now the M5B post + tag, and the CM7 post
-and the M5 demo post each move one week later. Interview prep has **two** weeks (W48–W49), not three.
+**Re-scoped 2026-11-01 (W44 retro):** a family week took Mon 26–Thu 29, yet README v1 landed
+(**ready to apply** on Nov 1) and every M5B finding closed. Only the M5B post + tag slipped. The
+owner judged that a one-day job, so W45 carries it **and** the CM7 post. The calendar stays as
+planned, with interview prep keeping its three weeks (W47–W49).
 
 **Buffer logic:** M5 closed in W40, so the W41–W42 reserve Saturdays weren't needed. The M6 design
 plan planned for W41 was never written (there is no `docs/briefs/M6-brief.md` yet).
