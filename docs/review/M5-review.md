@@ -2,8 +2,10 @@
 
 **Opened:** 2026-10-20 · **Status:** three verdicts given 2026-10-30, all **pass with findings**.
 Every finding is closed: M5-R5 (F-015), M5-R6 and M5-R8 on 2026-10-30, F-014 on silicon
-2026-11-01 (`docs/bench/2026-11-01/f014_gateway_reboot.md`). Left for the tag: the M5B post draft
-reviewed against the report (DoD check 8), the PR to `main` with CI green.
+2026-11-01 (`docs/bench/2026-11-01/f014_gateway_reboot.md`). **Closed 2026-11-02:** the M5 post
+was updated in place for M5B rather than a new post, every new claim reviewed against the bench
+captures and the report (DoD check 8), merged to `main` with CI green (`380af6c`), tagged
+`m5b-secoc` with a GitHub Release carrying the report.
 **Reviewers:** owner review, with Claude as adversarial reviewer. This is a solo project, so this
 is not an independent review (plan.md rule 11, check 9).
 **Inputs:** `docs/requirements/secoc.md`, `ADR-0021`, `ADR-0024` (when written),
