@@ -10,6 +10,8 @@ M4 checks **which code runs**. M5 checks **which commands that code obeys**. Eve
 
 The plan is simple: the problem, the solution, how it's built, and the test. The test has a twist: all host tests passed, and the first real bus rejected every frame.
 
+*Updated November 2026: the counter now survives a reboot, and that fix turned up a new bug. The story is in the update at the end.*
+
 ---
 
 ## 1. The problem
@@ -118,11 +120,13 @@ flowchart TD
 - The **MAC is checked first**. A fake frame can never move the counter, so an attacker can't block real frames with junk.
 - Each ID has its **own counter**, and all IDs share one **epoch** per boot. One flash write per boot, no matter how many IDs.
 
-Honest — the counter lives in RAM, so replay protection resets when Node B reboots. M6 moves it to flash.
+Each node's epoch, and the newest epoch it has accepted from the other node, are saved in flash. So replay protection survives a reboot. The first version kept them in RAM; the update at the end shows what that cost.
 
 ### Where the key lives
 
 The key is on the **M0+**, the same security core M4 uses to check the app. The app core never sees the key. It can only ask the M0+: "give me a MAC over these bytes". That's the opcode M4 kept free for M5.
+
+I checked that in the built images: the key's 16 bytes are in both M0+ images, and in none of the app or bootloader images.
 
 Honest — both nodes share one key, built into the M0+ image. Real cars use a key per ECU.
 
@@ -138,16 +142,14 @@ flowchart TB
     MSG --> SEC["★ SecOC<br/>secure · verify · freshness"]
     SEC --> CAN["CAN FD driver"] --> BUS[("bus")]
     SEC -. "MAC please" .-> M0["M0+ crypto service<br/>★ AES-CMAC + key"]
-    SEC -. "save the epoch" .-> ST["freshness store<br/>RAM now · flash in M6"]
+    SEC -. "save the epoch" .-> ST["freshness store<br/>work flash · two slots"]
     classDef pure fill:#dbeafe,stroke:#3b82f6,color:#0b1f44;
     classDef tgt fill:#fff7ed,stroke:#f59e0b,color:#3a2a08;
-    classDef next fill:#ede9fe,stroke:#8b5cf6,color:#1e1040;
     class SEC,MSG pure;
-    class APP,CAN,BUS,M0 tgt;
-    class ST next;
+    class APP,CAN,BUS,M0,ST tgt;
 ```
 
-*Blue runs on a PC too. Amber is board code. Purple changes in M6.*
+*Blue runs on a PC too. Amber is board code.*
 
 SecOC knows nothing about the CAN driver, the IPC mailbox or the flash. It talks to them through a few small interfaces, and each node plugs in its own version. So the **same SecOC code** runs on Node A (Cortex-M4), Node B (Cortex-M7) and my PC for the unit tests.
 
@@ -247,6 +249,7 @@ Secured traffic    one frame each way every 20 ms, zero rejects
 Overhead           12 bytes per frame
 MAC on the stack   556 bytes — my CAN task stack overflowed on the first MAC
 MAC round trip     not measured yet
+Flash save         once per boot, never per frame (time not measured yet)
 ```
 
 Adding security changed the stack budget. FreeRTOS caught the overflow on the first run, and the stacks went from 768 B to 1.5 KB.
@@ -275,7 +278,61 @@ What it looks like on Node B (one line per attack):
 [ 8733 ms] LOG_EVT_SECOC_REJECT_MAC        can_id=0x120 reject_reason=0x1   ← masquerade
 ```
 
-The failure demo — the best part: reset Node B, then replay an old frame. It should be **accepted**, because the counter lives in RAM and starts again after a reset. That's exactly what M6 fixes.
+The reset demo — the best part. Save a real light command, reset Node B, then send the saved frame:
+
+```
+python host_tools/secoc_attack/secoc_attack.py replay --save old.json
+python host_tools/secoc_attack/secoc_attack.py replay --load old.json
+```
+
+In the first version this frame was **accepted**, because the counter lived in RAM. Now Node B remembers the last epoch it accepted, only takes a newer one after the reset, and refuses the old frame:
+
+```
+[    2065 app] LOG_EVT_SECOC_REJECT_FRESHNESS can_id=0x121 rx_ctr=965
+```
+
+---
+
+## Update, November 2026 — the counter survives a reboot
+
+The first version of this post ended on a hole: reset Node B and an old frame works again. I closed it, and the fix found a bug of its own.
+
+### The fix: two slots in flash
+
+The epochs now live in work flash, in two slots. A save writes the slot that isn't in use, and the "valid" mark goes in last. If the power cuts mid-save, the old slot is still good, and at worst one epoch is skipped.
+
+On the bench: 5 real power cycles (USB pulled), and every epoch went up by exactly one. None repeated. A replay after a Node B reset is refused (the log line above).
+
+Honest — a power cut *during* a save is only tested on the PC. The window is a few ms per boot, too short to hit by hand.
+
+### The new bug: the gateway reboots alone
+
+Node A is a receiver too: it checks Node B's telemetry. With a saved counter, a rebooted Node A wants a newer epoch than the one Node B is still sending. So it rejected **460 telemetry frames in a row** and never recovered until Node B happened to reboot.
+
+```mermaid
+flowchart LR
+    subgraph OLD["Before"]
+        direction TB
+        O1["Node A reboots<br/>wants a newer epoch"] --> O2["Node B still sends<br/>the old epoch"] --> O3(["460 rejects<br/>no telemetry"])
+    end
+    subgraph NEW["After"]
+        direction TB
+        N1["Node A reboots<br/>sends a signed sync"] --> N2["Node B jumps<br/>to the new epoch"] --> N3(["telemetry back<br/>in ~36 ms"])
+    end
+    OLD ~~~ NEW
+    classDef bad fill:#fee2e2,stroke:#ef4444,color:#3a0a0a;
+    classDef ok fill:#dcfce7,stroke:#22c55e,color:#052e14;
+    classDef tgt fill:#fff7ed,stroke:#f59e0b,color:#3a2a08;
+    class O3 bad;
+    class N3 ok;
+    class O1,O2,N1,N2 tgt;
+```
+
+*Node B already sent this sync when it rebooted. Node A now does the same.*
+
+The RAM version hid this, because a freshly booted receiver accepted any epoch. The fix: at boot, Node A sends a signed sync frame with the epoch it now expects, and Node B moves past it. After 3 Node A resets: 0, 0 and 1 rejects, down from 460. An old sync frame replayed after the next reset is refused.
+
+A code review found one more: if saving a new epoch failed, the receiver ignored the error and accepted the frame anyway. After the next reboot, old frames from that epoch would replay. Now a failed save drops the frame. That one is tested on the PC only, because I can't make the flash fail on demand.
 
 ---
 
@@ -287,15 +344,15 @@ Toolchain  · ModusToolbox, Python
 RTOS       · FreeRTOS (app) · bare-metal (CM0+)
 Crypto     · AES-128-CMAC via the CRYPTO block, Cy_Crypto_Core_V2_Cmac
 Bus        · CAN FD 500 kbit/s / 2 Mbit/s · Vector VN1611
-Repo       · tag m5-secoc
-Written    · October 2026
+Repo       · tag m5b-secoc
+Written    · October 2026 · updated November 2026
 ```
 
 ## Follow along
 
 💻 GitHub — Traveo II Body Domain
 
-🔗 https://github.com/binhnguyenthanh051-ops/traveo-body-domain (tag m5-secoc)
+🔗 https://github.com/binhnguyenthanh051-ops/traveo-body-domain (tag m5b-secoc)
 
 💻 LinkedIn
 
@@ -304,4 +361,4 @@ Written    · October 2026
 ---
 
 ## Figures list
-- `img/m5/hero.png` (from `hero.svg`) and `img/m5/fig-01…09.png`, rendered by `host_tools/blog/render_diagrams.py`.
+- `img/m5/hero.png` (from `hero.svg`) and `img/m5/fig-01…10.png`, rendered by `host_tools/blog/render_diagrams.py`.
