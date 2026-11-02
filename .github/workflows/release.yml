@@ -1,0 +1,86 @@
+name: release
+
+# The "Release" button: Actions -> release -> Run workflow (on main).
+# Re-runs the full host CI, gates traceability for the milestone's area, then
+# creates the annotated tag and the GitHub Release with the report attached.
+# Nothing is tagged unless every check passes.
+#
+# Before you click (CI can't check these, DoD rule 11):
+#   - silicon evidence in docs/bench/, the post reviewed, the review record closed
+#   - release notes committed on main as docs/releases/<tag>.md
+# Firmware is not built here: ModusToolbox builds stay manual.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to create, e.g. m6-diag"
+        required: true
+        type: string
+      title:
+        description: "Release title, e.g. M6 — UDS diagnostics"
+        required: true
+        type: string
+      gate:
+        description: "Requirement area that must be gap-free, e.g. REQ-SECOC"
+        required: true
+        type: string
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    needs: ci
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # push the tag, create the Release
+    env:
+      TAG: ${{ inputs.tag }}
+      TITLE: ${{ inputs.title }}
+      GATE: ${{ inputs.gate }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Only from main
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "::error::Run the release workflow on main (was $GITHUB_REF)"
+          exit 1
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # all tags, for the "already exists" check
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Check the inputs
+        run: |
+          if ! [[ "$TAG" =~ ^m[0-9]+[a-z]?-[a-z0-9-]+$ ]]; then
+            echo "::error::Tag '$TAG' doesn't match the scheme (m5-secoc, m5b-secoc, ...)"; exit 1
+          fi
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "::error::Tag $TAG already exists"; exit 1
+          fi
+          if [ ! -f "docs/releases/$TAG.md" ]; then
+            echo "::error::Release notes missing: commit docs/releases/$TAG.md on main first"; exit 1
+          fi
+          # trace_report passes on an unknown prefix, so check the area exists.
+          if ! grep -q "^| $GATE |" docs/traceability.md; then
+            echo "::error::Area $GATE isn't in the traceability report summary"; exit 1
+          fi
+
+      - name: Traceability gate (DoD check 6)
+        run: python host_tools/trace_report.py --check --gate "$GATE"
+
+      - name: Create the tag
+        run: |
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR_ID}+${GITHUB_ACTOR}@users.noreply.github.com"
+          git tag -a "$TAG" -m "$TITLE"
+          git push origin "refs/tags/$TAG"
+
+      - name: Create the GitHub Release
+        run: |
+          gh release create "$TAG" docs/traceability.md \
+            --verify-tag --title "$TITLE" --notes-file "docs/releases/$TAG.md"

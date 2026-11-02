@@ -6,6 +6,7 @@ on:
   push:
     branches: [ main ]
   pull_request:
+  workflow_call:   # release.yml re-runs this exact gate before it tags
 
 jobs:
   host-build-test:
@@ -46,6 +47,11 @@ jobs:
       # name for the right ID, i.e. a confidently wrong test result. Gate it.
       - name: Verify generated log event tables are current
         run: python host_tools/gen_log_events.py --check
+
+      # DoD check 6: the committed report must match the code, and every area that
+      # has been tagged must stay gap-free. Add a --gate per area as it is tagged.
+      - name: Verify traceability report is current (tagged areas gap-free)
+        run: python host_tools/trace_report.py --check --gate REQ-SECOC
 
       - name: Run Python tests (if any)
         run: |
