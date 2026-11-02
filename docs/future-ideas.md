@@ -58,6 +58,32 @@ ISR stack cost (exception frame 8 / 26 words with FPU, nesting by priority).
 **Rule:** clean-room. Design from public sources (Arm docs, objdump/ELF), not from
 memory of any employer's tool.
 
+## Blog post: how CI/CD works on a solo embedded project
+**Status:** idea (2026-11-02) — a post, not code. Slot it in at a Sunday retro.
+
+**The idea:** one post on the gates between "I wrote it" and "it's tagged", and which DoD checks
+(plan.md rule 11) a machine can enforce versus which stay on the owner.
+
+**Material, all already in the repo:**
+- **Local gate:** the Claude Code Stop hook runs `make test && make lint` whenever a turn changes
+  C, headers, Makefiles or tests — the AI can't hand back red code.
+- **PR gate:** `.github/workflows/ci.yml` — host Unity tests, cppcheck (MISRA-oriented), Python
+  tools, `gen_log_events.py --check` (stale generated table = confidently wrong log names), and
+  `trace_report.py --check --gate` (stale report or a gap in a tagged area fails the PR). A
+  `main` ruleset (set up 2026-11-02) greys out Merge until all three jobs pass.
+- **Release button:** `.github/workflows/release.yml` — `workflow_dispatch` on `main`, re-runs
+  `ci.yml` via `workflow_call`, checks the tag scheme / tag not taken / notes committed at
+  `docs/releases/<tag>.md` / gate area exists, then tags and creates the Release with the
+  traceability report attached. Nothing is tagged unless every check passes.
+- **What stays manual, and why:** firmware builds (ModusToolbox isn't on hosted runners),
+  flashing, silicon evidence in `docs/bench/`, the reviewed post, the review record (DoD checks
+  5, 8, 9). Link to the parked HIL CI idea below as the way to automate check 5.
+
+**Story beats:** the gotcha found while writing it — `trace_report.py --gate` passes silently on
+an unknown prefix, so a typo would have let a release through; the release workflow checks the
+area exists. Tradeoff to explain: release button (checks before the tag exists, bot-created tag)
+vs tag-push trigger (your own tag, but a failed check leaves a public bad tag).
+
 ## Other parked ideas
 - Body High (Cortex-M7) board — unlocks cache + symmetric multicore hands-on (already noted in
   the roadmap's open items).
