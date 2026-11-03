@@ -26,7 +26,7 @@
 #                                             # anything after the project goes to make;
 #                                             # 'all' = both projects, merged hex rebuilt
 #
-# Two kits plugged in (F-012): set NODE_B_PROBE to Node B's KitProg3 serial so
+# Two kits plugged in (F-012): set NODE_B_PROBE (in bench.env) to Node B's KitProg3 serial so
 # `program` flashes that probe only (MTB_PROBE_SERIAL -> `adapter serial`). List
 # the serials with
 #   /c/Infineon/Tools/ModusToolboxProgtools-1.8/fw-loader/bin/fw-loader.exe --device-list
@@ -37,6 +37,13 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
+
+# Local bench settings (probe serials, signing key): bench.env at the repo root,
+# gitignored; template bench.env.example. Values already in the environment win.
+if [ -f "$ROOT/bench.env" ]; then
+    . "$ROOT/bench.env"
+fi
+
 APP="$ROOT/node_b_actuator"
 
 ACTION="${1:-build}"
@@ -66,7 +73,7 @@ case "$ACTION" in
             EXTRA+=(MTB_PROBE_SERIAL="$NODE_B_PROBE")
             echo "==> flashing on probe $NODE_B_PROBE"
         else
-            echo "WARNING: NODE_B_PROBE unset -- flashing the FIRST probe found (F-012)." >&2
+            echo "WARNING: NODE_B_PROBE unset -- flashing the FIRST probe found (F-012); set it in bench.env." >&2
         fi
         ;;
 esac

@@ -14,7 +14,7 @@
 #   ./zz_build_gateway_app.sh                    # steps 1-4
 #   ./zz_build_gateway_app.sh program            # steps 1-5
 #   ./zz_build_gateway_app.sh build VAR=value    # anything after the action goes to make
-#   FBL_SIGN_KEY=ec_p256_dev_private.pem ./zz_build_gateway_app.sh program
+#   FBL_SIGN_KEY=other.pem ./zz_build_gateway_app.sh program   # override bench.env
 #
 # `program` never flashes MTB's raw gateway_app.hex: the FBL rejects it (no
 # header, no stamp/signature). It flashes the image from step 3 with
@@ -22,7 +22,7 @@
 # its `program ... verify reset`. The FBL image is flashed separately by
 # zz_build_gateway_fbl.sh.
 #
-# Two kits plugged in (F-012): set NODE_A_PROBE to Node A's KitProg3 serial and
+# Two kits plugged in (F-012): set NODE_A_PROBE (in bench.env) to Node A's KitProg3 serial and
 # the flash goes to that probe only (MTB_PROBE_SERIAL -> `adapter serial`).
 # List the serials with
 #   /c/Infineon/Tools/ModusToolboxProgtools-1.8/fw-loader/bin/fw-loader.exe --device-list
@@ -38,6 +38,12 @@ HEADER_OFFSET=0x100          # FBL_APP_HEADER_OFFSET
 OBJCOPY=arm-none-eabi-objcopy
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
+
+# Local bench settings (probe serials, signing key): bench.env at the repo root,
+# gitignored; template bench.env.example. Values already in the environment win.
+if [ -f "$ROOT/bench.env" ]; then
+    . "$ROOT/bench.env"
+fi
 
 # Resolve a relative FBL_SIGN_KEY against the repo root BEFORE cd-ing into the
 # app dir (a bare "ec_p256_dev_private.pem" would otherwise resolve against
@@ -125,7 +131,7 @@ if [ -n "${NODE_A_PROBE:-}" ]; then
     echo "==> flashing on probe $NODE_A_PROBE"
 else
     echo "WARNING: NODE_A_PROBE unset -- flashing the FIRST probe found. With both kits" >&2
-    echo "         plugged in that may be Node B. See the header for how to set it." >&2
+    echo "         plugged in that may be Node B. Set it in bench.env (see bench.env.example)." >&2
 fi
 _hex="$(cygpath -m "$PWD/build/app_stamped.hex" 2>/dev/null || echo "$PWD/build/app_stamped.hex")"
 make "${MAKE_ARGS[@]}" qprogram PROG_FILE="$_hex"

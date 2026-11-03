@@ -81,6 +81,9 @@ Toolchain: Infineon ModusToolbox for firmware. GCC for host-side tests.
 
 - The Stop hook (`tools/hooks/stop_gate.sh`, brief Q1) runs the host gate, `make test && make lint`, whenever a turn changed C, header, Makefile or test files; Claude cannot hand back while it is red (max 3 blocks, then it says so).
 - Firmware (ModusToolbox) builds and flashing are **manual** — the gate is host-only.
+- **How to flash / bench setup** (one `bash ./zz_build_*.sh program` per image, `bench.env`, probe
+  serials, COM ports, log capture): `docs/hardware/kits.md` → "The bench" + "Flashing". Point the
+  owner there and keep it current; the owner's terminal is PowerShell.
 
 ## Conventions
 
