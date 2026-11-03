@@ -109,6 +109,9 @@ def main() -> int:
     ap.add_argument("--no-colour", action="store_true")
     args = ap.parse_args()
 
+    # F-005: a redirected stdout on Windows is cp1252, which can't encode the
+    # U+FFFD the decoder substitutes for a non-ASCII byte. Always write UTF-8.
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     colour = not args.no_colour and sys.stdout.isatty()
     if args.file:
         return from_file(args.file, sys.stdout, colour)
