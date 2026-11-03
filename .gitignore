@@ -22,6 +22,7 @@ fuse*.txt
 otp*.bin
 .env
 .env.*
+bench.env
 
 # ── Host build output ──
 build/

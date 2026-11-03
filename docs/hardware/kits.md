@@ -47,7 +47,42 @@ LEDs are active LOW (guide).
 | Fact | Value | Source |
 |---|---|---|
 | Log ports (KitProg3 UART bridge) | **COM4 = Node A**, **COM6 = Node B**. Windows can renumber them if the USB socket changes: check the banner (`fbl`/`app` vs `actuator`) | user, 2026-10-03 |
-| Flashing | Goes over the probe's USB debug interface, **not** the COM port. With both kits plugged in, the probe is chosen by serial number (F-012, open) | — |
+| Flashing | Goes over the probe's USB debug interface, **not** the COM port. With both kits plugged in, the probe is chosen by serial number (F-012). How-to: [Flashing](#flashing) below | — |
+| Probe serials (KitProg3) | **Node A = `1F110D8900212400`** (its UART is COM4), **Node B = `1C09043C03272400`** (COM6). The serial belongs to the kit, not the USB socket | `fw-loader --device-list` + each COM port's USB parent, 2026-11-03 |
 | CAN analyser | Vector VN1611 (1 CAN FD channel) or VN1610, via python-can (`host_tools/can_echo_probe/config.json`, app `python-can`, channel 0) | bench |
 | Bus | Node A ↔ Node B J5 ↔ VN161x, **120 Ω at both ends** (Node B has none on board) | bench |
 | Echo probe | Node echo of unknown IDs is **off by default** (`CAN_ECHO_TEST=1` to enable). Run it with only **one** echoing node on the bus, or the two echo each other forever | runbook #19 |
+
+### Flashing
+
+**Once per machine:** `cp bench.env.example bench.env` and fill in the probe serials (this bench's
+are in the table above) and the signing key. `bench.env` is gitignored, and every `zz_build_*`
+script loads it by itself, so there is nothing to set per terminal. A value set in the shell wins
+over the file.
+
+**Every time,** from the repo root (PowerShell or Git Bash), both kits plugged in:
+
+```
+bash ./zz_build_gateway_fbl.sh program     # Node A FBL + CM0+ (fbl_combined)
+bash ./zz_build_gateway_app.sh program     # Node A app: build -> sign -> flash app_stamped.hex
+bash ./zz_build_actuator_app.sh program    # Node B CM0+ + CM7
+```
+
+- Each one prints `==> flashing on probe <serial>`. If it prints `WARNING: NODE_x_PROBE unset`,
+  `bench.env` is missing or empty, and OpenOCD will flash the **first** probe it finds.
+- The gateway app's `program` never flashes MTB's raw `gateway_app.hex` (the FBL rejects it). It
+  signs, refuses a stamped hex older than the ELF, then flashes `app_stamped.hex` (F-013).
+- In PowerShell, `bash` is the ModusToolbox shell's (`tools_3.8/modus-shell/bin/bash.exe`), which
+  finds `make`, the GCC tools and Python. Bash syntax (`VAR=x ./script`, `/c/...` paths) does not
+  work typed into PowerShell itself.
+- Flashing is the owner's step. Claude builds, but never flashes.
+
+**Capture while you reset** (one terminal tab per node; the folder is the day of the bench):
+
+```
+python host_tools/logview/logview.py --port COM4 --raw docs/bench/<YYYY-MM-DD>/nodeA.bin
+python host_tools/logview/logview.py --port COM6 --raw docs/bench/<YYYY-MM-DD>/nodeB.bin
+```
+
+`logview` folds `SECOC_ACCEPT` into one line per CAN ID every 5 s; add `--all` for a transcript
+that is evidence (ADR-0023).
