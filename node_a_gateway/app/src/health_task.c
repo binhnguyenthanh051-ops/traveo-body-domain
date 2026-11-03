@@ -16,6 +16,18 @@
 #include "tb_log.h"     /* log_evt (ADR-0023) */
 #include "log_events.h"  /* LOG_EVT_APP_ALIVE — generated from events.csv */
 
+/* F-002: each of these off in FreeRTOSConfig.h only shows up as a linker error
+ * on a full firmware build. Fail here instead, at compile time, naming the fix. */
+#if (INCLUDE_uxTaskGetStackHighWaterMark != 1)
+#error "health_task needs INCLUDE_uxTaskGetStackHighWaterMark 1 in FreeRTOSConfig.h"
+#endif
+#if (INCLUDE_xTaskGetIdleTaskHandle != 1)
+#error "health_task needs INCLUDE_xTaskGetIdleTaskHandle 1 in FreeRTOSConfig.h"
+#endif
+#if (configUSE_TIMERS != 1)
+#error "health_task needs configUSE_TIMERS 1 in FreeRTOSConfig.h (timer daemon high-water)"
+#endif
+
 #define HEALTH_STACK_WORDS   128U   /* used ~26 words (g_hw_health) + margin (ADR-0010 D5) */
 
 /* Bring-up: free stack words (min ever) per task — read in the debugger to size
