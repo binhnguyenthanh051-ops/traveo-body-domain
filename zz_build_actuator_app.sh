@@ -26,6 +26,11 @@
 #                                             # anything after the project goes to make;
 #                                             # 'all' = both projects, merged hex rebuilt
 #
+# Two kits plugged in (F-012): set NODE_B_PROBE to Node B's KitProg3 serial so
+# `program` flashes that probe only (MTB_PROBE_SERIAL -> `adapter serial`). List
+# the serials with
+#   /c/Infineon/Tools/ModusToolboxProgtools-1.8/fw-loader/bin/fw-loader.exe --device-list
+#
 # Run from a ModusToolbox shell (or with CY_TOOLS_PATHS exported) so MTB's make
 # and GCC_ARM toolchain are on PATH.
 
@@ -54,6 +59,17 @@ if [ -n "$PROJECT" ]; then
             ;;
     esac
 fi
+
+case "$ACTION" in
+    program|qprogram)
+        if [ -n "${NODE_B_PROBE:-}" ]; then
+            EXTRA+=(MTB_PROBE_SERIAL="$NODE_B_PROBE")
+            echo "==> flashing on probe $NODE_B_PROBE"
+        else
+            echo "WARNING: NODE_B_PROBE unset -- flashing the FIRST probe found (F-012)." >&2
+        fi
+        ;;
+esac
 
 # Pass CY_TOOLS_DIR directly so $(wildcard C:/...) in the MTB Makefiles resolves
 # correctly under Git Bash's make, which does not expand C:/ wildcard paths.

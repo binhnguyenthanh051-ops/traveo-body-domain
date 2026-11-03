@@ -29,6 +29,11 @@
 #   ./zz_build_gateway_fbl.sh program cm0p CRYPTO_BRINGUP_KAT=1
 #                                              # anything after the project goes to make
 #
+# Two kits plugged in (F-012): set NODE_A_PROBE to Node A's KitProg3 serial so
+# `program` flashes that probe only (MTB_PROBE_SERIAL -> `adapter serial`). List
+# the serials with
+#   /c/Infineon/Tools/ModusToolboxProgtools-1.8/fw-loader/bin/fw-loader.exe --device-list
+#
 # Run from a ModusToolbox shell (or with CY_TOOLS_PATHS exported) so MTB's make
 # and GCC_ARM toolchain are on PATH.
 
@@ -56,6 +61,17 @@ if [ -n "$PROJECT" ]; then
             ;;
     esac
 fi
+
+case "$ACTION" in
+    program|qprogram)
+        if [ -n "${NODE_A_PROBE:-}" ]; then
+            EXTRA+=(MTB_PROBE_SERIAL="$NODE_A_PROBE")
+            echo "==> flashing on probe $NODE_A_PROBE"
+        else
+            echo "WARNING: NODE_A_PROBE unset -- flashing the FIRST probe found (F-012)." >&2
+        fi
+        ;;
+esac
 
 make "$MAKE_TARGET" "${EXTRA[@]}"
 
