@@ -116,6 +116,14 @@ int main(void)
      * safe this side of the scheduler. */
     log_port_init();
 
+    /* F-007: the reset-cause bits are sticky until software clears them, and
+     * Node B has no FBL to do it (Node A's does, port_reset.c). Without this,
+     * every LOG_EVT_BOOT reports the union of all resets since power-on. Cleared
+     * here, right after log_port_init() logged it, and not inside the log port:
+     * logging must not change hardware state (ADR-0023 D7). Nothing else on
+     * this node reads the reset cause. */
+    Cy_SysLib_ClearResetReason();
+
     /* Crypto-offload seam (ADR-0018 D6 / ADR-0021): program the MPU non-cacheable
      * region over the cross-core mailbox, idle the mailbox, and bind the IPC
      * transport into crypto_service so tasks can call crypto_mac(). Must precede
