@@ -19,6 +19,11 @@
 #include "secoc_app.h"   /* secured command TX (M5 seam 3) */
 #include "cy_pdl.h"   /* Cy_GPIO_* */
 
+/* F-002: off, this is a linker error on a full firmware build only. */
+#if (INCLUDE_uxTaskGetStackHighWaterMark != 1)
+#error "app_task needs INCLUDE_uxTaskGetStackHighWaterMark 1 in FreeRTOSConfig.h"
+#endif
+
 /* 384: crypto_mac() alone needs ~540 B (2 x crypto_msg_t + 2 wire buffers) on the
  * caller's stack; 192 overflowed on the first MAC (W40 bench, Stage 3). ADR-0010 D5. */
 #define APP_STACK_WORDS     384U   /* pre-SecOC: ~34 words used (g_hw_app) + the reprogram path */

@@ -22,6 +22,12 @@
 #include "tb_log.h"        /* log_evt */
 #include "log_events.h"    /* LOG_EVT_APP_ALIVE — generated from events.csv */
 
+/* F-002 (after F-001): with this off, heartbeat_log_alive() is a linker error on
+ * a full firmware build only. Fail here instead, at compile time, naming the fix. */
+#if (INCLUDE_uxTaskGetStackHighWaterMark != 1)
+#error "heartbeat needs INCLUDE_uxTaskGetStackHighWaterMark 1 in FreeRTOSConfig.h"
+#endif
+
 #define HEARTBEAT_STACK_WORDS   configMINIMAL_STACK_SIZE
 #define HEARTBEAT_PRIORITY      (tskIDLE_PRIORITY + 1U)
 #define HEARTBEAT_PERIOD_MS     500U
