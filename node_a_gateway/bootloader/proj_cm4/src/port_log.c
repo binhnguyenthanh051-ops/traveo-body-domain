@@ -294,8 +294,7 @@ void fbl_log_init(void)
     Cy_SCB_UART_Enable(LOG_UART_SCB);
     s_sink_ready = true;
 
-    log_init(LOG_CORE_APP);
-    log_banner();
+    log_init(LOG_CORE_APP);     /* emits the banner (F-006: don't call log_banner() again) */
 }
 
 void fbl_log_service(void)
