@@ -8,9 +8,26 @@
 #      (the FBL already provides CM0+; the app is CM4-only on the bus).
 #   3. fbl_image_stamp.py writes the FBL header + CRC32 trailer.
 #   4. objcopy re-addresses the stamped image to 0x1004_0000 as Intel HEX.
+#   5. (program only) flash build/app_stamped.hex over KitProg3 + reset (F-013).
 #
-# Flash build/app_stamped.hex (the FBL then verifies + jumps to it). The FBL
-# image is flashed separately by zz_build_gateway_fbl.sh.
+# Usage:
+#   ./zz_build_gateway_app.sh                    # steps 1-4
+#   ./zz_build_gateway_app.sh program            # steps 1-5
+#   ./zz_build_gateway_app.sh build VAR=value    # anything after the action goes to make
+#   FBL_SIGN_KEY=ec_p256_dev_private.pem ./zz_build_gateway_app.sh program
+#
+# `program` never flashes MTB's raw gateway_app.hex: the FBL rejects it (no
+# header, no stamp/signature). It flashes the image from step 3 with
+# `make qprogram PROG_FILE=...`, so it reuses the recipe's OpenOCD config and
+# its `program ... verify reset`. The FBL image is flashed separately by
+# zz_build_gateway_fbl.sh.
+#
+# Two kits plugged in (F-012): set NODE_A_PROBE to Node A's KitProg3 serial and
+# the flash goes to that probe only (MTB_PROBE_SERIAL -> `adapter serial`).
+# List the serials with
+#   /c/Infineon/Tools/ModusToolboxProgtools-1.8/fw-loader/bin/fw-loader.exe --device-list
+# Unset = OpenOCD takes the first probe it finds, so with two kits it may flash
+# the wrong board.
 #
 # Run from a ModusToolbox shell (GCC_ARM toolchain + objcopy on PATH).
 
@@ -40,24 +57,23 @@ fi
 
 cd "$ROOT/node_a_gateway/app"
 
-# In signing mode, `make program` is WRONG: it flashes MTB's raw build output
-# (the UNSIGNED gateway_app.hex), which a SHA-256 FBL then rejects. The signed
-# image (app_stamped.hex, built below) must be flashed via uds_flash or a
-# programmer. So downgrade a 'program' request to 'build' when signing.
-MAKE_ACTION="${1:-build}"
-if [ -n "${FBL_SIGN_KEY:-}" ] && [ "$MAKE_ACTION" = "program" ]; then
-    echo "NOTE: signing mode — 'make program' flashes the UNSIGNED image, so building only." >&2
-    echo "      Flash the SIGNED app_stamped.hex (printed below) via uds_flash / your programmer." >&2
-    MAKE_ACTION="build"
-fi
+# F-013: `make program` would flash MTB's raw gateway_app.hex BEFORE the stamp
+# step, and the FBL rejects that image. So `make` only ever builds here; the
+# flash, when asked for, is step 5 below, with the stamped/signed hex.
+ACTION="${1:-build}"
+EXTRA=("${@:2}")   # extra make args, as in the other zz_build_* scripts
+case "$ACTION" in
+    build|program) : ;;
+    *) echo "Unknown action '$ACTION' -- use 'build' or 'program'" >&2; exit 1 ;;
+esac
 
 # Pass CY_TOOLS_DIR directly so $(wildcard C:/...) in the MTB Makefile resolves
 # correctly under Git Bash's make, which does not expand C:/ wildcard paths.
+MAKE_ARGS=("${EXTRA[@]}")
 if [ -n "${CY_TOOLS_PATHS:-}" ]; then
-    make CY_TOOLS_DIR="$CY_TOOLS_PATHS" "$MAKE_ACTION"
-else
-    make "$MAKE_ACTION"
+    MAKE_ARGS+=(CY_TOOLS_DIR="$CY_TOOLS_PATHS")
 fi
+make "${MAKE_ARGS[@]}" build
 
 ELF="$(ls build/*/Debug/*.elf 2>/dev/null | head -1)"
 [ -n "$ELF" ] || { echo "no .elf in build/*/Debug/ — build first" >&2; exit 1; }
@@ -90,10 +106,27 @@ unset _script _key
 
 echo ""
 echo "==> node_a_gateway/app/build/app_stamped.hex  ($_mode; @ $APP_BASE)"
-if [ -n "${FBL_SIGN_KEY:-}" ]; then
-    echo "    Flash THIS (not 'make program', which flashes the unsigned image):"
-    echo "      python host_tools/uds_flash/uds_flash.py node_a_gateway/app/build/app_stamped.hex"
-    echo "    (the FBL, in programming mode, downloads it, verifies the signature, and jumps)"
-else
-    echo "    Flash this; the FBL verifies (CRC32) + jumps."
+
+if [ "$ACTION" = "build" ]; then
+    echo "    Flash it: ./zz_build_gateway_app.sh program   (SWD, KitProg3)"
+    echo "         or: python host_tools/uds_flash/uds_flash.py node_a_gateway/app/build/app_stamped.hex"
+    echo "             (over CAN: the FBL, in programming mode, downloads + verifies it)"
+    exit 0
 fi
+
+# 5. Flash. Refuse a stamped hex older than the ELF: that is the Sat 3
+# failure (runbook #18), a stale image flashed after a stamp that didn't run.
+if [ ! build/app_stamped.hex -nt "$ELF" ]; then
+    echo "app_stamped.hex is older than $ELF -- the stamp step did not run. Not flashing." >&2
+    exit 1
+fi
+if [ -n "${NODE_A_PROBE:-}" ]; then
+    MAKE_ARGS+=(MTB_PROBE_SERIAL="$NODE_A_PROBE")
+    echo "==> flashing on probe $NODE_A_PROBE"
+else
+    echo "WARNING: NODE_A_PROBE unset -- flashing the FIRST probe found. With both kits" >&2
+    echo "         plugged in that may be Node B. See the header for how to set it." >&2
+fi
+_hex="$(cygpath -m "$PWD/build/app_stamped.hex" 2>/dev/null || echo "$PWD/build/app_stamped.hex")"
+make "${MAKE_ARGS[@]}" qprogram PROG_FILE="$_hex"
+echo "==> flashed $_hex ($_mode) and reset; the FBL verifies it and jumps."
