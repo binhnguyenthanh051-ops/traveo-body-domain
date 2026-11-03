@@ -369,6 +369,30 @@ the plausible one), the port becomes the right answer and this is where to revis
 
 ## Resolved open items
 
+### Console noise from per-frame `SECOC_ACCEPT`: **folded in the viewer, not the firmware** (2026-11-03)
+
+One `ACCEPT` per secured frame (REQ-LOG-009) is about 47 lines a second on Node A (`0x200`
+telemetry): 10,739 lines for ten minutes of `docs/bench/2026-11-01/nodeA.bin`. The UART is fine
+(about 750 B/s on a 1 Mbps link, 0 records lost); the console is not readable.
+
+**Decision:** `logview` folds `ACCEPT` by default into one line per core + CAN ID every 5 s of
+target time (count + `freshness_ctr` range; `--fold-ms`, `--all` to expand). The firmware is
+unchanged. Only `ACCEPT` folds: rejects, resyncs, gaps and text print as they arrive, and a
+reboot sign (text, a gap, `LOG_EVT_BOOT`, a timestamp going backwards) flushes the pending summary
+first (`host_tools/tests/test_logview.py`). The same capture folds to 131 lines.
+
+**Alternatives rejected:**
+- *A build macro that turns SecOC logging off by default.* It breaks REQ-LOG-009 ("exactly one
+  event per received frame"), so the default image could no longer prove a replay was refused
+  (BVT tests 4–6, REQ-SECOC-013's continuous-counter evidence), and it adds an untested variant
+  plus `#ifdef`s at the call sites (ADR-0004; the same reasoning as F-004).
+- *A firmware summary event* (per-frame rejects, `ACCEPT` as a 5 s count). It would fix the
+  console too, but it means a REQ-LOG-009 amendment, a new event ID and BVT rework, and it loses
+  per-frame counter continuity. Revisit only if the UART load, not readability, becomes the limit.
+
+**Cost:** a transcript made with the default view is a summary. Evidence transcripts use `--all`;
+the `--raw` capture always holds every record.
+
 ### Baud rate — **1 Mbps default**, not the 4 Mbps the bridge allows
 
 The KitProg3 USB-UART bridge tops out at **4,000,000 bps**. We deliberately do not use it.
