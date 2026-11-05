@@ -84,7 +84,7 @@ About 10–12 hours a week; ~20 in a planned burst week (rule 5).
 | **W42** | Oct 12–18 | Publish **M5a post** (restart week, ~8 h) | *(none)* | **M5a post** ✓ |
 | **W43** | Oct 19–25 | **M5B — SecOC closure** *(burst ~14 h)*: persistent freshness store (REQ-SECOC-006/007/008), F-010, traceability report, M5 review record (rule 11) | **Sat:** replay-after-reset refused, Stage 7 resync, Stages 5–6 regression | **M5B merged to `main`** (report + review record) |
 | **W44** | Oct 26–Nov 1 | M5B post draft reviewed → **tag `m5b-secoc` + GitHub Release** (DoD done) · **README v1** "start here" · F-012/F-013 · F-002, F-005, F-007, F-009 | **Sat:** triage F-006/F-008 | **✅ Ready to apply** (README v1 on `main`) |
-| **W45** | Nov 2–8 | **M5B post** → **tag `m5b-secoc` + GitHub Release** (DoD done, Mon) · findings sweep (F-002/005/006/007/009/012/013) · **CM7 bring-up post** (cache/non-cacheable mailbox) + series index post · *stretch:* M5 demo post draft | — | **M5B tag + CM7 post** |
+| **W45** | Nov 2–8 | **M5B post** → **tag `m5b-secoc` + GitHub Release** (DoD done, Mon) · findings sweep (F-002/005/006/007/009/012/013) · ~~CM7 bring-up post~~ (dropped Thu 5) · series index post · *stretch:* M5 demo post draft | — | **M5B tag + findings sweep** |
 | **W46** | Nov 9–15 | **M5 demo post** from the W40 + W43 + W44 captures (forgery, replay, cross-ID, replay-after-reset, gateway reboot) | — | **M5 demo post** |
 | **W47–W49** | Nov 16–Dec 6 | Interview prep: "10 decisions I can defend" cheat-sheet from the ADRs, mock design questions. M6-lite starts early (see below). Planned week by week at the retros. | — | — |
 
@@ -97,6 +97,10 @@ slips from Oct 25 to **Nov 1**, and interview prep has three weeks, not five.
 (**ready to apply** on Nov 1) and every M5B finding closed. Only the M5B post + tag slipped. The
 owner judged that a one-day job, so W45 carries it **and** the CM7 post. The calendar stays as
 planned, with interview prep keeping its three weeks (W47–W49).
+
+**Changed 2026-11-05 (owner): the CM7 post is dropped.** The published M5 post's "Node B has a
+cache" section already makes the point (CM7 L1 D-cache, mailbox in an MPU non-cacheable region,
+ADR-0018 D6); a full post doesn't serve the Dec–Feb window.
 
 **Buffer logic:** M5 closed in W40, so the W41–W42 reserve Saturdays weren't needed. The M6 design
 plan planned for W41 was never written (there is no `docs/briefs/M6-brief.md` yet).
@@ -121,7 +125,7 @@ Planned week by week at the Sunday retros, like everything else.
 | EEPROM emulator | SecOC persistence across reboot stays a documented limitation |
 | EP.20 — app-side UDS | The roadmap itself says diagnostics isn't the differentiator |
 | EP.23 — fault injection | Covered by M4 Seam 6 (dead CM0+) + the M5c forged/replay demo |
-| EP.25 — cache essay | Becomes a section of the M5b post — hands-on now, on the CM7 |
+| EP.25 — cache essay | Covered by a section of the M5 post ("Node B has a cache"); the standalone CM7 post was dropped 2026-11-05 |
 | BVT bench, Pi bridge, checks pipeline | Regression-testing infrastructure; regression testing isn't the blocker |
 
 ---
