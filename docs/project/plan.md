@@ -85,7 +85,7 @@ About 10–12 hours a week; ~20 in a planned burst week (rule 5).
 | **W43** | Oct 19–25 | **M5B — SecOC closure** *(burst ~14 h)*: persistent freshness store (REQ-SECOC-006/007/008), F-010, traceability report, M5 review record (rule 11) | **Sat:** replay-after-reset refused, Stage 7 resync, Stages 5–6 regression | **M5B merged to `main`** (report + review record) |
 | **W44** | Oct 26–Nov 1 | M5B post draft reviewed → **tag `m5b-secoc` + GitHub Release** (DoD done) · **README v1** "start here" · F-012/F-013 · F-002, F-005, F-007, F-009 | **Sat:** triage F-006/F-008 | **✅ Ready to apply** (README v1 on `main`) |
 | **W45** | Nov 2–8 | **M5B post** → **tag `m5b-secoc` + GitHub Release** (DoD done, Mon) · findings sweep (F-002/005/006/007/009/012/013) · ~~CM7 bring-up post~~ (dropped Thu 5) · series index post · *stretch:* M5 demo post draft | — | **M5B tag + findings sweep** |
-| **W46** | Nov 9–15 | *(vacation Mon 9 – Tue 10)* **M5 demo post** from the W40 + W43 + W44 captures (forgery, replay, cross-ID, replay-after-reset, gateway reboot) · series index post (from W45) | — | **M5 demo post** |
+| **W46** | Nov 9–15 | *(vacation Mon 9 – Tue 10)* **Stack drill tool**: static worst-case stack per task vs `*_STACK_WORDS`, both nodes, cross-checked against the runtime high-water on the bench, + ADR (owner, 2026-11-05; was the M5 demo post, which moves out with the series index post, re-plan at the W46 retro) | — | **Stack drill** |
 | **W47–W49** | Nov 16–Dec 6 | Interview prep: "10 decisions I can defend" cheat-sheet from the ADRs, mock design questions. M6-lite starts early (see below). Planned week by week at the retros. | — | — |
 
 **Shifted 2026-10-18 (W42 retro), twice:** W41 was cancelled, which pushed everything back one week.
