@@ -75,7 +75,10 @@ bash ./zz_build_actuator_app.sh program    # Node B CM0+ + CM7
 - In PowerShell, `bash` is the ModusToolbox shell's (`tools_3.8/modus-shell/bin/bash.exe`), which
   finds `make`, the GCC tools and Python. Bash syntax (`VAR=x ./script`, `/c/...` paths) does not
   work typed into PowerShell itself.
-- Flashing is the owner's step. Claude builds, but never flashes.
+- Claude may flash and reset too, within the bench rule (`docs/workflow.md`), following the
+  `bench-session` skill. Reset only: `bash ./tools/bench/reset_node.sh A|B` (OpenOCD, the
+  `bench.env` probe; a debug reset, not the reset button). Numbers for a bench record:
+  `python host_tools/bench_summary.py <nodeA.bin> <nodeB.bin>`.
 
 **Capture while you reset** (one terminal tab per node; the folder is the day of the bench):
 
