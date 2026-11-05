@@ -103,7 +103,7 @@ UDS command that raises a module from contract-only to diagnostic.
   the roadmap's open items).
 - Hardware-in-the-loop CI (auto-flash + on-target tests).
 - AUTOSAR-flavored layer on the app — only if year-1 content lands well.
-- **Stack drill — static worst-case stack usage before flashing** (idea 2026-09-28, W40 Stage 3).
+- **Stack drill — static worst-case stack usage before flashing** (idea 2026-09-28, W40 Stage 3). **Scheduled: W46** (`docs/project/weeks/2026-W46.md`).
   A host tool that reads each image's `.elf` (objdump call graph: `push`/`vpush`/`sub sp` per
   function, followed along `bl` edges; or GCC `-fstack-usage` + `-fcallgraph-info`) and prints the
   worst-case depth per task entry next to its `*_STACK_WORDS`, failing the gate when margin < X%.
