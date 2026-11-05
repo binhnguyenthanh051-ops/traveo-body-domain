@@ -33,17 +33,28 @@ Each traces up to an ADR-0042 sub-decision.
 """
 
 
-def matrix(rows, silicon=True):
+OBSERVED_OK = "structural — fixture"     # always valid; needs no event registry
+
+
+def matrix(rows, silicon=True, observed=True):
+    """rows: (id, traces, verified, silicon[, observed])."""
     head = "| ID | Requirement (short) | Traces | Verified by |"
     sep = "|---|---|---|---|"
     if silicon:
         head += " On silicon |"
         sep += "---|"
+    if observed:
+        head += " Observed by |"
+        sep += "---|"
     lines = [head, sep]
-    for req_id, traces, verified, sil in rows:
+    for row in rows:
+        req_id, traces, verified, sil = row[:4]
+        obs = row[4] if len(row) > 4 else OBSERVED_OK
         line = f"| {req_id} | short {req_id} | {traces} | {verified} |"
         if silicon:
             line += f" {sil} |"
+        if observed:
+            line += f" {obs} |"
         lines.append(line)
     return "\n".join(lines) + "\n"
 
@@ -253,4 +264,78 @@ def test_main_fails_on_gaps_and_gate_scopes_them(tmp_path, capsys):
 def test_report_is_deterministic(tmp_path):
     root = good_repo(tmp_path)
     assert trace_report.render(trace_report.build_model(root)) == \
-        trace_report.render(trace_report.build_model(root))
+        trace_report.render(trace_report.build_model(root))
+
+
+# ---- "Observed by": how a requirement is seen on the bench (bench-testable rule) ----
+
+EVENTS_CSV = """# fixture registry: id,name,class,arg0,arg1,description
+0x0101,LOG_EVT_DEMO_OK,contract,can_id,-,demo verdict
+0x0102,LOG_EVT_DEMO_SPARE,contract,-,-,a contract event no requirement names
+0x1001,LOG_EVT_DEMO_DBG,diagnostic,value,tag,bring-up trace
+"""
+
+
+def observed_repo(tmp_path, observed, events=EVENTS_CSV):
+    md = REQS_HEADER + matrix([("REQ-DEMO-001", "D1", "`test_demo`", f"`{CAPTURE}`", observed)]) +         body("REQ-DEMO-001")
+    extra = {"shared/log/events.csv": events} if events is not None else {}
+    return make_repo(tmp_path, md, GOOD_SOURCES, extra=extra)
+
+
+@pytest.mark.parametrize("observed", [
+    "`LOG_EVT_DEMO_OK`",
+    "`LOG_EVT_DEMO_OK` (verdict per frame) + bus `0x120`",
+    "bus `0x200` (can_sniff)",
+    "structural — key bytes only in the CM0+ ELF",
+    "debugger — `g_kat_result` == 15 in a CRYPTO_BRINGUP_KAT=1 build",
+    "n/a — host-side contract",
+])
+def test_recognised_observations_are_not_gaps(tmp_path, observed):
+    assert trace_report.build_model(observed_repo(tmp_path, observed)).gaps == []
+
+
+@pytest.mark.parametrize("observed, detail", [
+    ("", "no observation"),
+    ("—", "no observation"),
+    ("see the capture", "names no contract event"),
+    ("structural", "without a reason"),
+    ("n/a", "without a reason"),
+    ("debugger", "without a reason"),
+])
+def test_missing_or_vague_observation_is_a_gap(tmp_path, observed, detail):
+    model = trace_report.build_model(observed_repo(tmp_path, observed))
+    gaps = [g for g in model.gaps if g.kind == "no-observed"]
+    assert [g.id for g in gaps] == ["REQ-DEMO-001"]
+    assert detail in gaps[0].detail
+
+
+def test_an_unknown_event_is_dangling(tmp_path):
+    model = trace_report.build_model(observed_repo(tmp_path, "`LOG_EVT_DEMO_TYPO`"))
+    assert kinds(model) == [("dangling-event", "REQ-DEMO-001")]
+
+
+def test_a_diagnostic_event_cannot_prove_a_requirement(tmp_path):
+    """REQ-LOG-008: diagnostic IDs are never asserted, so they are no evidence."""
+    model = trace_report.build_model(observed_repo(tmp_path, "`LOG_EVT_DEMO_DBG`"))
+    assert kinds(model) == [("not-contract", "REQ-DEMO-001")]
+
+
+def test_without_a_registry_every_event_is_dangling(tmp_path):
+    model = trace_report.build_model(observed_repo(tmp_path, "`LOG_EVT_DEMO_OK`", events=None))
+    assert kinds(model) == [("dangling-event", "REQ-DEMO-001")]
+
+
+def test_a_silicon_column_without_an_observed_column_is_one_gap_per_file(tmp_path):
+    md = REQS_HEADER + matrix([("REQ-DEMO-001", "D1", "`test_demo`", f"`{CAPTURE}`")],
+                              observed=False) + body("REQ-DEMO-001")
+    root = make_repo(tmp_path, md, GOOD_SOURCES)
+    assert kinds(trace_report.build_model(root)) == [("no-observed-col", "REQ-DEMO")]
+
+
+def test_report_shows_observed_and_lists_unclaimed_contract_events(tmp_path):
+    """A contract event no requirement names is reported, not failed: it may be infrastructure."""
+    model = trace_report.build_model(observed_repo(tmp_path, "`LOG_EVT_DEMO_OK`"))
+    report = trace_report.render(model)
+    assert "| Observed by |" in report and "`LOG_EVT_DEMO_OK`" in report
+    section = report.split("## Contract events not named by a requirement", 1)[1]
+    assert "`LOG_EVT_DEMO_SPARE`" in section and "LOG_EVT_DEMO_OK" not in section

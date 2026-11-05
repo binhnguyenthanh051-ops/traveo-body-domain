@@ -16,40 +16,40 @@
 
 ## REQ-LOG
 
-| REQ | Requirement | Traces | Impl | Test | On silicon | Status |
-|---|---|---|---|---|---|---|
-| REQ-LOG-001 | Producer emits fixed-size binary records; no `stdio`/varargs/formatting on target | ADR-0023 D1; ADR-0003 | `shared/log/src/log.c` | — | *(no column)* | ❌ matrix-drift, no-test |
-| REQ-LOG-002 | Record layout, LE fields, CRC-16/CCITT-FALSE, 16 B, byte-offset encoded | ADR-0023 D2 | `shared/log/src/log.c` ×2 | `shared/log/tests/test_log.c` ×3 | *(no column)* | ✅ |
-| REQ-LOG-003 | `LOG_SYNC` outside ASCII; text runs pass through unescaped and are never assertable | ADR-0023 D3, D6 | `shared/log/src/log.c` | `shared/log/tests/test_log.c` ×5 | *(no column)* | ❌ matrix-drift |
-| REQ-LOG-004 | One SPSC ring **per image**, image-private RAM; the security core does not log | ADR-0023 D4; ADR-0021 D1; ADR-0016 D2 | `shared/log/src/log.c` | `shared/log/tests/test_log.c` | *(no column)* | ✅ |
-| REQ-LOG-005 | `log_evt()` is bounded, non-blocking, ISR-safe; critical section covers reservation only | ADR-0023 D7 | `shared/log/src/log.c` ×2 | `shared/log/tests/test_log.c` ×6 | *(no column)* | ✅ |
-| REQ-LOG-006 | Overflow drops the **newest**, counts it, and emits `LOG_EVT_OVERFLOW`; `seq` gaps detect loss independently | ADR-0023 D5 | `shared/log/src/log.c` | `shared/log/tests/test_log.c` ×4 | *(no column)* | ✅ |
-| REQ-LOG-007 | A consumer shall treat any overflow within a window as **failing** that window | ADR-0023 D5 | — | — | *(no column)* | ❌ matrix-drift, no-impl, no-test |
-| REQ-LOG-008 | Contract IDs (`< 0x1000`) are assertable and breaking to change; diagnostic IDs are never asserted | ADR-0023 D6 | — | — | *(no column)* | ❌ matrix-drift, no-impl, no-test |
-| REQ-LOG-009 | SecOC accept/reject events emitted with reason + CAN ID, on the verify path | ADR-0023 D6, D11; ADR-0021 D9, D5 | `node_a_gateway/app/src/health_task.c`<br>`node_a_gateway/bootloader/proj_cm4/src/fbl_main.c` ×2<br>`node_b_actuator/proj_cm7/src/main.c`<br>`shared/secoc/src/secoc_rx.c` | `shared/secoc/tests/test_secoc_rx.c` ×9 | *(no column)* | ✅ |
-| REQ-LOG-010 | `log_panic()` bypasses the ring with a blocking, interrupt-free write | ADR-0023 D7 | `shared/log/src/log.c` | `shared/log/tests/test_log.c` ×2 | *(no column)* | ✅ |
-| REQ-LOG-011 | Logic host-testable with plain GCC; all hardware behind `log_port_*` | ADR-0023 D8; ADR-0001 | `shared/log/src/log.c` | — | *(no column)* | ❌ matrix-drift, no-test |
-| REQ-LOG-012 | One generated event registry; stale generated files fail CI | ADR-0023 D9 | — | — | *(no column)* | ❌ matrix-drift, no-impl, no-test |
-| REQ-LOG-013 | C encoder and host decoder round-trip identically | ADR-0023 D8 | — | — | *(no column)* | ❌ matrix-drift, no-impl, no-test |
-| REQ-LOG-014 | Drain latency is bounded and published, so absence-assertions can settle | ADR-0023 D10 | `shared/log/src/log.c` | `shared/log/tests/test_log.c` ×3 | *(no column)* | ❌ matrix-drift |
+| REQ | Requirement | Traces | Impl | Test | On silicon | Observed by | Status |
+|---|---|---|---|---|---|---|---|
+| REQ-LOG-001 | Producer emits fixed-size binary records; no `stdio`/varargs/formatting on target | ADR-0023 D1; ADR-0003 | `shared/log/src/log.c` | — | *(no column)* | *(no column)* | ❌ matrix-drift, no-test |
+| REQ-LOG-002 | Record layout, LE fields, CRC-16/CCITT-FALSE, 16 B, byte-offset encoded | ADR-0023 D2 | `shared/log/src/log.c` ×2 | `shared/log/tests/test_log.c` ×3 | *(no column)* | *(no column)* | ✅ |
+| REQ-LOG-003 | `LOG_SYNC` outside ASCII; text runs pass through unescaped and are never assertable | ADR-0023 D3, D6 | `shared/log/src/log.c` | `shared/log/tests/test_log.c` ×5 | *(no column)* | *(no column)* | ❌ matrix-drift |
+| REQ-LOG-004 | One SPSC ring **per image**, image-private RAM; the security core does not log | ADR-0023 D4; ADR-0021 D1; ADR-0016 D2 | `shared/log/src/log.c` | `shared/log/tests/test_log.c` | *(no column)* | *(no column)* | ✅ |
+| REQ-LOG-005 | `log_evt()` is bounded, non-blocking, ISR-safe; critical section covers reservation only | ADR-0023 D7 | `shared/log/src/log.c` ×2 | `shared/log/tests/test_log.c` ×6 | *(no column)* | *(no column)* | ✅ |
+| REQ-LOG-006 | Overflow drops the **newest**, counts it, and emits `LOG_EVT_OVERFLOW`; `seq` gaps detect loss independently | ADR-0023 D5 | `shared/log/src/log.c` | `shared/log/tests/test_log.c` ×4 | *(no column)* | *(no column)* | ✅ |
+| REQ-LOG-007 | A consumer shall treat any overflow within a window as **failing** that window | ADR-0023 D5 | — | — | *(no column)* | *(no column)* | ❌ matrix-drift, no-impl, no-test |
+| REQ-LOG-008 | Contract IDs (`< 0x1000`) are assertable and breaking to change; diagnostic IDs are never asserted | ADR-0023 D6 | — | — | *(no column)* | *(no column)* | ❌ matrix-drift, no-impl, no-test |
+| REQ-LOG-009 | SecOC accept/reject events emitted with reason + CAN ID, on the verify path | ADR-0023 D6, D11; ADR-0021 D9, D5 | `node_a_gateway/app/src/health_task.c`<br>`node_a_gateway/bootloader/proj_cm4/src/fbl_main.c` ×2<br>`node_b_actuator/proj_cm7/src/main.c`<br>`shared/secoc/src/secoc_rx.c` | `shared/secoc/tests/test_secoc_rx.c` ×9 | *(no column)* | *(no column)* | ✅ |
+| REQ-LOG-010 | `log_panic()` bypasses the ring with a blocking, interrupt-free write | ADR-0023 D7 | `shared/log/src/log.c` | `shared/log/tests/test_log.c` ×2 | *(no column)* | *(no column)* | ✅ |
+| REQ-LOG-011 | Logic host-testable with plain GCC; all hardware behind `log_port_*` | ADR-0023 D8; ADR-0001 | `shared/log/src/log.c` | — | *(no column)* | *(no column)* | ❌ matrix-drift, no-test |
+| REQ-LOG-012 | One generated event registry; stale generated files fail CI | ADR-0023 D9 | — | — | *(no column)* | *(no column)* | ❌ matrix-drift, no-impl, no-test |
+| REQ-LOG-013 | C encoder and host decoder round-trip identically | ADR-0023 D8 | — | — | *(no column)* | *(no column)* | ❌ matrix-drift, no-impl, no-test |
+| REQ-LOG-014 | Drain latency is bounded and published, so absence-assertions can settle | ADR-0023 D10 | `shared/log/src/log.c` | `shared/log/tests/test_log.c` ×3 | *(no column)* | *(no column)* | ❌ matrix-drift |
 
 ## REQ-SECOC
 
-| REQ | Requirement | Traces | Impl | Test | On silicon | Status |
-|---|---|---|---|---|---|---|
-| REQ-SECOC-001 | Protected messages authenticated; unauthenticated dropped before decode | ADR-0021 D1, D9; ADR-0016; ADR-0023 D11 | `node_a_gateway/app/src/secoc_app.c`<br>`node_b_actuator/proj_cm7/src/secoc_app.c`<br>`shared/secoc/src/secoc.c`<br>`shared/secoc/src/secoc_rx.c` | `shared/secoc/tests/test_secoc.c` ×6<br>`shared/secoc/tests/test_secoc_rx.c` ×7 | `docs/bench/2026-10-24/regression_r.md` (R2: 5/5 attacks dropped, no 0x120 accept) | ✅ |
-| REQ-SECOC-002 | MAC is AES-CMAC truncated to 8 B, constant-time compared | ADR-0021 D1 | `shared/secoc/src/secoc.c` | `shared/secoc/tests/test_secoc.c` ×2 | `docs/bench/2026-10-24/regression_r.md` (8 B MAC on the wire, cross-node verify; bit-flipped MAC refused). Constant-time compare: host-verified only | ✅ |
-| REQ-SECOC-003 | Secured frame layout `PDU∥freshness(4)∥MAC(8)`, one CAN FD frame, LE wire | ADR-0021 D2, D3 | `shared/secoc/src/secoc.c` | `shared/secoc/tests/test_secoc.c` ×6 | `docs/bench/2026-10-24/bus_round2.txt` (every secured frame: PDU ∥ epoch/ctr ∥ 8 B MAC, one CAN FD frame, padded to 16 B) | ✅ |
-| REQ-SECOC-004 | MAC input binds a Data ID: `CMAC(DataID∥freshness∥PDU)` | ADR-0021 D2 | `shared/secoc/src/secoc.c` | `shared/secoc/tests/test_secoc.c` | `docs/bench/2026-10-24/regression_r.md` (crossid: genuine 0x121 bytes on 0x120 → REJECT_MAC) | ✅ |
-| REQ-SECOC-005 | Freshness = `epoch(u16)∥counter(u16)`; counter is per CAN-ID | ADR-0021 D3 | `shared/secoc/src/secoc_freshness.c` | `shared/secoc/tests/test_secoc_freshness.c` ×2 | `docs/bench/2026-10-24/bus_round2.txt` (Node B, 4 boots: 0x2F0 at ctr 1, then 0x200 also at ctr 1 in the same epoch) + `docs/bench/2026-10-24/nodeA_round2.txt` (Node A accepts that 0x200 ctr 1 each time) | ✅ |
-| REQ-SECOC-006 | Epoch shared per-node, persisted, `++`/boot; `commit(E+1)` durable **before** spend | ADR-0021 D3, D8 | `shared/secoc/src/secoc_freshness.c`<br>`shared/secoc_store/src/secoc_store.c` ×2 | `shared/secoc/tests/test_freshness_store.c` ×6<br>`shared/secoc/tests/test_secoc_freshness.c` ×3<br>`shared/secoc_store/tests/test_secoc_store.c` ×6 | `docs/bench/2026-10-24/epochs_power_cycle.md` (5 power cycles, epochs strictly +1 on both nodes) | ✅ |
-| REQ-SECOC-007 | Receiver accept rule (floor + per-ID high-water); MAC-check before freshness update | ADR-0021 D4 | `shared/secoc/src/secoc_freshness.c` ×2<br>`shared/secoc/src/secoc_rx.c` | `shared/secoc/tests/test_secoc_freshness.c` ×6<br>`shared/secoc/tests/test_secoc_rx.c` ×5 | `docs/bench/2026-10-24/g2_g3_reset_replay.md` (G2: old frame refused after a Node B reset) | ✅ |
-| REQ-SECOC-008 | Receiver-reset resync via authenticated `FRESHNESS_SYNC`, both receivers (0x2F0 B→A, 0x1F0 A→B); `floor=persisted+1` | ADR-0021 D5; ADR-0002 | `node_a_gateway/app/src/secoc_app.c` ×2<br>`node_b_actuator/proj_cm7/src/secoc_app.c` ×2<br>`shared/secoc/src/secoc_freshness.c` ×2<br>`shared/secoc/src/secoc_rx.c` | `shared/secoc/tests/test_secoc_freshness.c`<br>`shared/secoc/tests/test_secoc_resync.c` ×3<br>`shared/secoc/tests/test_secoc_rx.c` | B-receiver: `docs/bench/2026-10-24/g2_g3_reset_replay.md` (G3: 4 Node B resets, A resyncs within 20 ms). A-receiver (0x1F0): `docs/bench/2026-11-01/f014_gateway_reboot.md` (3 Node A resets, telemetry back within 36 ms each, 0/0/1 rejects; a replayed 0x1F0 refused) | ✅ |
-| REQ-SECOC-009 | Counter rollover bumps the epoch (durable) and resets counters | ADR-0021 D3 | `shared/secoc/src/secoc_freshness.c` | `shared/secoc/tests/test_secoc_freshness.c` ×2 | deferred — host-verified only. A wrap needs ~22 min of `0x200` at 20 ms; the longest capture reached ctr 34964. Capture one on the next long bench run (M5-R8) | ✅ |
-| REQ-SECOC-010 | `key_id`-selected key; unknown `key_id` ⇒ fail (never key 0) | ADR-0021 D6; ADR-0019 D3 | `shared/crypto/src/crypto_keystore.c` | `shared/crypto/tests/test_crypto_mac.c` ×2<br>`shared/secoc/tests/test_secoc.c` | `docs/bench/2026-10-24/kat_f010.md` (a crypto failure reaches the caller as an error). Unknown key_id itself: host-verified only | ✅ |
-| REQ-SECOC-011 | Secret key resides only in the M0+ image; app uses the MAC oracle only | ADR-0021 D6, D7; ADR-0017; ADR-0020 | `node_a_gateway/bootloader/proj_cm0p/src/crypto_ops_cm0p.c`<br>`node_b_actuator/proj_cm0p/src/crypto_ops_cm0p.c`<br>design-only: `node_a_gateway/bootloader/proj_cm0p/src/crypto_ops_cm0p.c`<br>design-only: `node_b_actuator/proj_cm0p/src/crypto_ops_cm0p.c` | `shared/crypto/tests/test_crypto_mac.c` | `docs/bench/2026-10-30/key_residency.md` (key bytes in both CM0+ ELFs, absent from the CM4 FBL, CM4 app and CM7 app) | ✅ |
-| REQ-SECOC-012 | `CRYPTO_OP_MAC=0x03` generic op: `key_id∥len∥msg ⇒ tag[16]` | ADR-0021 D7; ADR-0017 D3 | `shared/crypto/src/crypto_msg.c` ×4 | `shared/crypto/tests/test_crypto_mac.c` ×3 | `docs/bench/2026-10-24/kat_f010.md` (op returns an error, not a tag, on a crypto fault; NIST tags on both CM0+) | ✅ |
-| REQ-SECOC-013 | Telemetry `0x200` (B→A) is authenticated on the same path | ADR-0021 D7 | `node_b_actuator/proj_cm7/src/secoc_app.c`<br>`shared/secoc/src/secoc.c` | `shared/secoc/tests/test_secoc.c` | `docs/bench/2026-10-24/nodeA_round2.txt` (Node A SECOC_ACCEPT on 0x200, continuous counters) | ✅ |
+| REQ | Requirement | Traces | Impl | Test | On silicon | Observed by | Status |
+|---|---|---|---|---|---|---|---|
+| REQ-SECOC-001 | Protected messages authenticated; unauthenticated dropped before decode | ADR-0021 D1, D9; ADR-0016; ADR-0023 D11 | `node_a_gateway/app/src/secoc_app.c`<br>`node_b_actuator/proj_cm7/src/secoc_app.c`<br>`shared/secoc/src/secoc.c`<br>`shared/secoc/src/secoc_rx.c` | `shared/secoc/tests/test_secoc.c` ×6<br>`shared/secoc/tests/test_secoc_rx.c` ×7 | `docs/bench/2026-10-24/regression_r.md` (R2: 5/5 attacks dropped, no 0x120 accept) | `LOG_EVT_SECOC_REJECT_MAC` per attack frame; no `LOG_EVT_SECOC_ACCEPT` on `0x120` | ✅ |
+| REQ-SECOC-002 | MAC is AES-CMAC truncated to 8 B, constant-time compared | ADR-0021 D1 | `shared/secoc/src/secoc.c` | `shared/secoc/tests/test_secoc.c` ×2 | `docs/bench/2026-10-24/regression_r.md` (8 B MAC on the wire, cross-node verify; bit-flipped MAC refused). Constant-time compare: host-verified only | bus `0x121` (8 B MAC on the wire) + `LOG_EVT_SECOC_REJECT_MAC` (bit-flipped MAC) | ✅ |
+| REQ-SECOC-003 | Secured frame layout `PDU∥freshness(4)∥MAC(8)`, one CAN FD frame, LE wire | ADR-0021 D2, D3 | `shared/secoc/src/secoc.c` | `shared/secoc/tests/test_secoc.c` ×6 | `docs/bench/2026-10-24/bus_round2.txt` (every secured frame: PDU ∥ epoch/ctr ∥ 8 B MAC, one CAN FD frame, padded to 16 B) | bus `0x121`, `0x200` (frame layout on the wire) | ✅ |
+| REQ-SECOC-004 | MAC input binds a Data ID: `CMAC(DataID∥freshness∥PDU)` | ADR-0021 D2 | `shared/secoc/src/secoc.c` | `shared/secoc/tests/test_secoc.c` | `docs/bench/2026-10-24/regression_r.md` (crossid: genuine 0x121 bytes on 0x120 → REJECT_MAC) | `LOG_EVT_SECOC_REJECT_MAC` (genuine `0x121` bytes sent on `0x120`) | ✅ |
+| REQ-SECOC-005 | Freshness = `epoch(u16)∥counter(u16)`; counter is per CAN-ID | ADR-0021 D3 | `shared/secoc/src/secoc_freshness.c` | `shared/secoc/tests/test_secoc_freshness.c` ×2 | `docs/bench/2026-10-24/bus_round2.txt` (Node B, 4 boots: 0x2F0 at ctr 1, then 0x200 also at ctr 1 in the same epoch) + `docs/bench/2026-10-24/nodeA_round2.txt` (Node A accepts that 0x200 ctr 1 each time) | bus `0x200`, `0x2F0` (epoch ∥ counter per CAN ID on the wire) | ✅ |
+| REQ-SECOC-006 | Epoch shared per-node, persisted, `++`/boot; `commit(E+1)` durable **before** spend | ADR-0021 D3, D8 | `shared/secoc/src/secoc_freshness.c`<br>`shared/secoc_store/src/secoc_store.c` ×2 | `shared/secoc/tests/test_freshness_store.c` ×6<br>`shared/secoc/tests/test_secoc_freshness.c` ×3<br>`shared/secoc_store/tests/test_secoc_store.c` ×6 | `docs/bench/2026-10-24/epochs_power_cycle.md` (5 power cycles, epochs strictly +1 on both nodes) | bus `0x121`, `0x200` (each sender epoch +1 per power cycle) | ✅ |
+| REQ-SECOC-007 | Receiver accept rule (floor + per-ID high-water); MAC-check before freshness update | ADR-0021 D4 | `shared/secoc/src/secoc_freshness.c` ×2<br>`shared/secoc/src/secoc_rx.c` | `shared/secoc/tests/test_secoc_freshness.c` ×6<br>`shared/secoc/tests/test_secoc_rx.c` ×5 | `docs/bench/2026-10-24/g2_g3_reset_replay.md` (G2: old frame refused after a Node B reset) | `LOG_EVT_SECOC_REJECT_FRESHNESS` (an old frame replayed) | ✅ |
+| REQ-SECOC-008 | Receiver-reset resync via authenticated `FRESHNESS_SYNC`, both receivers (0x2F0 B→A, 0x1F0 A→B); `floor=persisted+1` | ADR-0021 D5; ADR-0002 | `node_a_gateway/app/src/secoc_app.c` ×2<br>`node_b_actuator/proj_cm7/src/secoc_app.c` ×2<br>`shared/secoc/src/secoc_freshness.c` ×2<br>`shared/secoc/src/secoc_rx.c` | `shared/secoc/tests/test_secoc_freshness.c`<br>`shared/secoc/tests/test_secoc_resync.c` ×3<br>`shared/secoc/tests/test_secoc_rx.c` | B-receiver: `docs/bench/2026-10-24/g2_g3_reset_replay.md` (G3: 4 Node B resets, A resyncs within 20 ms). A-receiver (0x1F0): `docs/bench/2026-11-01/f014_gateway_reboot.md` (3 Node A resets, telemetry back within 36 ms each, 0/0/1 rejects; a replayed 0x1F0 refused) | `LOG_EVT_SECOC_RESYNC` (both receiver directions) | ✅ |
+| REQ-SECOC-009 | Counter rollover bumps the epoch (durable) and resets counters | ADR-0021 D3 | `shared/secoc/src/secoc_freshness.c` | `shared/secoc/tests/test_secoc_freshness.c` ×2 | deferred — host-verified only. A wrap needs ~22 min of `0x200` at 20 ms; the longest capture reached ctr 34964. Capture one on the next long bench run (M5-R8) | bus `0x200` (the epoch bumps at the counter wrap; not captured yet, see On silicon) | ✅ |
+| REQ-SECOC-010 | `key_id`-selected key; unknown `key_id` ⇒ fail (never key 0) | ADR-0021 D6; ADR-0019 D3 | `shared/crypto/src/crypto_keystore.c` | `shared/crypto/tests/test_crypto_mac.c` ×2<br>`shared/secoc/tests/test_secoc.c` | `docs/bench/2026-10-24/kat_f010.md` (a crypto failure reaches the caller as an error). Unknown key_id itself: host-verified only | debugger — `g_kat_result` in a `CRYPTO_BRINGUP_KAT=1` build. The registry's crypto-error contract event is never emitted, so the normal image can't show it (F-018) | ✅ |
+| REQ-SECOC-011 | Secret key resides only in the M0+ image; app uses the MAC oracle only | ADR-0021 D6, D7; ADR-0017; ADR-0020 | `node_a_gateway/bootloader/proj_cm0p/src/crypto_ops_cm0p.c`<br>`node_b_actuator/proj_cm0p/src/crypto_ops_cm0p.c`<br>design-only: `node_a_gateway/bootloader/proj_cm0p/src/crypto_ops_cm0p.c`<br>design-only: `node_b_actuator/proj_cm0p/src/crypto_ops_cm0p.c` | `shared/crypto/tests/test_crypto_mac.c` | `docs/bench/2026-10-30/key_residency.md` (key bytes in both CM0+ ELFs, absent from the CM4 FBL, CM4 app and CM7 app) | structural — key bytes only in the CM0+ ELFs (`host_tools/check_key_residency.py`) | ✅ |
+| REQ-SECOC-012 | `CRYPTO_OP_MAC=0x03` generic op: `key_id∥len∥msg ⇒ tag[16]` | ADR-0021 D7; ADR-0017 D3 | `shared/crypto/src/crypto_msg.c` ×4 | `shared/crypto/tests/test_crypto_mac.c` ×3 | `docs/bench/2026-10-24/kat_f010.md` (op returns an error, not a tag, on a crypto fault; NIST tags on both CM0+) | debugger — `g_kat_result` (NIST tags; a fault gives an error, not a tag) in a `CRYPTO_BRINGUP_KAT=1` build (F-018) | ✅ |
+| REQ-SECOC-013 | Telemetry `0x200` (B→A) is authenticated on the same path | ADR-0021 D7 | `node_b_actuator/proj_cm7/src/secoc_app.c`<br>`shared/secoc/src/secoc.c` | `shared/secoc/tests/test_secoc.c` | `docs/bench/2026-10-24/nodeA_round2.txt` (Node A SECOC_ACCEPT on 0x200, continuous counters) | `LOG_EVT_SECOC_ACCEPT` on `0x200` | ✅ |
 
 ## Gaps
 
@@ -82,6 +82,20 @@
 ## Deferred on silicon
 
 - **REQ-SECOC-009** — deferred — host-verified only. A wrap needs ~22 min of `0x200` at 20 ms; the longest capture reached ctr 34964. Capture one on the next long bench run (M5-R8)
+
+## Contract events not named by a requirement
+
+Informational, not gated: a contract event is assertable API (REQ-LOG-008), so each
+should prove some requirement's "Observed by"; some are infrastructure instead.
+
+- `LOG_EVT_APP_ALIVE`
+- `LOG_EVT_APP_JUMP`
+- `LOG_EVT_APP_REJECT`
+- `LOG_EVT_BOOT`
+- `LOG_EVT_CRYPTO_ERROR`
+- `LOG_EVT_OVERFLOW`
+- `LOG_EVT_UDS_SECURITY`
+- `LOG_EVT_UDS_SESSION`
 
 ## ADR coverage (informational, not gated)
 

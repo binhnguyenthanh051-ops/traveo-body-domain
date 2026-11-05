@@ -10,27 +10,32 @@ matrix against the tags and generates `docs/traceability.md`.
 as a backticked path under `docs/bench/`, or `n/a — <reason>` / `deferred — <reason>`.
 `⏳` means no evidence yet, and the report counts it as a gap.
 
+**Observed by** says *how* the behaviour is seen on the bench (CLAUDE.md rule 7, the bench-testable
+rule): a contract `LOG_EVT_*` the normal image emits; bus `0xNNN` (a can_sniff capture);
+`structural — <reason>`; `debugger — <what is read>`; or `n/a — <reason>`. The report fails an empty
+or vague cell, an event missing from `shared/log/events.csv`, and a diagnostic event.
+
 Design context: `docs/architecture/secoc-architecture.md`. Decisions: `ADR-0021` (protocol),
 `ADR-0017` (crypto offload), `ADR-0018` (IPC transport + D6 cache), `ADR-0019` (keys),
 `ADR-0002` (CAN IDs). Verdict semantics reused: `ADR-0016`.
 
 ## Coverage matrix
 
-| ID | Requirement (short) | Traces | Verified by | On silicon |
-|---|---|---|---|---|
-| REQ-SECOC-001 | Protected messages authenticated; unauthenticated dropped before decode | D1, D9 | `test_secoc`, `test_secoc_rx` | `docs/bench/2026-10-24/regression_r.md` (R2: 5/5 attacks dropped, no 0x120 accept) |
-| REQ-SECOC-002 | MAC is AES-CMAC truncated to 8 B, constant-time compared | D1 | `test_secoc` | `docs/bench/2026-10-24/regression_r.md` (8 B MAC on the wire, cross-node verify; bit-flipped MAC refused). Constant-time compare: host-verified only |
-| REQ-SECOC-003 | Secured frame layout `PDU∥freshness(4)∥MAC(8)`, one CAN FD frame, LE wire | D2 | `test_secoc` | `docs/bench/2026-10-24/bus_round2.txt` (every secured frame: PDU ∥ epoch/ctr ∥ 8 B MAC, one CAN FD frame, padded to 16 B) |
-| REQ-SECOC-004 | MAC input binds a Data ID: `CMAC(DataID∥freshness∥PDU)` | D2 | `test_secoc` | `docs/bench/2026-10-24/regression_r.md` (crossid: genuine 0x121 bytes on 0x120 → REJECT_MAC) |
-| REQ-SECOC-005 | Freshness = `epoch(u16)∥counter(u16)`; counter is per CAN-ID | D3 | `test_secoc_freshness` | `docs/bench/2026-10-24/bus_round2.txt` (Node B, 4 boots: 0x2F0 at ctr 1, then 0x200 also at ctr 1 in the same epoch) + `docs/bench/2026-10-24/nodeA_round2.txt` (Node A accepts that 0x200 ctr 1 each time) |
-| REQ-SECOC-006 | Epoch shared per-node, persisted, `++`/boot; `commit(E+1)` durable **before** spend | D3, D8 | `test_secoc_freshness`, `test_freshness_store`, `test_secoc_store` | `docs/bench/2026-10-24/epochs_power_cycle.md` (5 power cycles, epochs strictly +1 on both nodes) |
-| REQ-SECOC-007 | Receiver accept rule (floor + per-ID high-water); MAC-check before freshness update | D4 | `test_secoc_freshness`, `test_secoc_rx` | `docs/bench/2026-10-24/g2_g3_reset_replay.md` (G2: old frame refused after a Node B reset) |
-| REQ-SECOC-008 | Receiver-reset resync via authenticated `FRESHNESS_SYNC`, both receivers (0x2F0 B→A, 0x1F0 A→B); `floor=persisted+1` | D5 + F-014 addendum | `test_secoc_resync`, `test_secoc_rx` | B-receiver: `docs/bench/2026-10-24/g2_g3_reset_replay.md` (G3: 4 Node B resets, A resyncs within 20 ms). A-receiver (0x1F0): `docs/bench/2026-11-01/f014_gateway_reboot.md` (3 Node A resets, telemetry back within 36 ms each, 0/0/1 rejects; a replayed 0x1F0 refused) |
-| REQ-SECOC-009 | Counter rollover bumps the epoch (durable) and resets counters | D3 | `test_secoc_freshness` | deferred — host-verified only. A wrap needs ~22 min of `0x200` at 20 ms; the longest capture reached ctr 34964. Capture one on the next long bench run (M5-R8) |
-| REQ-SECOC-010 | `key_id`-selected key; unknown `key_id` ⇒ fail (never key 0) | D6 | `test_crypto_mac` | `docs/bench/2026-10-24/kat_f010.md` (a crypto failure reaches the caller as an error). Unknown key_id itself: host-verified only |
-| REQ-SECOC-011 | Secret key resides only in the M0+ image; app uses the MAC oracle only | D6, D7 | `@design-only` + `test_crypto_mac` | `docs/bench/2026-10-30/key_residency.md` (key bytes in both CM0+ ELFs, absent from the CM4 FBL, CM4 app and CM7 app) |
-| REQ-SECOC-012 | `CRYPTO_OP_MAC=0x03` generic op: `key_id∥len∥msg ⇒ tag[16]` | D7 | `test_crypto_mac` | `docs/bench/2026-10-24/kat_f010.md` (op returns an error, not a tag, on a crypto fault; NIST tags on both CM0+) |
-| REQ-SECOC-013 | Telemetry `0x200` (B→A) is authenticated on the same path | D7 | `test_secoc` | `docs/bench/2026-10-24/nodeA_round2.txt` (Node A SECOC_ACCEPT on 0x200, continuous counters) |
+| ID | Requirement (short) | Traces | Verified by | On silicon | Observed by |
+|---|---|---|---|---|---|
+| REQ-SECOC-001 | Protected messages authenticated; unauthenticated dropped before decode | D1, D9 | `test_secoc`, `test_secoc_rx` | `docs/bench/2026-10-24/regression_r.md` (R2: 5/5 attacks dropped, no 0x120 accept) | `LOG_EVT_SECOC_REJECT_MAC` per attack frame; no `LOG_EVT_SECOC_ACCEPT` on `0x120` |
+| REQ-SECOC-002 | MAC is AES-CMAC truncated to 8 B, constant-time compared | D1 | `test_secoc` | `docs/bench/2026-10-24/regression_r.md` (8 B MAC on the wire, cross-node verify; bit-flipped MAC refused). Constant-time compare: host-verified only | bus `0x121` (8 B MAC on the wire) + `LOG_EVT_SECOC_REJECT_MAC` (bit-flipped MAC) |
+| REQ-SECOC-003 | Secured frame layout `PDU∥freshness(4)∥MAC(8)`, one CAN FD frame, LE wire | D2 | `test_secoc` | `docs/bench/2026-10-24/bus_round2.txt` (every secured frame: PDU ∥ epoch/ctr ∥ 8 B MAC, one CAN FD frame, padded to 16 B) | bus `0x121`, `0x200` (frame layout on the wire) |
+| REQ-SECOC-004 | MAC input binds a Data ID: `CMAC(DataID∥freshness∥PDU)` | D2 | `test_secoc` | `docs/bench/2026-10-24/regression_r.md` (crossid: genuine 0x121 bytes on 0x120 → REJECT_MAC) | `LOG_EVT_SECOC_REJECT_MAC` (genuine `0x121` bytes sent on `0x120`) |
+| REQ-SECOC-005 | Freshness = `epoch(u16)∥counter(u16)`; counter is per CAN-ID | D3 | `test_secoc_freshness` | `docs/bench/2026-10-24/bus_round2.txt` (Node B, 4 boots: 0x2F0 at ctr 1, then 0x200 also at ctr 1 in the same epoch) + `docs/bench/2026-10-24/nodeA_round2.txt` (Node A accepts that 0x200 ctr 1 each time) | bus `0x200`, `0x2F0` (epoch ∥ counter per CAN ID on the wire) |
+| REQ-SECOC-006 | Epoch shared per-node, persisted, `++`/boot; `commit(E+1)` durable **before** spend | D3, D8 | `test_secoc_freshness`, `test_freshness_store`, `test_secoc_store` | `docs/bench/2026-10-24/epochs_power_cycle.md` (5 power cycles, epochs strictly +1 on both nodes) | bus `0x121`, `0x200` (each sender epoch +1 per power cycle) |
+| REQ-SECOC-007 | Receiver accept rule (floor + per-ID high-water); MAC-check before freshness update | D4 | `test_secoc_freshness`, `test_secoc_rx` | `docs/bench/2026-10-24/g2_g3_reset_replay.md` (G2: old frame refused after a Node B reset) | `LOG_EVT_SECOC_REJECT_FRESHNESS` (an old frame replayed) |
+| REQ-SECOC-008 | Receiver-reset resync via authenticated `FRESHNESS_SYNC`, both receivers (0x2F0 B→A, 0x1F0 A→B); `floor=persisted+1` | D5 + F-014 addendum | `test_secoc_resync`, `test_secoc_rx` | B-receiver: `docs/bench/2026-10-24/g2_g3_reset_replay.md` (G3: 4 Node B resets, A resyncs within 20 ms). A-receiver (0x1F0): `docs/bench/2026-11-01/f014_gateway_reboot.md` (3 Node A resets, telemetry back within 36 ms each, 0/0/1 rejects; a replayed 0x1F0 refused) | `LOG_EVT_SECOC_RESYNC` (both receiver directions) |
+| REQ-SECOC-009 | Counter rollover bumps the epoch (durable) and resets counters | D3 | `test_secoc_freshness` | deferred — host-verified only. A wrap needs ~22 min of `0x200` at 20 ms; the longest capture reached ctr 34964. Capture one on the next long bench run (M5-R8) | bus `0x200` (the epoch bumps at the counter wrap; not captured yet, see On silicon) |
+| REQ-SECOC-010 | `key_id`-selected key; unknown `key_id` ⇒ fail (never key 0) | D6 | `test_crypto_mac` | `docs/bench/2026-10-24/kat_f010.md` (a crypto failure reaches the caller as an error). Unknown key_id itself: host-verified only | debugger — `g_kat_result` in a `CRYPTO_BRINGUP_KAT=1` build. The registry's crypto-error contract event is never emitted, so the normal image can't show it (F-018) |
+| REQ-SECOC-011 | Secret key resides only in the M0+ image; app uses the MAC oracle only | D6, D7 | `@design-only` + `test_crypto_mac` | `docs/bench/2026-10-30/key_residency.md` (key bytes in both CM0+ ELFs, absent from the CM4 FBL, CM4 app and CM7 app) | structural — key bytes only in the CM0+ ELFs (`host_tools/check_key_residency.py`) |
+| REQ-SECOC-012 | `CRYPTO_OP_MAC=0x03` generic op: `key_id∥len∥msg ⇒ tag[16]` | D7 | `test_crypto_mac` | `docs/bench/2026-10-24/kat_f010.md` (op returns an error, not a tag, on a crypto fault; NIST tags on both CM0+) | debugger — `g_kat_result` (NIST tags; a fault gives an error, not a tag) in a `CRYPTO_BRINGUP_KAT=1` build (F-018) |
+| REQ-SECOC-013 | Telemetry `0x200` (B→A) is authenticated on the same path | D7 | `test_secoc` | `docs/bench/2026-10-24/nodeA_round2.txt` (Node A SECOC_ACCEPT on 0x200, continuous counters) | `LOG_EVT_SECOC_ACCEPT` on `0x200` |
 
 ## Requirements
 
