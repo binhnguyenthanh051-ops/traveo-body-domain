@@ -84,6 +84,20 @@ an unknown prefix, so a typo would have let a release through; the release workf
 area exists. Tradeoff to explain: release button (checks before the tag exists, bot-created tag)
 vs tag-push trigger (your own tag, but a failed check leaves a public bad tag).
 
+## Runtime log verbosity, DLT-style (parked 2026-11-05)
+
+Today, extra bench output means a different build: a compile-time switch (CLAUDE.md rule 7,
+`docs/hardware/kits.md` "Bring-up switches"). The automotive answer is AUTOSAR **DLT**: one image,
+with per-module log levels a diagnostic tester changes at runtime. Here that would be a CAN or
+UDS command that raises a module from contract-only to diagnostic.
+
+- **For:** the image under test is always the shipped one; no rebuild to see more; a good blog
+  section ("why a log level is a security decision").
+- **Against, for now:** a frame that changes node behaviour is attack surface. It must be
+  SecOC-authenticated or limited to an unlocked UDS session (EP.20 territory), plus code in every
+  module. A mini-milestone, not a rule.
+- **Owner decision 2026-11-05:** compile-time switches are fine for now.
+
 ## Other parked ideas
 - Body High (Cortex-M7) board — unlocks cache + symmetric multicore hands-on (already noted in
   the roadmap's open items).
