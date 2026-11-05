@@ -11,6 +11,19 @@ something *I* can stand behind in an interview.
 | **GitHub Copilot** | Function bodies *after* the signature + contract exist, Unity test cases, boilerplate, repetitive refactors | Invent interfaces/architecture; write the tricky core logic unsupervised |
 | **MS Copilot** | General concept questions, "what does this MISRA rule mean", quick syntax lookups | Anything touching repo code or design — it has no project context |
 
+## Bench rule (Claude Code on the hardware)
+
+Since 2026-11-05 Claude Code may **flash and reset the kits** to run a bench check end to end,
+following the `bench-session` skill (`.claude/skills/bench-session/`). The scope:
+
+- **Allowed:** `bash ./zz_build_*.sh program` and an OpenOCD `reset`, only on the probes pinned in
+  `bench.env`; capturing the log ports with `logview`; writing the record in `docs/bench/<date>/`.
+- **Never:** `erase`, anything that writes supervisory flash, eFuses or lifecycle,
+  `fw-loader --update-kp3`, or a probe that is not in `bench.env`.
+- **A failed flash or verify stops the session.** Claude reports it; no retry loop.
+- **Physical actions stay mine:** power, cables, jumpers, buttons, the CAN wiring. An OpenOCD
+  reset is not a reset-button (XRES) boot, and the bench record says which one it was.
+
 ## Handoff rule (Claude Code ↔ Copilot)
 
 Claude Code defines the **contract** — signature, preconditions, MISRA constraints, the ADR

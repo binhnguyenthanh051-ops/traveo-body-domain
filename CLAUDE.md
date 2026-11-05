@@ -84,6 +84,9 @@ Toolchain: Infineon ModusToolbox for firmware. GCC for host-side tests.
 - **How to flash / bench setup** (one `bash ./zz_build_*.sh program` per image, `bench.env`, probe
   serials, COM ports, log capture): `docs/hardware/kits.md` → "The bench" + "Flashing". Point the
   owner there and keep it current; the owner's terminal is PowerShell.
+- **Running a bench session yourself** (flash, reset, capture, record, close findings): allowed since
+  2026-11-05 within the bench rule in `docs/workflow.md`; follow the `bench-session` skill
+  (`.claude/skills/bench-session/SKILL.md`).
 
 ## Conventions
 
