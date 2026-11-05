@@ -14,6 +14,10 @@
 - [ ] `make test` green (host unit tests)
 - [ ] `make lint` green (cppcheck / MISRA-oriented)
 - [ ] On-target tested (board): <!-- what you observed -->
+- [ ] Bench-testable (CLAUDE.md rule 7): <!-- which contract event (or bus ID / structural /
+      debugger reason) proves it, what triggers it (reset, a CAN frame, an attack script), and
+      what host_tools/bench_summary.py shows. New REQ rows carry an "Observed by" cell; a new
+      bring-up aid has a row in docs/hardware/kits.md "Bring-up switches". -->
 - [ ] N/A — docs only
 
 ## Notes / tradeoffs

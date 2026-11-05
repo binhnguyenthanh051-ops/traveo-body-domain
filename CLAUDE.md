@@ -67,6 +67,19 @@ Toolchain: Infineon ModusToolbox for firmware. GCC for host-side tests.
    merged with CI green + tag and Release on `main`, a reviewed post draft, and a review record
    in `docs/review/`. New code that serves a `REQ-*` carries its tag. Never call a milestone
    "done" or suggest tagging while any check fails.
+7. **Bench-testable by design** (agreed 2026-11-05). When designing or reviewing a change:
+   - **Observable by default:** behaviour that serves a `REQ-*` is seen from the **normal**
+     image, through a *contract* event in `shared/log/events.csv` (not `printf`, not a macro
+     build). Where an event can't show it (timing, an absence, hardware state), the requirement
+     says how it *is* observed. Every requirements matrix has an **"Observed by"** column, which
+     `trace_report.py` checks in CI (`LOG_EVT_*` contract / bus `0xNNN` / `structural —` /
+     `debugger —` / `n/a —`, each with a reason).
+   - **Bring-up aids behind one named switch, off by default,** passed on the make command line
+     and listed in `docs/hardware/kits.md` → "Bring-up switches". No aid without a row there.
+   - **Diagnostic events are never evidence** (REQ-LOG-008). New bring-up output starts as
+     diagnostic and is promoted to contract only when a test needs it: contract IDs are API.
+   - The PR template's "Bench-testable" box asks which event proves it, what triggers it, and
+     what `host_tools/bench_summary.py` shows. Challenge a design that has no answer.
 
 ## How I want to use you (Claude Code)
 

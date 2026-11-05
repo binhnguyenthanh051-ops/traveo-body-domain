@@ -89,3 +89,22 @@ python host_tools/logview/logview.py --port COM6 --raw docs/bench/<YYYY-MM-DD>/n
 
 `logview` folds `SECOC_ACCEPT` into one line per CAN ID every 5 s; add `--all` for a transcript
 that is evidence (ADR-0023).
+
+### Bring-up switches
+
+Every bench-only build variant has **one named switch, off unless given on the command line**
+(CLAUDE.md rule 7). The normal image is the one tested and described; a variant is built for one
+check and then the normal image is rebuilt (the `bench-test` skill does this). Pass the switch
+after the project, for example `bash ./zz_build_actuator_app.sh program all CAN_ECHO_TEST=1`.
+**A new bring-up aid gets a row here, or it doesn't get merged.**
+
+| Switch | Node / project | What it adds | Notes |
+|---|---|---|---|
+| `CRYPTO_BRINGUP_KAT=1` | A + B, `proj_cm0p` | CMAC known-answer test at boot; result in `g_kat_result` (read with the debugger) | Evidence for REQ-SECOC-010/012 (`docs/bench/2026-10-24/kat_f010.md`); F-018 |
+| `SECOC_CRYPTO_BRINGUP=1` | B, `proj_cm7` | One MAC over the IPC mailbox at boot, logged as `LOG_EVT_DBG_U32` tags `0x33xx` (cache/MPU registers) | M5 Stage 3.3 |
+| `CAN_LOOPBACK_TEST=1` | A app + FBL, B `proj_cm7` | On-chip CAN loopback, no bus needed | M2 bring-up |
+| `CAN_ECHO_TEST=1` | A app, B `proj_cm7` | Echo of unknown CAN IDs, for `host_tools/can_echo_probe` | Never with both nodes on the bus (F-011) |
+| `FBL_M4_SEAM5_PROBE` | A, FBL `proj_cm4` | Deliberate CM4 read of the CM0+ key region, to show the bus fault | Pair with `FBL_M4_SEAM5_PROT` |
+| `FBL_M4_SEAM5_PROT` | A, FBL `proj_cm0p` | Raises the TCB-isolation walls (ADR-0020 Boundary A) | **A feature, not a bring-up aid**, yet off in the committed image (F-019) |
+| `FBL_M4_SEAM6_DEAD`, `FBL_M4_SEAM6_GARBAGE` | A, FBL `proj_cm0p` | CM0+ plays dead / replies garbage → the FBL stays in the bootloader | Fault-injection demo (ADR-0016 D5); one at a time |
+| *(none yet)* | B, `proj_cm7` | `can_report_status()`: CAN PSR/ECR/CCCR as `DBG_U32` every second | **Always on**: F-017, at the retro |
