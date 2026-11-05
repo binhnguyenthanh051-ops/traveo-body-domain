@@ -1,4 +1,4 @@
-"""test_bench_summary.py -- the bench-session capture summary.
+"""test_bench_summary.py -- the bench-test capture summary.
 
 bench_summary is what a bench record's numbers come from (boots, banners per
 boot, rejects, lost records, reset causes), so it has to read a real stream the

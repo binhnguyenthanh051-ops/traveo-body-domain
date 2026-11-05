@@ -3,7 +3,7 @@
 The bench checks left open by the Tue 3 findings sweep: **F-006** (one FBL banner), **F-007**
 (Node B clears its reset cause), **F-012** (flash/reset the right kit with both plugged in) and
 **F-013** (`program` flashes the signed image). First session run end to end by Claude Code under
-the bench rule (`docs/workflow.md`, `bench-session` skill): flash, reset, capture, check. The owner
+the bench rule (`docs/workflow.md`, `bench-test` skill, then named `bench-session`): flash, reset, capture, check. The owner
 plugged in the kits; nothing else was physical.
 
 **Images:** built and flashed tonight by the three `zz_build_*` scripts, from a tree whose firmware

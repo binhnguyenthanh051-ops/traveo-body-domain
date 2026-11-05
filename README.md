@@ -135,6 +135,8 @@ On Windows with MSYS make, pass a Windows temp folder or GCC can't write its tem
 - `host_tools/`: Python: `can_sniff`, `logview`, `secoc_attack`, `uds_flash`, signing, the
   traceability report
 - `docs/`: architecture, ADRs, requirements, bench captures, reviews, posts, the project plan
+- `.claude/skills/`: the procedures Claude Code follows, e.g. `bench-test`, which flashes and checks
+  the kits end to end (listed in [docs/workflow.md](docs/workflow.md#skills))
 
 ## Git workflow
 
