@@ -1,0 +1,129 @@
+﻿Tools Directory: C:/Infineon/Tools/ModusToolbox/tools_3.8
+Searching installed tools in progress...
+Searching installed tools complete
+NOTE: Using 'C:/Infineon/Tools/ModusToolbox/tools_3.8/ninja/ninja.exe' from PATH.
+Generating mtbninja data files...
+Generating mtbninja data complete...
+
+Prebuild operations complete
+Toolchain validation: PASS
+Initializing build: gateway_app Debug CYTVII-B-E-1M-SK GCC_ARM
+# 0: Loading the application in directory 'C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/app'
+# 0: Loading the ModusToolbox Technology Packs and Early Access Packs
+# 0: Loading the tools information
+[1/4] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/app/build/Debug/local/src/app_task.o
+[2/4] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/app/build/Debug/local/src/health_task.o
+[3/4] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/app/build/Debug/local/src/can_task.o
+[4/4] Linking, creating elf file build/CYTVII-B-E-1M-SK/Debug/gateway_app.elf
+C:/Infineon/Tools/mtb-gcc-arm-eabi/14.2.1/gcc/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/bin/ld.exe: warning: build/CYTVII-B-E-1M-SK/Debug/gateway_app.elf has a LOAD segment with RWX permissions
+
+C:/Infineon/Tools/mtb-gcc-arm-eabi/14.2.1/gcc/bin/arm-none-eabi-objcopy -O ihex C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/app/build/CYTVII-B-E-1M-SK/Debug/gateway_app.elf C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/app/build/CYTVII-B-E-1M-SK/Debug/gateway_app.hex
+==============================================================================
+= Build complete =
+==============================================================================
+
+  -----------------------------------------------
+ | Section          |    Address |          Used |
+  -----------------------------------------------
+ |   .cy_m0p_image  | 0x10000000 |         3,840 |
+ |   .text          | 0x10040000 |        35,916 |
+ |   .ARM.exidx     | 0x10048c4c |             8 |
+ |   .copy.table    | 0x10048c54 |            24 |
+ |   .zero.table    | 0x10048c6c |             8 |
+ |   .data          | 0x08008080 |           120 |
+ |   .cy_sharedmem  | 0x08008100 |            48 |
+ |   .noinit        | 0x08008130 |         1,693 |
+ |   .fbl_handshake | 0x0801f700 |            12 |
+ |   .bss           | 0x080087e0 |        10,152 |
+ |   .heap          | 0x0800af88 |        79,736 |
+  -----------------------------------------------
+
+Total FLASH (Available): 1,114,112
+Total FLASH (Utilized) : 39,796
+signed build/app_cm4.bin -> build/app_stamped.bin: image_len=36124 (0x8d1c) B, header@0x100, key_id=1, trailer=100 B, total=36224 B
+
+==> node_a_gateway/app/build/app_stamped.hex  (SIGNED (ECDSA P-256, key_id=1) — needs a SHA-256 FBL; @ 0x10040000)
+==> flashing on probe 1F110D8900212400
+Tools Directory: C:/Infineon/Tools/ModusToolbox/tools_3.8
+Searching installed tools in progress...
+Searching installed tools complete
+NOTE: Using 'C:/Infineon/Tools/ModusToolbox/tools_3.8/ninja/ninja.exe' from PATH.
+Generating mtbninja data files...
+Generating mtbninja data complete...
+
+Open On-Chip Debugger 0.12.0+dev-5.16.1.4486 (2026-04-14-18:10)
+Licensed under GNU GPL v2
+For bug reports, read
+	http://openocd.org/doc/doxygen/bugs.html
+adapter speed: 2000 kHz
+adapter srst delay: 25
+adapter srst pulse_width: 25
+** Auto-acquire enabled, use "set ENABLE_ACQUIRE 0" to disable
+cortex_m reset_config sysresetreq
+Warn : SFlash programming allowed for regions: USER, TOC, KEY
+Warn : Using CMSIS-DAPv2 interface 0 with wrong class 0 subclass 0 or protocol 0
+Info : Using CMSIS-DAPv2 interface with VID:PID=0x04b4:0xf155, serial=1F110D8900212400
+Info : CMSIS-DAP: SWD supported
+Info : CMSIS-DAP: Atomic commands supported
+Info : CMSIS-DAP: FW Version = 2.0.0
+Info : CMSIS-DAP: Interface Initialised (SWD)
+Info : SWCLK/TCK = 1 SWDIO/TMS = 1 TDI = 0 TDO = 0 nTRST = 0 nRESET = 1
+Info : CMSIS-DAP: Interface ready
+Info : KitProg3: FW version: 256.256.0
+Info : KitProg3: Pipelined transfers enabled
+Info : KitProg3: Asynchronous USB transfers enabled
+Info : VTarget = 0.000 V
+Info : kitprog3: acquiring device in Test Mode using 'TraveoII/XMC7xxx/XMC5xxx' target and 'xres' reset...
+Info : clock speed 2000 kHz
+Info : SWD DPIDR 0x6ba02477
+Info : [traveo2.cpu.cm0] Cortex-M0+ r0p1 processor detected
+Info : [traveo2.cpu.cm0] target has 4 breakpoints, 2 watchpoints
+***************************************
+** Use overriden Main Flash size, kb: 1088
+** Use overriden Work Flash size, kb: 96
+** Silicon: 0xE3DA, Family: 0x101, Rev.: 0x23 (B2)
+** Detected Device: CYT2B75CXE
+** Flash Boot version: 3.1.0.556
+** SFlash version: 0x5abd3
+** Chip Protection: NORMAL
+***************************************
+Info : [traveo2.cpu.cm0] Examination succeed
+Info : [traveo2.cpu.cm4] Cortex-M4 r0p1 processor detected
+Info : [traveo2.cpu.cm4] target has 6 breakpoints, 4 watchpoints
+Info : [traveo2.cpu.cm4] Examination succeed
+Info : starting gdb server for traveo2.cpu.cm0 on 3333
+Info : Listening on port 3333 for gdb connections
+Info : starting gdb server for traveo2.cpu.cm4 on 3334
+Info : Listening on port 3334 for gdb connections
+Info : SWD DPIDR 0x6ba02477
+[traveo2.cpu.cm0] halted due to debug-request, current mode: Thread 
+xPSR: 0x61000000 pc: 0x000000f8 msp: 0x0801f800
+Info : kitprog3: acquiring device in Test Mode using 'TraveoII/XMC7xxx/XMC5xxx' target and 'xres' reset...
+Info : [traveo2.cpu.cm0] external reset detected
+[traveo2.cpu.cm0] halted due to debug-request, current mode: Thread 
+xPSR: 0x41000000 pc: 0x000002a4 msp: 0x08020000
+** Device acquired successfully
+** traveo2.cpu.cm4: Ran after reset and before halt...
+[traveo2.cpu.cm4] halted due to debug-request, current mode: Thread 
+xPSR: 0x01000000 pc: 0x000001bc msp: 0x0801f800
+** Programming Started **
+auto erase enabled
+Info : Padding image section 0 at 0x10048d80 with 128 bytes (bank write end alignment)
+Warn : Adding extra erase range, 0x10048e00 .. 0x1004ffff
+
+[100%] [################################] [ Erasing     ]
+
+[ 81%] [#########################       ] [ Programming ]
+[ 83%] [##########################      ] [ Programming ]
+[ 98%] [############################### ] [ Programming ]
+[100%] [################################] [ Programming ]
+wrote 36352 bytes from file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/app/build/app_stamped.hex in 0.418692s (84.788 KiB/s)
+** Programming Finished **
+** Verify Started **
+verified 36224 bytes in 0.056838s (622.383 KiB/s)
+** Verified OK **
+** Resetting Target **
+Info : SWD DPIDR 0x6ba02477
+shutdown command invoked
+Info : traveo2.dap: powering down debug domain...
+==> flashed C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/app/build/app_stamped.hex (SIGNED (ECDSA P-256, key_id=1) — needs a SHA-256 FBL) and reset; the FBL verifies it and jumps.
