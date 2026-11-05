@@ -1,9 +1,9 @@
 ---
-name: bench-session
-description: Run a bench session on the two TRAVEO T2G kits end to end: flash Node A (FBL + signed app) and/or Node B with the zz_build scripts, reset over OpenOCD, capture both log ports, summarise, write the record in docs/bench/<date>/, and update docs/project/findings.md. Use when the owner asks to flash, run a bench check, verify a fix on silicon, or close a finding that waits on the bench.
+name: bench-test
+description: Run a bench test on the two TRAVEO T2G kits end to end: flash Node A (FBL + signed app) and/or Node B with the zz_build scripts, reset over OpenOCD, capture both log ports, summarise, write the record in docs/bench/<date>/, and update docs/project/findings.md. Use when the owner asks to flash, run a bench check, verify a fix on silicon, or close a finding that waits on the bench.
 ---
 
-# Bench session (flash → reset → capture → check → record)
+# Bench test (flash → reset → capture → check → record)
 
 The owner allowed Claude to flash and reset the kits on 2026-11-05, within the **bench rule** in
 `docs/workflow.md`. Read that section first; it overrides anything below.

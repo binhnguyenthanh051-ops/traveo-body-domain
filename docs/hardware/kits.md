@@ -76,7 +76,7 @@ bash ./zz_build_actuator_app.sh program    # Node B CM0+ + CM7
   finds `make`, the GCC tools and Python. Bash syntax (`VAR=x ./script`, `/c/...` paths) does not
   work typed into PowerShell itself.
 - Claude may flash and reset too, within the bench rule (`docs/workflow.md`), following the
-  `bench-session` skill. Reset only: `bash ./tools/bench/reset_node.sh A|B` (OpenOCD, the
+  `bench-test` skill (`.claude/skills/bench-test/`). Reset only: `bash ./tools/bench/reset_node.sh A|B` (OpenOCD, the
   `bench.env` probe; a debug reset, not the reset button). Numbers for a bench record:
   `python host_tools/bench_summary.py <nodeA.bin> <nodeB.bin>`.
 

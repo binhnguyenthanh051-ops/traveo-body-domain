@@ -14,7 +14,7 @@ something *I* can stand behind in an interview.
 ## Bench rule (Claude Code on the hardware)
 
 Since 2026-11-05 Claude Code may **flash and reset the kits** to run a bench check end to end,
-following the `bench-session` skill (`.claude/skills/bench-session/`). The scope:
+following the `bench-test` skill (see "Skills" below). The scope:
 
 - **Allowed:** `bash ./zz_build_*.sh program` and an OpenOCD `reset`, only on the probes pinned in
   `bench.env`; capturing the log ports with `logview`; writing the record in `docs/bench/<date>/`.
@@ -23,6 +23,18 @@ following the `bench-session` skill (`.claude/skills/bench-session/`). The scope
 - **A failed flash or verify stops the session.** Claude reports it; no retry loop.
 - **Physical actions stay mine:** power, cables, jumpers, buttons, the CAN wiring. An OpenOCD
   reset is not a reset-button (XRES) boot, and the bench record says which one it was.
+
+## Skills
+
+The procedures Claude Code follows are kept in the repo, under version control, so you can read
+exactly what an agent was told to do. They all live in **`.claude/skills/<name>/SKILL.md`**, the
+folder Claude Code discovers them in. There is no second copy anywhere else.
+
+| Skill | What it does | First run |
+|---|---|---|
+| [`bench-test`](../.claude/skills/bench-test/SKILL.md) | Flash (signed app on Node A), reset, capture both log ports, summarise with `host_tools/bench_summary.py`, write the record in `docs/bench/<date>/`, update the findings register. Bounded by the bench rule above | [2026-11-05](bench/2026-11-05/findings_closeout.md) |
+
+`.github/prompts/` holds GitHub Copilot prompt files, which are Copilot's, not skills.
 
 ## Handoff rule (Claude Code ↔ Copilot)
 
