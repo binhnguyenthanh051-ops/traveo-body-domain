@@ -26,15 +26,30 @@ A GAP (exit 1) is any of:
     no-silicon      an "On silicon" cell that is empty, names a missing file, or says
                     n/a / deferred without a reason
     no-silicon-col  a requirements file with no "On silicon" column at all
+    no-observed     an "Observed by" cell that is empty, vague, or n/a / structural / debugger
+                    without a reason (the bench-testable rule, CLAUDE.md rule 7)
+    dangling-event  an "Observed by" cell naming a LOG_EVT_* not in shared/log/events.csv
+    not-contract    an "Observed by" cell naming a diagnostic event (REQ-LOG-008: never
+                    asserted, so no evidence)
+    no-observed-col a requirements file with an "On silicon" column but no "Observed by"
 
 Reported but NOT a gap: accepted ADRs without a test tag (backfilling M1-M4 is
-opportunistic, convention §6).
+opportunistic, convention §6), and contract events no requirement names (some
+are infrastructure, e.g. LOG_EVT_OVERFLOW).
 
 On silicon cell values:
     `docs/bench/<date>/<file>`  ...   evidence; every backticked path must exist
     n/a — <reason>                    not target behaviour (e.g. a host-side contract)
     deferred — <reason>               explicitly deferred; listed in the report
     (empty), —, ⏳ ...                no evidence yet => gap
+
+Observed by cell values (how the behaviour is seen on the bench):
+    `LOG_EVT_X`                       a contract event the normal image emits
+    bus `0xNNN`                       a CAN capture (can_sniff) of that ID
+    structural — <reason>             proven by structure, not by an event (e.g. key residency)
+    debugger — <what is read>         read with the debugger, often in a bring-up build:
+                                      honest, but a candidate for a contract event
+    n/a — <reason>                    not target behaviour
 
 Usage:
     python host_tools/trace_report.py                   # write the report; exit 1 on gaps
@@ -54,6 +69,8 @@ ROOT = Path(__file__).resolve().parent.parent
 REQ_DIR = Path("docs") / "requirements"
 ADR_DIR = Path("docs") / "architecture" / "decisions"
 OUT_PATH = Path("docs") / "traceability.md"
+EVENTS_PATH = Path("shared") / "log" / "events.csv"
+EVENT_RE = re.compile(r"LOG_EVT_[A-Z0-9_]+")
 
 SOURCE_SUFFIXES = {".c", ".h", ".py", ".s", ".S"}
 # docs/ mentions tags in prose; the rest is build output or third-party code.
@@ -102,6 +119,7 @@ class Req:
     traces: list[tuple[str, int | None]] = field(default_factory=list)
     verified_by: list[str] = field(default_factory=list)
     silicon: str | None = None        # raw cell; None = the file has no such column
+    observed: str | None = None       # raw "Observed by" cell; None = no such column
 
 
 @dataclass(frozen=True)
@@ -159,6 +177,8 @@ def parse_requirements(path: Path, rel: str) -> tuple[list[Req], bool]:
                         col["verified"] = i
                     elif name.startswith("on silicon"):
                         col["silicon"] = i
+                    elif name.startswith("observed"):
+                        col["observed"] = i
                 has_silicon_col = "silicon" in col
             continue
         if set("".join(cells)) <= set("-: "):
@@ -184,6 +204,8 @@ def parse_requirements(path: Path, rel: str) -> tuple[list[Req], bool]:
         req.verified_by = [t for t in re.findall(r"`(test_\w+)`", cell("verified"))]
         if has_silicon_col:
             req.silicon = cell("silicon")
+        if "observed" in col:
+            req.observed = cell("observed")
 
     # Body: "### REQ-X-NNN — title" up to the next heading.
     current: Req | None = None
@@ -279,6 +301,7 @@ class Model:
     tags: list[Tag]
     gaps: list[Gap]
     silicon_cols: dict[str, bool]          # requirements file -> has the column
+    events: dict[str, str] = field(default_factory=dict)   # registry: name -> class
 
     def tags_for(self, req_id: str, kind: str) -> list[Tag]:
         return [t for t in self.tags if t.id == req_id and t.kind == kind]
@@ -299,6 +322,47 @@ def silicon_problem(cell: str, root: Path) -> str | None:
     if missing:
         return "evidence path not found: " + ", ".join(f"`{p}`" for p in missing)
     return None
+
+
+def load_events(root: Path) -> dict[str, str]:
+    """Event name -> class ("contract" / "diagnostic") from the registry (ADR-0023 D9).
+    No registry => {} => every named event is dangling."""
+    path = root / EVENTS_PATH
+    if not path.is_file():
+        return {}
+    events: dict[str, str] = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        cells = [c.strip() for c in line.split(",")]
+        if len(cells) >= 3:
+            events[cells[1]] = cells[2]
+    return events
+
+
+def observed_problems(cell: str, events: dict[str, str]) -> list[tuple[str, str]]:
+    """(gap kind, detail) for an "Observed by" cell; [] when it says how it's seen."""
+    c = cell.strip()
+    low = c.lower()
+    if low in EMPTY_CELLS:
+        return [("no-observed", "no observation: name a contract `LOG_EVT_*`, bus `0xNNN`, "
+                                "`structural — <reason>`, `debugger — <what is read>` or `n/a — <reason>`")]
+    for kw in ("n/a", "structural", "debugger"):
+        if low.startswith(kw):
+            reason = c[len(kw):].strip(" :—–-")
+            return [] if reason else [("no-observed", f"`{kw}` without a reason")]
+    problems = []
+    named = EVENT_RE.findall(c)
+    for name in named:
+        if name not in events:
+            problems.append(("dangling-event", f"`{name}` is not in `{EVENTS_PATH.as_posix()}`"))
+        elif events[name] != "contract":
+            problems.append(("not-contract", f"`{name}` is {events[name]}: never asserted "
+                                             "(REQ-LOG-008), so it proves nothing"))
+    on_bus = re.search(r"\bbus\b", low) and re.search(r"0x[0-9a-f]+", low)
+    if not named and not on_bus:
+        problems.append(("no-observed", "names no contract event, bus ID, or structural reason"))
+    return problems
 
 
 def build_model(root: Path) -> Model:
@@ -329,12 +393,17 @@ def build_model(root: Path) -> Model:
             gaps.append(Gap("dangling", f"{t.id} D{t.sub}",
                             f"{t.id} has no sub-decision D{t.sub}", where))
 
-    model = Model(reqs, adrs, tags, gaps, silicon_cols)
+    events = load_events(root)
+    model = Model(reqs, adrs, tags, gaps, silicon_cols, events)
     for rel, has_col in silicon_cols.items():
+        area = next(_area(r.id) for r in reqs if r.source == rel)
         if not has_col:
-            area = next(_area(r.id) for r in reqs if r.source == rel)
             gaps.append(Gap("no-silicon-col", area,
                             "requirements file has no \"On silicon\" column", rel))
+        elif all(r.observed is None for r in reqs if r.source == rel):
+            gaps.append(Gap("no-observed-col", area,
+                            "requirements file has an \"On silicon\" column but no "
+                            "\"Observed by\" column", rel))
 
     for r in reqs:
         has_matrix = any(x.in_matrix for x in reqs if x.source == r.source)
@@ -370,6 +439,9 @@ def build_model(root: Path) -> Model:
             problem = silicon_problem(r.silicon, root)
             if problem:
                 gaps.append(Gap("no-silicon", r.id, problem, r.source))
+        if r.observed is not None and r.in_matrix:
+            for kind, detail in observed_problems(r.observed, events):
+                gaps.append(Gap(kind, r.id, detail, r.source))
     return model
 
 
@@ -428,18 +500,20 @@ def render(model: Model) -> str:
 
     for area, reqs in areas.items():
         out += [f"## {area}", "",
-                "| REQ | Requirement | Traces | Impl | Test | On silicon | Status |",
-                "|---|---|---|---|---|---|---|"]
+                "| REQ | Requirement | Traces | Impl | Test | On silicon | Observed by | Status |",
+                "|---|---|---|---|---|---|---|---|"]
         for r in reqs:
             impl = _fmt_files(model.tags_for(r.id, "impl"))
             impl += _fmt_files(model.tags_for(r.id, "design-only"), "design-only: ")
             test = _fmt_files(model.tags_for(r.id, "test"))
             silicon = "*(no column)*" if r.silicon is None else _md(r.silicon or "—")
+            observed = "*(no column)*" if r.observed is None else _md(r.observed or "—")
             kinds = sorted({g.kind for g in gaps_by_req.get(r.id, [])})
             status = "✅" if not kinds else "❌ " + ", ".join(kinds)
             out.append(" | ".join([
                 f"| {r.id}", _md(r.short or r.title), _fmt_traces(r.traces) or "—",
-                "<br>".join(impl) or "—", "<br>".join(test) or "—", silicon, f"{status} |"]))
+                "<br>".join(impl) or "—", "<br>".join(test) or "—", silicon, observed,
+                f"{status} |"]))
         out.append("")
 
     out += ["## Gaps", ""]
@@ -454,6 +528,15 @@ def render(model: Model) -> str:
                 if r.silicon and r.silicon.strip().lower().startswith("deferred")]
     out += ["## Deferred on silicon", ""]
     out += [f"- **{r.id}** — {_md(r.silicon or '')}" for r in deferred] or ["None."]
+    out.append("")
+
+    claimed = {n for r in model.reqs for n in EVENT_RE.findall(r.observed or "")}
+    unclaimed = sorted(n for n, cls in model.events.items()
+                       if cls == "contract" and n not in claimed)
+    out += ["## Contract events not named by a requirement", "",
+            "Informational, not gated: a contract event is assertable API (REQ-LOG-008), so each",
+            "should prove some requirement's \"Observed by\"; some are infrastructure instead.", ""]
+    out += [f"- `{n}`" for n in unclaimed] or ["None."]
     out.append("")
 
     out += ["## ADR coverage (informational, not gated)", "",
