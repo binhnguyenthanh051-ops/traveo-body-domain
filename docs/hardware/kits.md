@@ -107,4 +107,4 @@ after the project, for example `bash ./zz_build_actuator_app.sh program all CAN_
 | `FBL_M4_SEAM5_PROBE` | A, FBL `proj_cm4` | Deliberate CM4 read of the CM0+ key region, to show the bus fault | Pair with `FBL_M4_SEAM5_PROT` |
 | `FBL_M4_SEAM5_PROT` | A, FBL `proj_cm0p` | Raises the TCB-isolation walls (ADR-0020 Boundary A) | **A feature, not a bring-up aid**, yet off in the committed image (F-019) |
 | `FBL_M4_SEAM6_DEAD`, `FBL_M4_SEAM6_GARBAGE` | A, FBL `proj_cm0p` | CM0+ plays dead / replies garbage → the FBL stays in the bootloader | Fault-injection demo (ADR-0016 D5); one at a time |
-| *(none yet)* | B, `proj_cm7` | `can_report_status()`: CAN PSR/ECR/CCCR as `DBG_U32` every second | **Always on**: F-017, at the retro |
+| `CAN_STATUS_BRINGUP=1` | B, `proj_cm7` | `can_report_status()`: CAN PSR/ECR/CCCR as `DBG_U32` tags `0x3510`–`0x3512` every second | Bus bring-up (LEC, TEC/REC, bus-off). Was always on until F-017; real bus only (no effect with `CAN_LOOPBACK_TEST=1`) |

@@ -148,6 +148,13 @@ ifeq ($(SECOC_CRYPTO_BRINGUP),1)
 DEFINES+=SECOC_CRYPTO_BRINGUP=1
 endif
 
+# Bench toggle (F-017): `CAN_STATUS_BRINGUP=1` logs the CAN controller's PSR/ECR/
+# CCCR once a second as LOG_EVT_DBG_U32 tags 0x3510..12 (can_task.c). Off by
+# default: on a healthy bus it is only console noise.
+ifeq ($(CAN_STATUS_BRINGUP),1)
+DEFINES+=CAN_STATUS_BRINGUP=1
+endif
+
 # Bench toggle: `CAN_LOOPBACK_TEST=1` = Phase A on-chip loopback (no bus needed).
 # The default (unset) is Phase B, the real bus (can_task.c).
 ifeq ($(CAN_LOOPBACK_TEST),1)
