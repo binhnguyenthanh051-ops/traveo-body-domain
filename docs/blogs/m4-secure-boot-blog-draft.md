@@ -377,9 +377,11 @@ read succeeds. That delta **is** the proof — and it's driven by CM4 code, not 
 debugger read (the DAP is a separate master that bypasses, which is exactly why our
 `mdw` dumps always worked).*
 
-> **Honest label — one wall shipped, and the discipline to stop there.** The full plan
+> **Honest label — one wall, proven on a bench build, and the discipline to stop there.** The full plan
 > was two walls (the key **and** the CRYPTO engine) plus a lock so the CM4 can't disable
-> them. Only the **key SMPU** is shipped-and-proven. The CRYPTO-engine wall and the
+> them. Only the **key SMPU** is built and proven, on a bench build: it sits behind a
+> build switch that is off in the committed image, because without the lock a hostile
+> CM4 could simply turn it off. The CRYPTO-engine wall and the
 > tamper-lock are **design-only, deferred to M5** — and *redundant* for M4 on purpose:
 > the CM4 never touches the CRYPTO engine (all crypto crosses the mailbox), and the only
 > persistent secret — the key — is already walled. Proving the crown jewel is
@@ -485,8 +487,8 @@ the end-to-end proof.
 | CM4 debug routine reads the key | **BusFault** (`BFAR = 0x1000_0000`) | the wall (TCB isolation) |
 
 *Each is a one-line change and each demonstrates a distinct property. The last one is
-the money shot: the untrusted core physically cannot read the key it would need to
-forge trust.*
+the money shot: on the bench build, the untrusted core physically cannot read the key
+it would need to forge trust.*
 
 ---
 

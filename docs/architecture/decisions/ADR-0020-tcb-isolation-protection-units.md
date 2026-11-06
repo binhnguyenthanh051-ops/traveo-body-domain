@@ -22,6 +22,32 @@ it describes the CM4 core-MPU rejection (D1) and the SMPU (D3), it is what was b
 *(Not chased further on the bench: the fixed-PPU per-PC att model and the master-struct lock both
 have silicon quirks that were disproportionate to walling a resource the CM4 cannot reach anyway.)*
 
+### Addendum 2026-11-06 (F-019): Boundary A is a bench demonstration, off in the committed image
+
+"Proven on silicon" above means **proven on a bench build**. The wall is behind
+`FBL_M4_SEAM5_PROT` in `node_a_gateway/bootloader/proj_cm0p/Makefile`, off by default so the
+committed image stays byte-identical to Seam 4. The image on `main` runs the CM4 with no SMPU
+over the CM0+ flash. This ADR never decided the default. The W45 retro (2026-11-05) decided it:
+**it stays demo-only**, for three reasons:
+
+1. **Without D5 it is not a boundary anyway.** D5 says it plainly: without the lock, D3 is
+   theatre, because a hostile CM4 could turn the wall off. D5 is deferred. Turning D3 on by
+   default would make the committed image *look* isolated without being isolated, which is
+   worse than an honest "off".
+2. **NORMAL lifecycle.** The DAP bypasses the wall regardless (see Consequences). Nothing in
+   this project is a fused lockdown.
+3. **Cost against the plan.** Default-on means re-running the Seam 5 bench with the normal image
+   plus the FBL/app regression on both images, for a property that reasons 1–2 already cap.
+
+**What may be claimed:** the mechanism works. On a bench build, a CM4 read of the CM0+ key
+region takes a bus fault, against a walls-off control where the same read succeeds. **What may
+not be claimed:** that the shipped image stops the CM4 reading the key. Posts and the README say
+"proven on a bench build", not "shipped". Since M5 the CM0+ image also holds the SecOC secret
+(REQ-SECOC-011). Its evidence is structural (the key bytes are only in the CM0+ ELFs,
+`host_tools/check_key_residency.py`), not a runtime wall, which is what
+`docs/requirements/secoc.md` already says. Making the wall real (D5, then default-on) is future
+work, not a finding.
+
 ## Context
 
 ADR-0017 offloaded crypto to the CM0+ for three named reasons; reason #2 was **TCB
@@ -212,7 +238,8 @@ plainly that enforcement itself is bench-only.
 ## Consequences
 
 - (+) ADR-0017 reason #2 stops being an assertion — a buggy CM4 parser provably can't reach the
-  key or the engine; the TCB is a boundary, not a convention.
+  key or the engine; the TCB is a boundary, not a convention. *(On a bench build only: the
+  committed image has the wall off, see the F-019 addendum under Scope.)*
 - (+) The PC split is M5-ready: the app inherits the wall, forcing it through the IPC service for
   MAC ops — the runtime-secret-key case ADR-0017 offloaded *for*.
 - (+) Zero cost to the FBL/app: neither ever legitimately touches the walled regions.
