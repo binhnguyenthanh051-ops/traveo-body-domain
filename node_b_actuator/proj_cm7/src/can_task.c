@@ -175,9 +175,17 @@ static void demo_io_init(void);
 static bool door_ajar_switch(void);
 static void light_output_update(void);
 
-#if !CAN_LOOPBACK_TEST
+/* CAN_STATUS_BRINGUP: real-bus bring-up only, off by default (F-017, CLAUDE.md
+ * rule 7). Left on, it was 1,476 of 1,694 lines of a folded Node B capture. */
+#if !CAN_LOOPBACK_TEST && defined(CAN_STATUS_BRINGUP) && (CAN_STATUS_BRINGUP != 0)
+#define CAN_STATUS_REPORT    1
+#else
+#define CAN_STATUS_REPORT    0
+#endif
+
+#if CAN_STATUS_REPORT
 /* Bench Stage 5 diagnosis: the controller's own view of the bus, once a second,
- * as LOG_EVT_DBG_U32 (no debugger needed):
+ * as LOG_EVT_DBG_U32 (no debugger needed). Build with CAN_STATUS_BRINGUP=1:
  *   tag 0x3510 PSR  bits[2:0] LEC = last error: 0 none, 1 stuff, 2 form,
  *                   3 ACK (we sent, nobody acked), 4 bit1, 5 bit0, 7 no change;
  *                   bit 5 EP = error passive, bit 7 BO = bus off
@@ -200,7 +208,7 @@ static void can_report_status(void)
     log_evt(LOG_EVT_DBG_U32, tt->ECR,  0x3511U);
     log_evt(LOG_EVT_DBG_U32, tt->CCCR, 0x3512U);
 }
-#endif
+#endif /* CAN_STATUS_REPORT */
 
 static void can_task(void *arg)
 {
@@ -219,8 +227,10 @@ static void can_task(void *arg)
 
     for (;;)
     {
-#if !CAN_LOOPBACK_TEST
+#if CAN_STATUS_REPORT
         can_report_status();
+#endif
+#if !CAN_LOOPBACK_TEST
         /* Phase B: on the real bus, announce our freshness floor once at startup
          * so the gateway raises its command epoch (D5 resync). Task context — the
          * MAC round-trip uses the RTOS-tick clock. */
