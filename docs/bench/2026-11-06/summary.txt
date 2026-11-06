@@ -1,0 +1,33 @@
+== nodeA.bin
+records: 21275   lost: 0   resyncs: 0
+boots: 16   max banners per boot: 1   jumps: 7
+  boot  1  fbl       banners=1  reset_reason=0x0  (FBL_RST_POWER_ON (mapped enum, F-016))
+  boot  2  app       banners=1  reset_reason=0x0  (none)
+  boot  3  fbl       banners=1  reset_reason=0x0  (FBL_RST_POWER_ON (mapped enum, F-016))
+  boot  4  app       banners=1  reset_reason=0x0  (none)
+  boot  5  fbl       banners=1  reset_reason=0x0  (FBL_RST_POWER_ON (mapped enum, F-016))
+  boot  6  app       banners=1  reset_reason=0x0  (none)
+  boot  7  fbl       banners=1  reset_reason=0x0  (FBL_RST_POWER_ON (mapped enum, F-016))
+  boot  8  app       banners=1  reset_reason=0x0  (none)
+  boot  9  fbl       banners=1  reset_reason=0x0  (FBL_RST_POWER_ON (mapped enum, F-016))
+  boot 10  fbl       banners=1  reset_reason=0x0  (FBL_RST_POWER_ON (mapped enum, F-016))
+  boot 11  fbl       banners=1  reset_reason=0x0  (FBL_RST_POWER_ON (mapped enum, F-016))
+  boot 12  app       banners=1  reset_reason=0x0  (none)
+  boot 13  fbl       banners=1  reset_reason=0x0  (FBL_RST_POWER_ON (mapped enum, F-016))
+  boot 14  app       banners=1  reset_reason=0x0  (none)
+  boot 15  fbl       banners=1  reset_reason=0x0  (FBL_RST_POWER_ON (mapped enum, F-016))
+  boot 16  app       banners=1  reset_reason=0x0  (none)
+accepts: 0x200 x12289, 0x2F0 x3
+rejects: 1973
+  LOG_EVT_SECOC_REJECT_MAC can_id=0x200 x1973
+
+== nodeB.bin
+records: 12526   lost: 0   resyncs: 0
+boots: 3   max banners per boot: 1   jumps: 0
+  boot  1  actuator  banners=1  reset_reason=0x10010  (XRES | SOFT)
+  boot  2  actuator  banners=1  reset_reason=0x10010  (XRES | SOFT)
+  boot  3  actuator  banners=1  reset_reason=0x10010  (XRES | SOFT)
+accepts: 0x121 x12297, 0x1F0 x6
+rejects: 1
+  LOG_EVT_SECOC_REJECT_FRESHNESS can_id=0x121 x1
+
