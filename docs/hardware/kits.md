@@ -79,6 +79,13 @@ bash ./zz_build_actuator_app.sh program    # Node B CM0+ + CM7
   `bench-test` skill (`.claude/skills/bench-test/`). Reset only: `bash ./tools/bench/reset_node.sh A|B` (OpenOCD, the
   `bench.env` probe; a debug reset, not the reset button). Numbers for a bench record:
   `python host_tools/bench_summary.py <nodeA.bin> <nodeB.bin>`.
+- **`LOG_EVT_BOOT reset_reason` means different things per image (F-016).** Node B's app logs
+  the raw `CY_SYSLIB_RESET_*` bitmask. On Node A the **FBL** logs its mapped `fbl_reset_cause_t`
+  (`0` power-on, `1` software, `2` watchdog, `3` debug, `4` hibernate, `5` other; so `0x0` after
+  an OpenOCD reset is normal), and the **app** always logs `0`, because the FBL clears the
+  register before the jump (`boot.c`). `bench_summary.py` decodes it this way. Don't read Node A's
+  app value as "power-on". Handing the raw value to the app through the `.noinit` handshake is an
+  option for later, not a bug.
 
 **Capture while you reset** (one terminal tab per node; the folder is the day of the bench):
 
