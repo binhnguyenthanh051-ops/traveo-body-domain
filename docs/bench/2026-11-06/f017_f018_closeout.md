@@ -7,7 +7,7 @@ run by Claude Code under the bench rule (`docs/workflow.md`, `bench-test` skill)
 both kits plugged in, and nothing else was physical.
 
 **Images:** built and flashed by the three `zz_build_*` scripts from branch
-`bench/2026-11-05-closeout` at `acb26d1` (firmware = `main` + F-018 `8cbe8a2` + F-017 `d04642a`).
+`bench/2026-11-05-closeout` at the commit that is `32da54d` on `main` (firmware = `main` + F-018 `b17c7f5` + F-017 `0bcb8ec`; hashes as merged).
 Node A: `fbl_combined` (built as `bootloader/build/app_combined.hex`) + the signed
 `app_stamped.hex` (ECDSA P-256, key_id 1); Node B: `app_combined.hex`. The Seam 6 fault images
 are `proj_cm0p` only (`program cm0p DEFINES=FBL_M4_SEAM6_…`), and the normal CM0+ image was
@@ -104,7 +104,7 @@ below.
   2453 ms, the normal timing). This contradicts `docs/briefs/M4-bringup_log.md` §10, which records
   the garbage case as "rejected … immediately" on 2026-07-14. The hook and the verify-path decode
   are unchanged since `51dfe0c` (the Seam 6 commit), and M4 had no log channel, so that
-  observation can't be re-checked. Not caused by F-018: `8cbe8a2` only adds reports. Registered,
+  observation can't be re-checked. Not caused by F-018: `b17c7f5` only adds reports. Registered,
   triage at the retro.
 - Node B, one `SECOC_REJECT_FRESHNESS can_id=0x121 rx_ctr=143`, right after the second Node B reset
   in step 2: an old in-flight frame refused across the reset. This is the designed behaviour
