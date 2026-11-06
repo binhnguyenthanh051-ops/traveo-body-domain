@@ -31,6 +31,24 @@
 #define CRYPTO_MAC_TIMEOUT_MS      10U
 #endif
 
+/* Why a crypto op failed: arg1 of LOG_EVT_CRYPTO_ERROR (arg0 is the
+ * crypto_op_t). Every ERROR / false return from the calls below emits exactly
+ * one such event, so a crypto failure is visible from the normal image (F-018,
+ * REQ-SECOC-010/012). 1..3 match the ipc_status_t values, so a capture reads
+ * the same either way. An INVALID verdict is an answer, not an error, and emits
+ * nothing. */
+typedef enum
+{
+    CRYPTO_FAIL_IPC_BUSY      = 1,   /* = IPC_BUSY: mailbox semaphore contended */
+    CRYPTO_FAIL_IPC_TIMEOUT   = 2,   /* = IPC_TIMEOUT: the M0+ never answered */
+    CRYPTO_FAIL_IPC_MALFORMED = 3,   /* = IPC_MALFORMED: reply not copyable */
+    CRYPTO_FAIL_BAD_REPLY     = 4,   /* reply copied but undecodable / wrong shape */
+    CRYPTO_FAIL_REFUSED       = 5,   /* the M0+ answered with an ERROR verdict
+                                      * (e.g. unknown key_id, a crypto fault) */
+    CRYPTO_FAIL_REQUEST       = 6    /* never sent: no port bound, bad arguments,
+                                      * or the request does not encode */
+} crypto_fail_t;
+
 /* Bind the transport port (composition root). */
 void crypto_service_init(const ipc_port_if_t *port);
 

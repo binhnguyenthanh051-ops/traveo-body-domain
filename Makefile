@@ -30,9 +30,9 @@ BOOT_TEST := shared/boot/tests/test_boot.c shared/boot/tests/boot_port_fake.c
 BOOT_SECURE_DEFS := -DFBL_DIGEST_ALGO=FBL_DIGEST_SHA256
 BOOT_SECURE_SRC  := shared/boot/src/boot.c \
                     shared/crypto/src/crypto_service.c shared/crypto/src/ipc_mailbox.c \
-                    shared/crypto/src/crypto_msg.c
+                    shared/crypto/src/crypto_msg.c shared/log/src/log.c
 BOOT_SECURE_TEST := shared/boot/tests/test_boot_secure.c shared/boot/tests/boot_port_fake.c \
-                    shared/crypto/tests/ipc_port_fake.c
+                    shared/crypto/tests/ipc_port_fake.c shared/log/tests/log_port_fake.c
 
 # --- Node A app: host-testable logic (bodyctl, reprogram) ---
 APP_INC      := -Inode_a_gateway/app/logic/include -Inode_a_gateway/app/include
@@ -81,10 +81,19 @@ CRYPTO_DISPATCH_TEST := shared/crypto/tests/test_crypto_dispatch.c
 CRYPTO_KEYSTORE_SRC  := shared/crypto/src/crypto_keystore.c
 CRYPTO_KEYSTORE_TEST := shared/crypto/tests/test_crypto_keystore.c
 
-# the verify client drives the real transport + framing, faking only the port
+# the verify client drives the real transport + framing, faking only the port.
+# crypto_service.c emits LOG_EVT_CRYPTO_ERROR on every failure (F-018), so every
+# suite that links it links shared/log too, with the fake log port.
 CRYPTO_VERIFY_SRC    := shared/crypto/src/crypto_service.c shared/crypto/src/ipc_mailbox.c \
-                        shared/crypto/src/crypto_msg.c
-CRYPTO_VERIFY_TEST   := shared/crypto/tests/test_crypto_verify.c shared/crypto/tests/ipc_port_fake.c
+                        shared/crypto/src/crypto_msg.c shared/log/src/log.c
+CRYPTO_VERIFY_TEST   := shared/crypto/tests/test_crypto_verify.c shared/crypto/tests/ipc_port_fake.c \
+                        shared/log/tests/log_port_fake.c
+
+# The crypto-error event (F-018): one LOG_EVT_CRYPTO_ERROR per failed op, none on
+# success or INVALID. Same links as crypto_verify; also crypto_mac()'s host test.
+CRYPTO_ERROR_SRC     := $(CRYPTO_VERIFY_SRC)
+CRYPTO_ERROR_TEST    := shared/crypto/tests/test_crypto_error.c shared/crypto/tests/ipc_port_fake.c \
+                        shared/log/tests/log_port_fake.c
 
 # MAC-op framing (ADR-0021 D7) + the AES-secret key type (D6). Links crypto_msg
 # (MAC helpers, currently stubbed => red) and the real keystore selection.
@@ -158,7 +167,7 @@ REPROG_TEST  := node_a_gateway/app/logic/tests/test_reprogram.c
         test_isotp test_uds_session test_uds_security_access test_uds_download \
         test_uds_routine_control test_sysmgr \
         test_crypto_msg test_ipc_mailbox test_crypto_dispatch test_crypto_keystore \
-        test_crypto_verify test_crypto_mac test_prot_region \
+        test_crypto_verify test_crypto_error test_crypto_mac test_prot_region \
         test_secoc test_secoc_freshness test_secoc_resync test_freshness_store \
         test_secoc_store test_secoc_rx test_log clean lint
 
@@ -166,7 +175,7 @@ test: test_messages test_scheduler test_boot test_boot_secure test_bodyctl test_
       test_isotp test_uds_session test_uds_security_access test_uds_download \
       test_uds_routine_control test_sysmgr \
       test_crypto_msg test_ipc_mailbox test_crypto_dispatch test_crypto_keystore \
-      test_crypto_verify test_crypto_mac test_prot_region \
+      test_crypto_verify test_crypto_error test_crypto_mac test_prot_region \
       test_secoc test_secoc_freshness test_secoc_resync test_freshness_store \
       test_secoc_store test_secoc_rx test_log
 
@@ -237,6 +246,10 @@ test_crypto_keystore: $(BUILD)/test_crypto_keystore
 test_crypto_verify: $(BUILD)/test_crypto_verify
 	@echo "== crypto_verify =="
 	@$(BUILD)/test_crypto_verify
+
+test_crypto_error: $(BUILD)/test_crypto_error
+	@echo "== crypto_error (LOG_EVT_CRYPTO_ERROR / F-018) =="
+	@$(BUILD)/test_crypto_error
 
 test_crypto_mac: $(BUILD)/test_crypto_mac
 	@echo "== crypto_mac (MAC-op framing + AES key type / M5) =="
@@ -311,7 +324,7 @@ $(BUILD)/test_boot: $(BOOT_SRC) $(BOOT_TEST) $(UNITY_SRC) | $(BUILD)
 	$(CC) $(CFLAGS) $(UNITY_INC) $(BOOT_INC) $(UNITY_SRC) $(BOOT_SRC) $(BOOT_TEST) -o $@
 
 $(BUILD)/test_boot_secure: $(BOOT_SECURE_SRC) $(BOOT_SECURE_TEST) $(UNITY_SRC) | $(BUILD)
-	$(CC) $(CFLAGS) $(BOOT_SECURE_DEFS) $(UNITY_INC) $(BOOT_INC) $(CRYPTO_INC) $(UNITY_SRC) \
+	$(CC) $(CFLAGS) $(BOOT_SECURE_DEFS) $(UNITY_INC) $(BOOT_INC) $(CRYPTO_INC) $(LOG_INC) $(UNITY_SRC) \
 	    $(BOOT_SECURE_SRC) $(BOOT_SECURE_TEST) -o $@
 
 $(BUILD)/test_bodyctl: $(BODYCTL_SRC) $(BODYCTL_TEST) $(UNITY_SRC) | $(BUILD)
@@ -360,7 +373,10 @@ $(BUILD)/test_crypto_keystore: $(CRYPTO_KEYSTORE_SRC) $(CRYPTO_KEYSTORE_TEST) $(
 	$(CC) $(CFLAGS) $(UNITY_INC) $(CRYPTO_INC) $(UNITY_SRC) $(CRYPTO_KEYSTORE_SRC) $(CRYPTO_KEYSTORE_TEST) -o $@
 
 $(BUILD)/test_crypto_verify: $(CRYPTO_VERIFY_SRC) $(CRYPTO_VERIFY_TEST) $(UNITY_SRC) | $(BUILD)
-	$(CC) $(CFLAGS) $(UNITY_INC) $(CRYPTO_INC) $(UNITY_SRC) $(CRYPTO_VERIFY_SRC) $(CRYPTO_VERIFY_TEST) -o $@
+	$(CC) $(CFLAGS) $(UNITY_INC) $(CRYPTO_INC) $(LOG_INC) $(UNITY_SRC) $(CRYPTO_VERIFY_SRC) $(CRYPTO_VERIFY_TEST) -o $@
+
+$(BUILD)/test_crypto_error: $(CRYPTO_ERROR_SRC) $(CRYPTO_ERROR_TEST) $(UNITY_SRC) | $(BUILD)
+	$(CC) $(CFLAGS) $(UNITY_INC) $(CRYPTO_INC) $(LOG_INC) $(UNITY_SRC) $(CRYPTO_ERROR_SRC) $(CRYPTO_ERROR_TEST) -o $@
 
 $(BUILD)/test_crypto_mac: $(CRYPTO_MAC_SRC) $(CRYPTO_MAC_TEST) $(UNITY_SRC) | $(BUILD)
 	$(CC) $(CFLAGS) $(UNITY_INC) $(CRYPTO_INC) $(UNITY_SRC) $(CRYPTO_MAC_SRC) $(CRYPTO_MAC_TEST) -o $@

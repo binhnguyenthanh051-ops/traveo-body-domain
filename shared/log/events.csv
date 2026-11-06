@@ -43,7 +43,7 @@
 0x0104,LOG_EVT_SECOC_RESYNC,contract,can_id,new_epoch,Receiver-reset resync completed -- sender adopted the floor (ADR-0021 D5)
 
 # --- 0x02xx crypto service -------------------------------------------------
-0x0201,LOG_EVT_CRYPTO_ERROR,contract,op,ipc_status,Crypto op produced ERROR (M0+ dead/timeout/malformed)
+0x0201,LOG_EVT_CRYPTO_ERROR,contract,op,reason,Crypto op failed -- reason: 1 busy 2 timeout (M0+ dead) 3 malformed 4 bad reply 5 refused (e.g. unknown key_id) 6 request not sent
 
 # --- 0x03xx diag / UDS -----------------------------------------------------
 0x0301,LOG_EVT_UDS_SESSION,contract,new_session,-,Diagnostic session changed

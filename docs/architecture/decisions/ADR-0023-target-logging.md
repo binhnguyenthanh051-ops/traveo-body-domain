@@ -125,7 +125,7 @@ This resolves D1's tradeoff honestly rather than by assertion:
 > unnecessary channel out of a key-holding core is reason enough. The diagnostic value it would
 > have added is already covered from the app side: `crypto_verdict_t` distinguishes `ERROR`
 > from `INVALID` precisely so the caller can log which happened (ADR-0016 D2/D5), and
-> `LOG_EVT_CRYPTO_ERROR(op, ipc_status)` reports a dead, slow or lying M0+ — the M4 Seam 6
+> `LOG_EVT_CRYPTO_ERROR(op, reason)` reports a dead, slow or lying M0+ — the M4 Seam 6
 > case. Anything deeper inside the CM0+ remains an OpenOCD question, as it is today.
 >
 > **What this deletes:** the second ring in every image (2 KB app, 512 B FBL), the shared-RAM
@@ -345,6 +345,43 @@ module's style. Rejected: it buys an indirection and a NULL check on a per-frame
 port to wire up in two apps, in order to avoid depending on a header that is already as portable as
 `<stdint.h>`. If `shared/secoc` ever needs a second consumer of verdicts (a diagnostic DTC sink is
 the plausible one), the port becomes the right answer and this is where to revisit it.
+
+### D12. `LOG_EVT_CRYPTO_ERROR` is emitted by the **crypto client**, once per failed op (2026-11-06, F-018)
+
+The event was in the registry from the start (D4 names it as how M0+ health is reported), but
+nothing emitted it, so a crypto failure could only be seen with a debugger in a
+`CRYPTO_BRINGUP_KAT=1` build. The first "Observed by" pass found the gap (F-018).
+
+**Decision:** `shared/crypto/src/crypto_service.c` emits it. Every `CRYPTO_VERDICT_ERROR` from
+`crypto_verify_image()` and every `false` from `crypto_mac()` emits exactly one
+`LOG_EVT_CRYPTO_ERROR(op, reason)`. `arg0` is the `crypto_op_t`, and `arg1` is a
+`crypto_fail_t`: `1` busy, `2` timeout, `3` malformed (these match `ipc_status_t`), `4` bad
+reply, `5` refused (the M0+ answered with an ERROR verdict, e.g. an unknown `key_id`), and
+`6` request not sent. An `INVALID` verdict is an answer, not an error, and emits nothing: a
+tampered image must not look like a dead M0+. `arg1` was called `ipc_status` until now. It is
+renamed rather than reused because a refusal reaches the client with IPC status `OK`, and
+nothing had ever emitted the old meaning.
+
+This is not the "primitive" placement D11 rejected. D11's objections were that a primitive
+doesn't know the final verdict, and that an emission would add a side effect to a pure function.
+Neither holds here: the client is the last step of every crypto op (nothing after it can turn
+the failure into a success), and it already does I/O. It is also the one file every crypto op
+passes through on all three images (Node A FBL and app, Node B app), so both nodes get the event
+from one host-tested implementation (`test_crypto_error`). That suite also gives `crypto_mac()`
+its first host test.
+
+**A known overlap.** On the receive path a dead M0+ now yields two records per frame:
+`CRYPTO_ERROR(MAC, 2)`, then `SECOC_REJECT_MAC(can_id, 3)`. That is deliberate. They answer
+different questions (which frame was dropped, and why the oracle failed), and D11's "one event
+per frame" is about the SecOC verdict, which stays single. On the **send** path,
+`CRYPTO_ERROR` is the only evidence: a frame that cannot be MACed is simply not sent, and no
+SecOC event exists for that.
+
+**Alternative considered: emit from each node's `secoc_app.c` oracle wrapper.** That keeps
+`shared/crypto` free of `shared/log`, but it means two untested copies (the problem D11
+removed), and the FBL's verify path would get nothing. Rejected. **Cost:** `shared/crypto` now
+depends on `tb_log.h`, so every host suite that links `crypto_service.c` binds the fake log
+port. All three target images already link `log.c`.
 
 ## Consequences
 
