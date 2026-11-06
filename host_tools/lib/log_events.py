@@ -6,7 +6,7 @@ CONTRACT_MAX = 0x0FFF
 
 # id -> (name, class, arg0 meaning, arg1 meaning, description)
 EVENTS = {
-    0x0001: ('LOG_EVT_BOOT', 'contract', 'reset_reason', '-', 'Image started; first record after log_init. reset_reason is the CY_SYSLIB_RESET_* bitmask'),
+    0x0001: ('LOG_EVT_BOOT', 'contract', 'reset_reason', '-', 'Image started; first record after log_init. reset_reason is the CY_SYSLIB_RESET_* bitmask -- except on Node A (F-016): the FBL logs its mapped fbl_reset_cause_t (0 power-on 1 software 2 watchdog 3 debug 4 hibernate 5 other) and the app always logs 0 because the FBL has already cleared the register'),
     0x0002: ('LOG_EVT_APP_JUMP', 'contract', 'app_entry_addr', '-', 'FBL verified the app and is jumping (ADR-0008)'),
     0x0003: ('LOG_EVT_APP_REJECT', 'contract', 'fail_addr', 'reason', 'FBL refused to jump -- stays in FBL (fail-safe)'),
     0x0004: ('LOG_EVT_OVERFLOW', 'contract', 'dropped_count', '-', 'Records lost since the last overflow report (D5)'),
