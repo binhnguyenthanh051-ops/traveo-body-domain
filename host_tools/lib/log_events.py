@@ -14,7 +14,7 @@ EVENTS = {
     0x0102: ('LOG_EVT_SECOC_REJECT_MAC', 'contract', 'can_id', 'reject_reason', 'MAC check failed -- forged/corrupt frame (1) bad length (2) or oracle error (3)'),
     0x0103: ('LOG_EVT_SECOC_REJECT_FRESHNESS', 'contract', 'can_id', 'rx_ctr', 'Freshness not ahead of stored -- replay'),
     0x0104: ('LOG_EVT_SECOC_RESYNC', 'contract', 'can_id', 'new_epoch', 'Receiver-reset resync completed -- sender adopted the floor (ADR-0021 D5)'),
-    0x0201: ('LOG_EVT_CRYPTO_ERROR', 'contract', 'op', 'ipc_status', 'Crypto op produced ERROR (M0+ dead/timeout/malformed)'),
+    0x0201: ('LOG_EVT_CRYPTO_ERROR', 'contract', 'op', 'reason', 'Crypto op failed -- reason: 1 busy 2 timeout (M0+ dead) 3 malformed 4 bad reply 5 refused (e.g. unknown key_id) 6 request not sent'),
     0x0301: ('LOG_EVT_UDS_SESSION', 'contract', 'new_session', '-', 'Diagnostic session changed'),
     0x0302: ('LOG_EVT_UDS_SECURITY', 'contract', 'granted', 'attempt_no', 'SecurityAccess unlock result'),
     0x0401: ('LOG_EVT_APP_ALIVE', 'contract', 'uptime_ms', 'stack_free_words', 'Liveness every 5s; first is immediate after boot -- BVT timeouts must clear 5s'),
