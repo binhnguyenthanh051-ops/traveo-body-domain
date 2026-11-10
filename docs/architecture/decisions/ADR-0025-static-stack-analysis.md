@@ -106,16 +106,18 @@ entry, or **recursion** fails the run with the call site named. The report lists
 annotation used, so a reviewer sees each assumption, and nothing is silently dropped (the W46
 pass criterion).
 
-### D4. Margin rule: worst case ≤ 85% of the stack, or the gate fails
+### D4. Margin rule: worst case ≤ 80% of the stack, or the gate fails
 
-`worst_path + 204 B ≤ 0.85 × STACK_WORDS × 4`. The 15% covers what the tool can't prove:
+`worst_path + 204 B ≤ 0.80 × STACK_WORDS × 4`. This is `stack_bound`'s default margin rule
+(its ADR-0001 D10), and this project keeps it (changed from 85% on 2026-11-10). The 20% covers what the tool can't prove:
 annotated frames that are measured rather than compiler-given, an indirect target missed in
 review, and the next small change to a failure path (F-018's 160 B logging branch under `crypto_mac` is the example). A fixed
 byte margin was rejected: 64 B is generous on a 512 B stack and nothing on a 1.5 KB one.
 
 **First result, against this rule:** Node B's `can_task` is `1256 + 204 = 1460 B` against
 `384 × 4 = 1536 B`, only **5%** of margin, so it fails D4. That is a finding (F-021), not a
-reason to loosen the rule. `heartbeat_task` is `168 + 204 = 372 B` against 512 B: 27%, so it
+reason to loosen the rule. Meeting the rule needs at least `1460 / 0.80 = 1825 B`, i.e.
+**≥ 457 words** (1828 B). `heartbeat_task` is `168 + 204 = 372 B` against 512 B: 27%, so it
 passes.
 
 ### D5. The bench cross-check needs one new contract event: per-task stack high-water
