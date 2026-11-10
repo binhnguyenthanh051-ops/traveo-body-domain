@@ -1,3 +1,6 @@
 [submodule "vendor/unity"]
 	path = vendor/unity
 	url = https://github.com/ThrowTheSwitch/Unity.git
+[submodule "tools/stack_bound"]
+	path = tools/stack_bound
+	url = https://github.com/binhnguyenthanh051-ops/stack_bound.git
