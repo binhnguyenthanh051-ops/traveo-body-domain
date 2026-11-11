@@ -50,9 +50,10 @@
 #define CAN_IRQ_PRIORITY     5U              /* kernel-aware: >= configMAX_SYSCALL_INTERRUPT_PRIORITY */
 #define CAN_TX_BUF_IDX       0U
 
-/* 384: crypto_mac() alone needs ~540 B (2 x crypto_msg_t + 2 wire buffers) on the
- * caller's stack; 192 overflowed on the first MAC (W40 bench, Stage 3). ADR-0010 D5. */
-#define CAN_STACK_WORDS      384U
+/* 512 (F-021): stack_bound gives a worst case of 1472 B (can_task -> secoc_app_verify_and_decode
+ * -> ... -> crypto_mac 568 B -> crypto_report -> log_evt, + 208 B switch frame), which needs
+ * >= 460 words under the 80% rule (ADR-0025 D4). 384 used 96%. stack_bound.toml has the inputs. */
+#define CAN_STACK_WORDS      512U
 #define RAW_FRAME_QDEPTH     16U
 #define CAN_TASK_PRIO        2U
 #define CAN_POLL_MS          20U

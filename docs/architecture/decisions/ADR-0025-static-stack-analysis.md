@@ -88,12 +88,22 @@ than compiler-given frames, an indirect target missed in review, and the next sm
 failure path (F-018's 160 B logging branch is the example). A fixed byte margin was rejected: 64 B is
 generous on 512 B and nothing on 1.5 KB.
 
-**Table 4.** First results (Node B spike, GCC 14.2.1).
+**Table 4.** Results, `stack_bound` 0.1.2 on both app images (GCC 14.2.1, 2026-11-11). Reports:
+`docs/bench/2026-11-11/stack_bound_node*.txt`.
 
-| Task | Path | + switch | Stack | Used | Status |
-|---|---|---|---|---|---|
-| `can_task` | 1256 B | 208 B | 384 w = 1536 B | 95% | **FAIL: F-021**, needs ≥ 458 words |
-| `heartbeat_task` | 168 B | 208 B | 128 w = 512 B | 73% | ok |
+| Node | Task | Path | + switch | Stack before → after | Used | Status |
+|---|---|---|---|---|---|---|
+| A | `can_task` | 1280 B | 208 B | 384 → **512 w** | 97% → 73% | **F-021**, fixed (needs ≥ 466 w) |
+| A | `app_task` | 1048 B | 208 B | 384 → **512 w** | 82% → 61% | **F-021**, fixed (needs ≥ 394 w) |
+| A | `health_task` | 184 B | 208 B | 128 w | 77% | ok |
+| A | `log_cyclic_task` | 100 B | 208 B | 128 w | 60% | ok |
+| B | `can_task` | 1264 B | 208 B | 384 → **512 w** | 96% → 72% | **F-021**, fixed (needs ≥ 460 w) |
+| B | `heartbeat_task` | 176 B | 208 B | 128 w | 75% | ok |
+| B | `log_cyclic_task` | 100 B | 208 B | 128 w | 60% | ok |
+
+The spike's 1256 B for Node B `can` missed `memcpy` (8 B). Node A's `app` task was not in the spike:
+its transmit path (`secoc_secure → crypto_mac`) carries the same 568 B frame. Not analysed yet: the
+FreeRTOS idle and timer tasks (newlib with no `.su`, see Table 7).
 
 ### D5. One new contract event: `LOG_EVT_TASK_STACK(task_id, free_words)`
 
@@ -150,7 +160,8 @@ SHA-256 equal). Re-check on any toolchain bump, as one line of the `bench-test` 
 
 | Item | Next step |
 |---|---|
-| F-021 | Raise Node B `CAN_STACK_WORDS` to ≥ 458; check Node A's `can` task (same 384 words, same SecOC path) |
-| Node A not spiked | Build `app` with the flags (needs `NOINIT_LD_DIR`, `CY_IGNORE`); confirm identical bytes |
-| `memcpy` / `memset` frames | Measure from `objdump -d` of the linked newlib-nano objects |
+| ~~F-021~~ | Done 2026-11-11: three stacks raised to 512 words (Table 4); bench cross-check with D5 |
+| Node A code bytes | Built with the flags and analysed (2026-11-11); identical bytes not yet compared |
+| ~~`memcpy` / `memset` frames~~ | Done: 8 B (`push {r4, lr}`) and 0 B (leaf), newlib-nano, in both project files |
+| FreeRTOS idle + timer tasks | Reach newlib with no `.su` (`_reclaim_reent` has an indirect `bx r3`): stack_bound's binary witness (slice 2) |
 | MSP budget | Interrupt chain per core (stack_bound D9), after W46 |

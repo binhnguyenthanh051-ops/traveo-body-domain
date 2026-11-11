@@ -1,0 +1,82 @@
+# stack_bound project file: Node A gateway, app (ADR-0025 D3).
+# Run after a build with CFLAGS="-fstack-usage -fcallgraph-info=su" (ADR-0025 D7):
+#   python -m stack_bound build/CYTVII-B-E-1M-SK/Debug/gateway_app.elf --su build --project stack_bound.toml
+profile = "cortex-m-freertos"
+# margin_rule: stack_bound's default 0.80 (ADR-0025 D4)
+
+# Three tasks have a `static StackType_t s_stack[]`, so each is named by its file.
+[[task]]
+entry = "can_task"
+stack = "can_task.c:s_stack"
+
+[[task]]
+entry = "app_task"
+stack = "app_task.c:s_stack"
+
+[[task]]
+entry = "health_task"
+stack = "health_task.c:s_stack"
+
+[[task]]
+entry = "log_cyclic_task"
+stack = "s_log_stack"
+
+# Not analysed yet: FreeRTOS's prvIdleTask (s_idle_stack) and prvTimerTask (s_timer_stack). They
+# reach newlib code with no .su (free -> _free_r, _reclaim_reent with an indirect `bx r3`), which
+# needs stack_bound's binary witness (slice 2) and RTOS-task discovery (REQ-SB-203). No software
+# timer is created in this image (no xTimerCreate*), so the timer task only waits.
+
+# ---- Function pointers: every indirect call on a task path, bound to what can be stored there.
+
+[[indirect]]
+function = "verify_core"
+targets = ["crypto_mac"]
+reason = "cy->oracle->mac: g_oracle = { crypto_mac } (secoc_app.c:24), the only secoc_mac_if_t in the image"
+
+[[indirect]]
+function = "secoc_secure"
+targets = ["crypto_mac"]
+reason = "cy->oracle->mac: g_oracle = { crypto_mac } (secoc_app.c:24), the only secoc_mac_if_t in the image"
+
+[[indirect]]
+function = "secoc_rx_process"
+targets = ["body_msg_pdu_len"]
+reason = "rx->pdu_len_of: secoc_rx_set_pdu_len_of(&g_secoc_rx, body_msg_pdu_len) (secoc_app.c:86), the only setter call"
+
+[[indirect]]
+function = "secoc_tx_next"
+targets = ["store_commit"]
+reason = "ctx->store->commit: g_store = &g_secoc_store (secoc_app.c:53), .commit = store_commit (secoc_store.c:293)"
+
+[[indirect]]
+function = "secoc_tx_adopt_floor"
+targets = ["store_commit"]
+reason = "ctx->store->commit: g_store = &g_secoc_store (secoc_app.c:53), .commit = store_commit (secoc_store.c:293)"
+
+[[indirect]]
+function = "secoc_rx_accept"
+targets = ["store_commit"]
+reason = "ctx->store->commit: g_store = &g_secoc_store (secoc_app.c:53), .commit = store_commit (secoc_store.c:293)"
+
+[[indirect]]
+function = "read_slot"
+targets = ["wf_blank_check", "wf_read_checked"]
+reason = "f->blank_check / f->read_checked: the store's flash is wflash_port_init()'s s_hal (wflash_port.c:182), the only hal_flash_if_t the store is given"
+
+[[indirect]]
+function = "store_commit"
+targets = ["wf_erase_sector", "wf_write"]
+reason = "f->erase_sector / f->write: the store's flash is wflash_port_init()'s s_hal (wflash_port.c:182), the only hal_flash_if_t the store is given"
+
+[[indirect]]
+function = "ipc_transact"
+targets = ["port_sema_try_acquire", "port_sema_release", "port_mailbox", "port_notify",
+           "port_response_ready", "port_response_len", "port_now_ms"]
+reason = "port->*: g_crypto_port (port_crypto.c:67), the only ipc_port_if_t in the image; every member bound, so the deepest one counts"
+
+# ---- Frames with no .su: newlib-nano, prebuilt in the toolchain (MTB GCC 14.2.1).
+# Re-check on any toolchain bump (ADR-0025 D7).
+
+[frames]
+memcpy = { bytes = 8, source = "newlib-nano memcpy: push {r4, lr} (objdump, MTB GCC 14.2.1)" }
+memset = { bytes = 0, source = "newlib-nano memset: leaf, no push, SP untouched (objdump, MTB GCC 14.2.1)" }
