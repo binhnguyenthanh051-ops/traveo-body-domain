@@ -1,0 +1,193 @@
+﻿Tools Directory: C:/Infineon/Tools/ModusToolbox/tools_3.8
+Searching installed tools in progress...
+Searching installed tools complete
+NOTE: Using 'C:/Infineon/Tools/ModusToolbox/tools_3.8/ninja/ninja.exe' from PATH.
+Generating mtbninja data files...
+Generating mtbninja data complete...
+
+Prebuild operations complete
+Toolchain validation: PASS
+Initializing build: gateway_app Debug CYTVII-B-E-1M-SK GCC_ARM
+# 0: Loading the application in directory 'C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/app'
+# 0: Loading the ModusToolbox Technology Packs and Early Access Packs
+# 0: Loading the tools information
+ninja: no work to do.
+==============================================================================
+= Build complete =
+==============================================================================
+
+  -----------------------------------------------
+ | Section          |    Address |          Used |
+  -----------------------------------------------
+ |   .cy_m0p_image  | 0x10000000 |         3,840 |
+ |   .text          | 0x10040000 |        36,432 |
+ |   .ARM.exidx     | 0x10048e50 |             8 |
+ |   .copy.table    | 0x10048e58 |            24 |
+ |   .zero.table    | 0x10048e70 |             8 |
+ |   .data          | 0x08008080 |           120 |
+ |   .cy_sharedmem  | 0x08008100 |            48 |
+ |   .noinit        | 0x08008130 |         1,693 |
+ |   .fbl_handshake | 0x0801f700 |            12 |
+ |   .bss           | 0x080087e0 |        11,176 |
+ |   .heap          | 0x0800b388 |        78,712 |
+  -----------------------------------------------
+
+Total FLASH (Available): 1,114,112
+Total FLASH (Utilized) : 40,312
+==> stack gate (ADR-0025 D6): /cygdrive/c/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/app/build/CYTVII-B-E-1M-SK/Debug/gateway_app.elf
+STACK                   REQUIRED  CONFIGURED   USED       RECOMMENDED  STATUS
+task can_task             1488 B      2048 B    73%    1864 B (466 w)  ok
+task app_task             1256 B      2048 B    61%    1576 B (394 w)  ok
+task health_task           408 B       512 B    80%     512 B (128 w)  ok
+task log_cyclic_task       308 B       512 B    60%      392 B (98 w)  ok
+not analysed: main stack (MSP): the interrupt chain and the code before the scheduler starts (REQ-SB-204..206, not implemented yet)
+
+worst path, task can_task (1280 B + 208 B switch frame, stack from ELF symbol can_task.c:s_stack):
+     can_task 168 B
+   -> secoc_app_verify_telemetry 88 B
+   -> rx_authentic 32 B
+   -> secoc_rx_process 64 B
+   -> secoc_verify_len 56 B
+   -> verify_core 136 B
+   ~> crypto_mac 568 B   [listed: cy->oracle->mac: g_oracle = { crypto_mac } (secoc_app.c:24), the only secoc_mac_if_t in the image]
+   -> crypto_report 8 B
+   -> log_evt 80 B
+   -> log_try_enqueue 48 B
+   -> log_ring_copy_in 24 B
+   -> memcpy 8 B
+
+worst path, task app_task (1048 B + 208 B switch frame, stack from ELF symbol app_task.c:s_stack):
+     app_task 24 B
+   -> apply_output 80 B
+   -> secoc_app_build_door_cmd 16 B
+   -> build_secured 48 B
+   -> secoc_secure 144 B
+   ~> crypto_mac 568 B   [listed: cy->oracle->mac: g_oracle = { crypto_mac } (secoc_app.c:24), the only secoc_mac_if_t in the image]
+   -> crypto_report 8 B
+   -> log_evt 80 B
+   -> log_try_enqueue 48 B
+   -> log_ring_copy_in 24 B
+   -> memcpy 8 B
+
+worst path, task health_task (200 B + 208 B switch frame, stack from ELF symbol health_task.c:s_stack):
+     health_task 16 B
+   -> health_log_alive 8 B
+   -> log_task_stacks 16 B
+   -> log_evt 80 B
+   -> log_try_enqueue 48 B
+   -> log_ring_copy_in 24 B
+   -> memcpy 8 B
+
+worst path, task log_cyclic_task (100 B + 208 B switch frame, stack from ELF symbol s_log_stack):
+     log_cyclic_task 16 B
+   -> log_drain 56 B
+   -> log_port_tx 8 B
+   -> Cy_SCB_UART_PutArray 8 B
+   -> Cy_SCB_WriteArray 8 B
+   -> Cy_SCB_WriteArrayNoCheck 4 B
+
+  ->  direct call    ~>  function-pointer target (from the [[indirect]] list)
+
+assumptions:
+  - indirect verify_core -> crypto_mac: cy->oracle->mac: g_oracle = { crypto_mac } (secoc_app.c:24), the only secoc_mac_if_t in the image
+  - indirect secoc_secure -> crypto_mac: cy->oracle->mac: g_oracle = { crypto_mac } (secoc_app.c:24), the only secoc_mac_if_t in the image
+  - indirect secoc_rx_process -> body_msg_pdu_len: rx->pdu_len_of: secoc_rx_set_pdu_len_of(&g_secoc_rx, body_msg_pdu_len) (secoc_app.c:86), the only setter call
+  - indirect secoc_tx_next -> store_commit: ctx->store->commit: g_store = &g_secoc_store (secoc_app.c:53), .commit = store_commit (secoc_store.c:293)
+  - indirect secoc_tx_adopt_floor -> store_commit: ctx->store->commit: g_store = &g_secoc_store (secoc_app.c:53), .commit = store_commit (secoc_store.c:293)
+  - indirect secoc_rx_accept -> store_commit: ctx->store->commit: g_store = &g_secoc_store (secoc_app.c:53), .commit = store_commit (secoc_store.c:293)
+  - indirect read_slot -> wf_blank_check, wf_read_checked: f->blank_check / f->read_checked: the store's flash is wflash_port_init()'s s_hal (wflash_port.c:182), the only hal_flash_if_t the store is given
+  - indirect store_commit -> wf_erase_sector, wf_write: f->erase_sector / f->write: the store's flash is wflash_port_init()'s s_hal (wflash_port.c:182), the only hal_flash_if_t the store is given
+  - indirect ipc_transact -> port_sema_try_acquire, port_sema_release, port_mailbox, port_notify, port_response_ready, port_response_len, port_now_ms: port->*: g_crypto_port (port_crypto.c:67), the only ipc_port_if_t in the image; every member bound, so the deepest one counts
+  - frame memcpy = 8 B: newlib-nano memcpy: push {r4, lr} (objdump, MTB GCC 14.2.1)
+  - frame memset = 0 B: newlib-nano memset: leaf, no push, SP untouched (objdump, MTB GCC 14.2.1)
+  - frame strlen = 0 B: newlib-nano strlen: leaf, no push, SP untouched (objdump, MTB GCC 14.2.1); called by xTaskGetHandle (LOG_EVT_TASK_STACK)
+  - switch frame 208 B (FPU) / 72 B [profile cortex-m-freertos]: ARMv7-M Architecture Reference Manual B1.5.7 (exception entry, STKALIGN) + FreeRTOS GCC port.c xPortPendSVHandler
+  - stack alignment 8 B [profile cortex-m-freertos]
+  - margin rule 0.80 [tool default]
+  - 1632 compiler frame entries name functions not in the image (removed by the linker), ignored
+    stacks ok; report: /cygdrive/c/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/app/build/stack_bound.html
+signed build/app_cm4.bin -> build/app_stamped.bin: image_len=36640 (0x8f20) B, header@0x100, key_id=1, trailer=100 B, total=36740 B
+
+==> node_a_gateway/app/build/app_stamped.hex  (SIGNED (ECDSA P-256, key_id=1) — needs a SHA-256 FBL; @ 0x10040000)
+==> flashing on probe 1F110D8900212400
+Tools Directory: C:/Infineon/Tools/ModusToolbox/tools_3.8
+Searching installed tools in progress...
+Searching installed tools complete
+NOTE: Using 'C:/Infineon/Tools/ModusToolbox/tools_3.8/ninja/ninja.exe' from PATH.
+Generating mtbninja data files...
+Generating mtbninja data complete...
+
+Open On-Chip Debugger 0.12.0+dev-5.16.1.4486 (2026-04-14-18:10)
+Licensed under GNU GPL v2
+For bug reports, read
+	http://openocd.org/doc/doxygen/bugs.html
+adapter speed: 2000 kHz
+adapter srst delay: 25
+adapter srst pulse_width: 25
+** Auto-acquire enabled, use "set ENABLE_ACQUIRE 0" to disable
+cortex_m reset_config sysresetreq
+Warn : SFlash programming allowed for regions: USER, TOC, KEY
+Warn : Using CMSIS-DAPv2 interface 0 with wrong class 0 subclass 0 or protocol 0
+Info : Using CMSIS-DAPv2 interface with VID:PID=0x04b4:0xf155, serial=1F110D8900212400
+Info : CMSIS-DAP: SWD supported
+Info : CMSIS-DAP: Atomic commands supported
+Info : CMSIS-DAP: FW Version = 2.0.0
+Info : CMSIS-DAP: Interface Initialised (SWD)
+Info : SWCLK/TCK = 1 SWDIO/TMS = 1 TDI = 0 TDO = 0 nTRST = 0 nRESET = 1
+Info : CMSIS-DAP: Interface ready
+Info : KitProg3: FW version: 256.256.0
+Info : KitProg3: Pipelined transfers enabled
+Info : KitProg3: Asynchronous USB transfers enabled
+Info : VTarget = 0.000 V
+Info : kitprog3: acquiring device in Test Mode using 'TraveoII/XMC7xxx/XMC5xxx' target and 'xres' reset...
+Info : clock speed 2000 kHz
+Info : SWD DPIDR 0x6ba02477
+Info : [traveo2.cpu.cm0] Cortex-M0+ r0p1 processor detected
+Info : [traveo2.cpu.cm0] target has 4 breakpoints, 2 watchpoints
+***************************************
+** Use overriden Main Flash size, kb: 1088
+** Use overriden Work Flash size, kb: 96
+** Silicon: 0xE3DA, Family: 0x101, Rev.: 0x23 (B2)
+** Detected Device: CYT2B75CXE
+** Flash Boot version: 3.1.0.556
+** SFlash version: 0x5abd3
+** Chip Protection: NORMAL
+***************************************
+Info : [traveo2.cpu.cm0] Examination succeed
+Info : [traveo2.cpu.cm4] Cortex-M4 r0p1 processor detected
+Info : [traveo2.cpu.cm4] target has 6 breakpoints, 4 watchpoints
+Info : [traveo2.cpu.cm4] Examination succeed
+Info : starting gdb server for traveo2.cpu.cm0 on 3333
+Info : Listening on port 3333 for gdb connections
+Info : starting gdb server for traveo2.cpu.cm4 on 3334
+Info : Listening on port 3334 for gdb connections
+Info : SWD DPIDR 0x6ba02477
+[traveo2.cpu.cm0] halted due to debug-request, current mode: Thread 
+xPSR: 0x61000000 pc: 0x000000f8 msp: 0x0801f800
+Info : kitprog3: acquiring device in Test Mode using 'TraveoII/XMC7xxx/XMC5xxx' target and 'xres' reset...
+Info : [traveo2.cpu.cm0] external reset detected
+[traveo2.cpu.cm0] halted due to debug-request, current mode: Thread 
+xPSR: 0x41000000 pc: 0x000002a4 msp: 0x08020000
+** Device acquired successfully
+** traveo2.cpu.cm4: Ran after reset and before halt...
+[traveo2.cpu.cm4] halted due to debug-request, current mode: Thread 
+xPSR: 0x01000000 pc: 0x000001bc msp: 0x0801f800
+** Programming Started **
+auto erase enabled
+Info : Padding image section 0 at 0x10048f84 with 124 bytes (bank write end alignment)
+Warn : Adding extra erase range, 0x10049000 .. 0x1004ffff
+
+[100%] [################################] [ Erasing     ]
+
+[ 80%] [#########################       ] [ Programming ]
+[100%] [################################] [ Programming ]
+wrote 36864 bytes from file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/app/build/app_stamped.hex in 0.433127s (83.117 KiB/s)
+** Programming Finished **
+** Verify Started **
+verified 36740 bytes in 0.056163s (638.835 KiB/s)
+** Verified OK **
+** Resetting Target **
+Info : SWD DPIDR 0x6ba02477
+shutdown command invoked
+Info : traveo2.dap: powering down debug domain...
+==> flashed C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/app/build/app_stamped.hex (SIGNED (ECDSA P-256, key_id=1) — needs a SHA-256 FBL) and reset; the FBL verifies it and jumps.

@@ -1,0 +1,321 @@
+{
+  "schema": "stack_bound.report/1",
+  "tool": {
+    "name": "stack_bound",
+    "version": "0.2.0"
+  },
+  "result": "pass",
+  "image": {
+    "name": "actuator_cm7.elf",
+    "sha256": "f55ed5eab3fa10c25861ff3989089927218d6a66bec30a2e65ea4a2e550dd03d",
+    "compiler": "GCC: (Arm GNU Toolchain 14.2.Rel1 (Build arm-14.52)) 14.2.1 20241119"
+  },
+  "profile": {
+    "name": "cortex-m-freertos",
+    "version": "1"
+  },
+  "margin": {
+    "rule": 0.8,
+    "layer": "tool default"
+  },
+  "stacks": [
+    {
+      "kind": "task",
+      "entry": "can_task",
+      "required": 1472,
+      "path_bytes": 1264,
+      "switch_bytes": 208,
+      "configured": 2048,
+      "configured_from": "ELF symbol s_stack",
+      "used": 0.71875,
+      "recommended": 1840,
+      "recommended_words": 460,
+      "status": "ok",
+      "path": [
+        {
+          "function": "can_task",
+          "frame": 168,
+          "frame_source": "gcc .su (can_task.c:214)",
+          "edge": "entry",
+          "reason": null
+        },
+        {
+          "function": "secoc_app_verify_and_decode",
+          "frame": 104,
+          "frame_source": "gcc .su (secoc_app.c:95)",
+          "edge": "call",
+          "reason": null
+        },
+        {
+          "function": "secoc_rx_process",
+          "frame": 64,
+          "frame_source": "gcc .su (secoc_rx.c:68)",
+          "edge": "call",
+          "reason": null
+        },
+        {
+          "function": "secoc_verify_len",
+          "frame": 56,
+          "frame_source": "gcc .su (secoc.c:207)",
+          "edge": "call",
+          "reason": null
+        },
+        {
+          "function": "verify_core",
+          "frame": 136,
+          "frame_source": "gcc .su (secoc.c:126)",
+          "edge": "call",
+          "reason": null
+        },
+        {
+          "function": "crypto_mac",
+          "frame": 568,
+          "frame_source": "gcc .su (crypto_service.c:102)",
+          "edge": "listed",
+          "reason": "listed: cy->oracle->mac: g_oracle = { crypto_mac } (secoc_app.c:27), the only secoc_mac_if_t in the image"
+        },
+        {
+          "function": "crypto_report",
+          "frame": 8,
+          "frame_source": "gcc .su (crypto_service.c:25)",
+          "edge": "call",
+          "reason": null
+        },
+        {
+          "function": "log_evt",
+          "frame": 80,
+          "frame_source": "gcc .su (log.c:198)",
+          "edge": "call",
+          "reason": null
+        },
+        {
+          "function": "log_try_enqueue",
+          "frame": 48,
+          "frame_source": "gcc .su (log.c:92)",
+          "edge": "call",
+          "reason": null
+        },
+        {
+          "function": "log_ring_copy_in",
+          "frame": 24,
+          "frame_source": "gcc .su (log.c:53)",
+          "edge": "call",
+          "reason": null
+        },
+        {
+          "function": "memcpy",
+          "frame": 8,
+          "frame_source": "annotation: newlib-nano memcpy: push {r4, lr} (objdump, MTB GCC 14.2.1)",
+          "edge": "call",
+          "reason": null
+        }
+      ]
+    },
+    {
+      "kind": "task",
+      "entry": "heartbeat_task",
+      "required": 400,
+      "path_bytes": 192,
+      "switch_bytes": 208,
+      "configured": 512,
+      "configured_from": "ELF symbol s_hb_stack",
+      "used": 0.78125,
+      "recommended": 504,
+      "recommended_words": 126,
+      "status": "ok",
+      "path": [
+        {
+          "function": "heartbeat_task",
+          "frame": 8,
+          "frame_source": "gcc .su (main.c:127)",
+          "edge": "entry",
+          "reason": null
+        },
+        {
+          "function": "heartbeat_log_alive",
+          "frame": 8,
+          "frame_source": "gcc .su (main.c:69)",
+          "edge": "call",
+          "reason": null
+        },
+        {
+          "function": "log_task_stacks",
+          "frame": 16,
+          "frame_source": "gcc .su (main.c:114)",
+          "edge": "call",
+          "reason": null
+        },
+        {
+          "function": "log_evt",
+          "frame": 80,
+          "frame_source": "gcc .su (log.c:198)",
+          "edge": "call",
+          "reason": null
+        },
+        {
+          "function": "log_try_enqueue",
+          "frame": 48,
+          "frame_source": "gcc .su (log.c:92)",
+          "edge": "call",
+          "reason": null
+        },
+        {
+          "function": "log_ring_copy_in",
+          "frame": 24,
+          "frame_source": "gcc .su (log.c:53)",
+          "edge": "call",
+          "reason": null
+        },
+        {
+          "function": "memcpy",
+          "frame": 8,
+          "frame_source": "annotation: newlib-nano memcpy: push {r4, lr} (objdump, MTB GCC 14.2.1)",
+          "edge": "call",
+          "reason": null
+        }
+      ]
+    },
+    {
+      "kind": "task",
+      "entry": "log_cyclic_task",
+      "required": 308,
+      "path_bytes": 100,
+      "switch_bytes": 208,
+      "configured": 512,
+      "configured_from": "ELF symbol s_log_stack",
+      "used": 0.6015625,
+      "recommended": 392,
+      "recommended_words": 98,
+      "status": "ok",
+      "path": [
+        {
+          "function": "log_cyclic_task",
+          "frame": 16,
+          "frame_source": "gcc .su (log_task.c:43)",
+          "edge": "entry",
+          "reason": null
+        },
+        {
+          "function": "log_drain",
+          "frame": 56,
+          "frame_source": "gcc .su (log.c:285)",
+          "edge": "call",
+          "reason": null
+        },
+        {
+          "function": "log_port_tx",
+          "frame": 8,
+          "frame_source": "gcc .su (port_log.c:169)",
+          "edge": "call",
+          "reason": null
+        },
+        {
+          "function": "Cy_SCB_UART_PutArray",
+          "frame": 8,
+          "frame_source": "gcc .su (cy_scb_uart.h:1534)",
+          "edge": "call",
+          "reason": null
+        },
+        {
+          "function": "Cy_SCB_WriteArray",
+          "frame": 8,
+          "frame_source": "gcc .su (cy_scb_common.c:344)",
+          "edge": "call",
+          "reason": null
+        },
+        {
+          "function": "Cy_SCB_WriteArrayNoCheck",
+          "frame": 4,
+          "frame_source": "gcc .su (cy_scb_common.c:260)",
+          "edge": "call",
+          "reason": null
+        }
+      ]
+    }
+  ],
+  "assumptions": [
+    {
+      "kind": "indirect",
+      "layer": "project",
+      "text": "indirect verify_core -> crypto_mac: cy->oracle->mac: g_oracle = { crypto_mac } (secoc_app.c:27), the only secoc_mac_if_t in the image"
+    },
+    {
+      "kind": "indirect",
+      "layer": "project",
+      "text": "indirect secoc_secure -> crypto_mac: cy->oracle->mac: g_oracle = { crypto_mac } (secoc_app.c:27), the only secoc_mac_if_t in the image"
+    },
+    {
+      "kind": "indirect",
+      "layer": "project",
+      "text": "indirect secoc_rx_process -> body_msg_pdu_len: rx->pdu_len_of: secoc_rx_set_pdu_len_of(&g_secoc_rx, body_msg_pdu_len) (secoc_app.c:92), the only setter call"
+    },
+    {
+      "kind": "indirect",
+      "layer": "project",
+      "text": "indirect secoc_tx_next -> store_commit: ctx->store->commit: g_store = &g_secoc_store (secoc_app.c:57), .commit = store_commit (secoc_store.c:293)"
+    },
+    {
+      "kind": "indirect",
+      "layer": "project",
+      "text": "indirect secoc_tx_adopt_floor -> store_commit: ctx->store->commit: g_store = &g_secoc_store (secoc_app.c:57), .commit = store_commit (secoc_store.c:293)"
+    },
+    {
+      "kind": "indirect",
+      "layer": "project",
+      "text": "indirect secoc_rx_accept -> store_commit: ctx->store->commit: g_store = &g_secoc_store (secoc_app.c:57), .commit = store_commit (secoc_store.c:293)"
+    },
+    {
+      "kind": "indirect",
+      "layer": "project",
+      "text": "indirect read_slot -> wf_blank_check, wf_read_checked: f->blank_check / f->read_checked: the store's flash is wflash_port_init()'s s_hal (wflash_port.c:182), the only hal_flash_if_t in the image"
+    },
+    {
+      "kind": "indirect",
+      "layer": "project",
+      "text": "indirect store_commit -> wf_erase_sector, wf_write: f->erase_sector / f->write: the store's flash is wflash_port_init()'s s_hal (wflash_port.c:182), the only hal_flash_if_t in the image"
+    },
+    {
+      "kind": "indirect",
+      "layer": "project",
+      "text": "indirect ipc_transact -> port_sema_try_acquire, port_sema_release, port_mailbox, port_notify, port_response_ready, port_response_len, port_now_ms: port->*: g_crypto_port (port_crypto.c:98), the only ipc_port_if_t in the image; every member bound, so the deepest one counts"
+    },
+    {
+      "kind": "frame",
+      "layer": "project",
+      "text": "frame memcpy = 8 B: newlib-nano memcpy: push {r4, lr} (objdump, MTB GCC 14.2.1)"
+    },
+    {
+      "kind": "frame",
+      "layer": "project",
+      "text": "frame memset = 0 B: newlib-nano memset: leaf, no push, SP untouched (objdump, MTB GCC 14.2.1)"
+    },
+    {
+      "kind": "frame",
+      "layer": "project",
+      "text": "frame strlen = 0 B: newlib-nano strlen: leaf, no push, SP untouched (objdump, MTB GCC 14.2.1); called by xTaskGetHandle (LOG_EVT_TASK_STACK)"
+    },
+    {
+      "kind": "profile",
+      "layer": "profile cortex-m-freertos",
+      "text": "switch frame 208 B (FPU) / 72 B [profile cortex-m-freertos]: ARMv7-M Architecture Reference Manual B1.5.7 (exception entry, STKALIGN) + FreeRTOS GCC port.c xPortPendSVHandler"
+    },
+    {
+      "kind": "profile",
+      "layer": "profile cortex-m-freertos",
+      "text": "stack alignment 8 B [profile cortex-m-freertos]"
+    },
+    {
+      "kind": "margin",
+      "layer": "tool default",
+      "text": "margin rule 0.80 [tool default]"
+    },
+    {
+      "kind": "not_linked",
+      "layer": "ELF",
+      "text": "2006 compiler frame entries name functions not in the image (removed by the linker), ignored"
+    }
+  ],
+  "not_analysed": [
+    "main stack (MSP): the interrupt chain and the code before the scheduler starts (REQ-SB-204..206, not implemented yet)"
+  ]
+}
