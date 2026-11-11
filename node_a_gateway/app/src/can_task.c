@@ -30,9 +30,10 @@
 #error "can_task needs INCLUDE_uxTaskGetStackHighWaterMark 1 in FreeRTOSConfig.h"
 #endif
 
-/* 384: crypto_mac() alone needs ~540 B (2 x crypto_msg_t + 2 wire buffers) on the
- * caller's stack; 192 overflowed on the first MAC (W40 bench, Stage 3). ADR-0010 D5. */
-#define CAN_STACK_WORDS     384U   /* pre-SecOC: ~88 words used (g_hw_can; incl. can_tx) */
+/* 512 (F-021): stack_bound gives a worst case of 1488 B (can_task -> secoc_app_verify_telemetry
+ * -> ... -> crypto_mac 568 B -> crypto_report -> log_evt, + 208 B switch frame), which needs
+ * >= 466 words under the 80% rule (ADR-0025 D4). 384 used 97%. stack_bound.toml has the inputs. */
+#define CAN_STACK_WORDS     512U
 #define RAW_FRAME_QDEPTH     16U
 
 /* CANFD channel for the gateway (ADR-0011). The kit routes CAN0 channel 1 to the

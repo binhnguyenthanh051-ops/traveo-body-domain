@@ -1,0 +1,70 @@
+stack_bound 0.1.1 | gateway_app.elf (sha256 c77007295d3a) | GCC: (Arm GNU Toolchain 14.2.Rel1 (Build arm-14.52)) 14.2.1 20241119
+profile cortex-m-freertos v1 | margin: required <= 80% of configured (tool default)
+
+STACK               REQUIRED  CONFIGURED   USED       RECOMMENDED  STATUS
+task can_task         1488 B      2048 B    73%    1864 B (466 w)  ok
+task app_task         1256 B      2048 B    61%    1576 B (394 w)  ok
+task health_task       392 B       512 B    77%     496 B (124 w)  ok
+task log_cyclic_task     308 B       512 B    60%      392 B (98 w)  ok
+
+worst path, task can_task (1280 B + 208 B switch frame, stack from ELF symbol can_task.c:s_stack):
+     can_task 168 B
+   -> secoc_app_verify_telemetry 88 B
+   -> rx_authentic 32 B
+   -> secoc_rx_process 64 B
+   -> secoc_verify_len 56 B
+   -> verify_core 136 B
+   ~> crypto_mac 568 B   [listed: cy->oracle->mac: g_oracle = { crypto_mac } (secoc_app.c:24), the only secoc_mac_if_t in the image]
+   -> crypto_report 8 B
+   -> log_evt 80 B
+   -> log_try_enqueue 48 B
+   -> log_ring_copy_in 24 B
+   -> memcpy 8 B
+
+worst path, task app_task (1048 B + 208 B switch frame, stack from ELF symbol app_task.c:s_stack):
+     app_task 24 B
+   -> apply_output 80 B
+   -> secoc_app_build_door_cmd 16 B
+   -> build_secured 48 B
+   -> secoc_secure 144 B
+   ~> crypto_mac 568 B   [listed: cy->oracle->mac: g_oracle = { crypto_mac } (secoc_app.c:24), the only secoc_mac_if_t in the image]
+   -> crypto_report 8 B
+   -> log_evt 80 B
+   -> log_try_enqueue 48 B
+   -> log_ring_copy_in 24 B
+   -> memcpy 8 B
+
+worst path, task health_task (184 B + 208 B switch frame, stack from ELF symbol health_task.c:s_stack):
+     health_task 16 B
+   -> health_log_alive 8 B
+   -> log_evt 80 B
+   -> log_try_enqueue 48 B
+   -> log_ring_copy_in 24 B
+   -> memcpy 8 B
+
+worst path, task log_cyclic_task (100 B + 208 B switch frame, stack from ELF symbol s_log_stack):
+     log_cyclic_task 16 B
+   -> log_drain 56 B
+   -> log_port_tx 8 B
+   -> Cy_SCB_UART_PutArray 8 B
+   -> Cy_SCB_WriteArray 8 B
+   -> Cy_SCB_WriteArrayNoCheck 4 B
+
+  ->  direct call    ~>  function-pointer target (from the [[indirect]] list)
+
+assumptions:
+  - indirect verify_core -> crypto_mac: cy->oracle->mac: g_oracle = { crypto_mac } (secoc_app.c:24), the only secoc_mac_if_t in the image
+  - indirect secoc_secure -> crypto_mac: cy->oracle->mac: g_oracle = { crypto_mac } (secoc_app.c:24), the only secoc_mac_if_t in the image
+  - indirect secoc_rx_process -> body_msg_pdu_len: rx->pdu_len_of: secoc_rx_set_pdu_len_of(&g_secoc_rx, body_msg_pdu_len) (secoc_app.c:86), the only setter call
+  - indirect secoc_tx_next -> store_commit: ctx->store->commit: g_store = &g_secoc_store (secoc_app.c:53), .commit = store_commit (secoc_store.c:293)
+  - indirect secoc_tx_adopt_floor -> store_commit: ctx->store->commit: g_store = &g_secoc_store (secoc_app.c:53), .commit = store_commit (secoc_store.c:293)
+  - indirect secoc_rx_accept -> store_commit: ctx->store->commit: g_store = &g_secoc_store (secoc_app.c:53), .commit = store_commit (secoc_store.c:293)
+  - indirect read_slot -> wf_blank_check, wf_read_checked: f->blank_check / f->read_checked: the store's flash is wflash_port_init()'s s_hal (wflash_port.c:182), the only hal_flash_if_t the store is given
+  - indirect store_commit -> wf_erase_sector, wf_write: f->erase_sector / f->write: the store's flash is wflash_port_init()'s s_hal (wflash_port.c:182), the only hal_flash_if_t the store is given
+  - indirect ipc_transact -> port_sema_try_acquire, port_sema_release, port_mailbox, port_notify, port_response_ready, port_response_len, port_now_ms: port->*: g_crypto_port (port_crypto.c:67), the only ipc_port_if_t in the image; every member bound, so the deepest one counts
+  - frame memcpy = 8 B: newlib-nano memcpy: push {r4, lr} (objdump, MTB GCC 14.2.1)
+  - frame memset = 0 B: newlib-nano memset: leaf, no push, SP untouched (objdump, MTB GCC 14.2.1)
+  - switch frame 208 B (FPU) / 72 B [profile cortex-m-freertos]: ARMv7-M Architecture Reference Manual B1.5.7 (exception entry, STKALIGN) + FreeRTOS GCC port.c xPortPendSVHandler
+  - stack alignment 8 B [profile cortex-m-freertos]
+  - margin rule 0.80 [tool default]
+  - 1632 compiler frame entries name functions not in the image (removed by the linker), ignored
