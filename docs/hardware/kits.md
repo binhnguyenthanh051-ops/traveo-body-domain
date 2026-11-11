@@ -72,6 +72,12 @@ bash ./zz_build_actuator_app.sh program    # Node B CM0+ + CM7
   `bench.env` is missing or empty, and OpenOCD will flash the **first** probe it finds.
 - The gateway app's `program` never flashes MTB's raw `gateway_app.hex` (the FBL rejects it). It
   signs, refuses a stamped hex older than the ELF, then flashes `app_stamped.hex` (F-013).
+- **Stack gate (ADR-0025 D6):** both app scripts run `stack_bound` after the build and stop before
+  signing/flashing unless every analysed stack passes. They print the per-stack table, and the report is
+  `build/stack_bound.html` in the project folder. No override: a failing stack is fixed or raised.
+  Needs `git submodule update --init` once and `python -m pip install pyelftools capstone`. If the
+  gate says pyelftools is missing but pip says it's installed, the Git Bash child shell lost `APPDATA`:
+  prefix the command with `env APPDATA="$(cygpath -w "$APPDATA")"`.
 - In PowerShell, `bash` is the ModusToolbox shell's (`tools_3.8/modus-shell/bin/bash.exe`), which
   finds `make`, the GCC tools and Python. Bash syntax (`VAR=x ./script`, `/c/...` paths) does not
   work typed into PowerShell itself.

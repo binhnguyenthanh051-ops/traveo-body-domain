@@ -6,7 +6,14 @@
 Per capture: records, lost records (REQ-LOG-007), every LOG_EVT_BOOT with the
 image whose banner preceded it and how many banners it had (F-006), the reset
 cause decoded (TRM Table 19-2; the FBL's is a mapped enum, F-016), FBL jumps,
-SecOC accepts per CAN ID, and rejects per reason + CAN ID.
+SecOC accepts per CAN ID, rejects per reason + CAN ID, and each task's minimum
+free stack words (LOG_EVT_TASK_STACK, ADR-0025 D5).
+
+    python host_tools/bench_summary.py nodeA.bin --stack-report nodeA.bin=stack_bound_nodeA_app.json
+
+With --stack-report, each task's measured stack use (configured - free words)
+is checked against stack_bound's static worst case from that JSON report: the
+static number must never be smaller. Exit 1 if it is (the analysis is wrong).
 
 It reads the same stream logview does, through lib/log_decode, so a bench record
 never rests on a grep of a rendered transcript.
@@ -14,6 +21,7 @@ never rests on a grep of a rendered transcript.
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 from collections import Counter
@@ -27,6 +35,13 @@ from lib import log_decode  # noqa: E402
 EVT = log_decode.log_events.NAME_TO_ID
 BOOT, JUMP, ACCEPT = EVT["LOG_EVT_BOOT"], EVT["LOG_EVT_APP_JUMP"], EVT["LOG_EVT_SECOC_ACCEPT"]
 REJECTS = {EVT[n]: n for n in ("LOG_EVT_SECOC_REJECT_MAC", "LOG_EVT_SECOC_REJECT_FRESHNESS")}
+TASK_STACK = EVT["LOG_EVT_TASK_STACK"]
+
+# LOG_EVT_TASK_STACK task_id (events.csv) -> (short name, stack_bound task entry)
+TASKS = {1: ("can", "can_task"), 2: ("app", "app_task"), 3: ("health", "health_task"),
+         4: ("log", "log_cyclic_task"), 5: ("heartbeat", "heartbeat_task"),
+         6: ("idle", "prvIdleTask"), 7: ("timer", "prvTimerTask")}
+WORD = 4
 
 BANNER = re.compile(r"--- (\S+?)(?:/sec)? \S+ ---")
 
@@ -71,6 +86,7 @@ class Summary:
     boots: list[Boot] = field(default_factory=list)
     accepts: Counter = field(default_factory=Counter)
     rejects: Counter = field(default_factory=Counter)
+    min_free: dict[int, int] = field(default_factory=dict)     # task_id -> min free words seen
 
     @property
     def max_banners_per_boot(self) -> int:
@@ -101,6 +117,8 @@ def summarize(data: bytes) -> Summary:
                 s.accepts[item.arg0] += 1
             elif item.evt in REJECTS:
                 s.rejects[(REJECTS[item.evt], item.arg0)] += 1
+            elif item.evt == TASK_STACK:
+                s.min_free[item.arg0] = min(item.arg1, s.min_free.get(item.arg0, item.arg1))
     s.records, s.lost, s.resyncs = dec.records, dec.lost, dec.resyncs
     return s
 
@@ -117,19 +135,65 @@ def format_summary(label: str, s: Summary) -> str:
     out.append(f"rejects: {sum(s.rejects.values())}")
     for (name, can_id), n in sorted(s.rejects.items()):
         out.append(f"  {name} can_id=0x{can_id:03X} x{n}")
+    out.append("task stacks, min free words: " + (", ".join(
+        f"{TASKS.get(t, (f'id{t}',))[0]} {w}" for t, w in sorted(s.min_free.items())) or "none"))
     return "\n".join(out)
+
+
+def check_stacks(s: Summary, report: dict) -> tuple[bool, list[str]]:
+    """Measured use (configured - min free) against stack_bound's static worst case, per task.
+
+    The static bound must be >= what the bench measured, or the analysis missed a path.
+    A task in the report with no LOG_EVT_TASK_STACK in the capture is a failure too: no
+    evidence is not a pass."""
+    by_entry = {entry: tid for tid, (_, entry) in TASKS.items()}
+    ok, out = True, [f"stack check against {report['image']['name']} "
+                     f"(sha256 {report['image']['sha256'][:12]}, {report['tool']['name']} "
+                     f"{report['tool']['version']}):"]
+    for st in report["stacks"]:
+        tid = by_entry.get(st["entry"])
+        if tid is None or tid not in s.min_free:
+            ok = False
+            out.append(f"  {st['entry']:<16} NO DATA: no LOG_EVT_TASK_STACK for it in the capture")
+            continue
+        used = st["configured"] - WORD * s.min_free[tid]
+        good = used <= st["required"]
+        ok &= good
+        out.append(f"  {st['entry']:<16} measured {used:>5} B <= static {st['required']:>5} B "
+                   f"of {st['configured']:>5} B  {'ok' if good else 'VIOLATION: the static bound is too small'}")
+    for tid in sorted(set(s.min_free) - {by_entry.get(st["entry"]) for st in report["stacks"]}):
+        name = TASKS.get(tid, (f"id{tid}",))[0]
+        out.append(f"  {name:<16} {s.min_free[tid]} words free, no static bound (not in the report)")
+    return ok, out
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("captures", nargs="+", type=Path, help="raw logview captures (--raw .bin)")
+    ap.add_argument("--stack-report", action="append", default=[], metavar="CAPTURE=JSON",
+                    help="check that capture's task stacks against a stack_bound JSON report")
     args = ap.parse_args()
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")     # as logview (F-005)
+    reports = {}
+    for spec in args.stack_report:
+        cap, sep, rep = spec.partition("=")
+        if not sep:
+            ap.error(f"--stack-report wants CAPTURE=JSON, got {spec!r}")
+        reports[Path(cap).name] = Path(rep)
+    unknown = set(reports) - {p.name for p in args.captures}
+    if unknown:
+        ap.error(f"--stack-report names captures not given: {', '.join(sorted(unknown))}")
+    rc = 0
     for path in args.captures:
-        print(format_summary(path.name, summarize(path.read_bytes())))
+        s = summarize(path.read_bytes())
+        print(format_summary(path.name, s))
+        if path.name in reports:
+            ok, lines = check_stacks(s, json.loads(reports[path.name].read_text(encoding="utf-8")))
+            print("\n".join(lines))
+            rc |= 0 if ok else 1
         print()
-    return 0
+    return rc
 
 
 if __name__ == "__main__":

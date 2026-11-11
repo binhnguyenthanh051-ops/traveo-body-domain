@@ -9,7 +9,7 @@
 
 | Area | Source | REQs | Fully traced | With gaps |
 |---|---|---|---|---|
-| REQ-LOG | `docs/requirements/logging.md` | 14 | 6 | 8 |
+| REQ-LOG | `docs/requirements/logging.md` | 15 | 7 | 8 |
 | REQ-SECOC | `docs/requirements/secoc.md` | 13 | 13 | 0 |
 
 **25 gap(s)** in total — see [Gaps](#gaps).
@@ -32,6 +32,7 @@
 | REQ-LOG-012 | One generated event registry; stale generated files fail CI | ADR-0023 D9 | — | — | *(no column)* | *(no column)* | ❌ matrix-drift, no-impl, no-test |
 | REQ-LOG-013 | C encoder and host decoder round-trip identically | ADR-0023 D8 | — | — | *(no column)* | *(no column)* | ❌ matrix-drift, no-impl, no-test |
 | REQ-LOG-014 | Drain latency is bounded and published, so absence-assertions can settle | ADR-0023 D10 | `shared/log/src/log.c` | `shared/log/tests/test_log.c` ×3 | *(no column)* | *(no column)* | ❌ matrix-drift |
+| REQ-LOG-016 | Each app image reports every task's stack high-water (task id, free words) right after each `APP_ALIVE`, as `LOG_EVT_TASK_STACK`, so the bench can check it against the static bound | ADR-0025 D5 | `node_a_gateway/app/src/health_task.c`<br>`node_b_actuator/proj_cm7/src/main.c` | `host_tools/tests/test_bench_summary.py` ×2 | *(no column)* | *(no column)* | ✅ |
 
 ## REQ-SECOC
 
@@ -93,6 +94,7 @@ should prove some requirement's "Observed by"; some are infrastructure instead.
 - `LOG_EVT_APP_REJECT`
 - `LOG_EVT_BOOT`
 - `LOG_EVT_OVERFLOW`
+- `LOG_EVT_TASK_STACK`
 - `LOG_EVT_UDS_SECURITY`
 - `LOG_EVT_UDS_SESSION`
 

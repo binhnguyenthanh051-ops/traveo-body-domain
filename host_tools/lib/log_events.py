@@ -18,6 +18,7 @@ EVENTS = {
     0x0301: ('LOG_EVT_UDS_SESSION', 'contract', 'new_session', '-', 'Diagnostic session changed'),
     0x0302: ('LOG_EVT_UDS_SECURITY', 'contract', 'granted', 'attempt_no', 'SecurityAccess unlock result'),
     0x0401: ('LOG_EVT_APP_ALIVE', 'contract', 'uptime_ms', 'stack_free_words', 'Liveness every 5s; first is immediate after boot -- BVT timeouts must clear 5s'),
+    0x0402: ('LOG_EVT_TASK_STACK', 'contract', 'task_id', 'free_words', "One per task right after each APP_ALIVE (ADR-0025 D5): the task's stack high-water (uxTaskGetStackHighWaterMark). task_id: 1 can 2 app 3 health 4 log 5 heartbeat 6 idle 7 timer"),
     0x1001: ('LOG_EVT_DBG_U32', 'diagnostic', 'value', 'tag', 'Ad-hoc developer value; delete freely'),
     0x1002: ('LOG_EVT_CRYPTO_MAC_US', 'diagnostic', 'elapsed_us', '-', 'MAC round-trip time -- timing only'),
 }

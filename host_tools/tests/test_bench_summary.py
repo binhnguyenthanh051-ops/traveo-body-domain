@@ -80,3 +80,53 @@ def test_report_names_the_numbers_a_bench_record_needs():
     text = bs.format_summary("nodeA", bs.summarize(gateway_boot()))
     for needle in ("boots: 2", "max banners per boot: 1", "lost: 0", "rejects: 0", "jumps: 1"):
         assert needle in text, needle
+
+
+# ---- LOG_EVT_TASK_STACK (ADR-0025 D5) ---------------------------------------------------
+
+TASK_STACK = 0x0402
+
+
+def stacks(*pairs) -> bytes:
+    """One APP_ALIVE tick's TASK_STACK records: (task_id, free_words) pairs."""
+    return b"".join(rec(i, TASK_STACK, arg0=t, arg1=w) for i, (t, w) in enumerate(pairs))
+
+
+def stack_report(*rows) -> dict:
+    """The parts of a stack_bound JSON report the check reads: (entry, required, configured)."""
+    return {"image": {"name": "gateway_app.elf", "sha256": "c77007295d3a7147"},
+            "tool": {"name": "stack_bound", "version": "0.2.0"},
+            "stacks": [{"entry": e, "required": r, "configured": c} for e, r, c in rows]}
+
+
+def test_task_stack_event_id_is_the_table_one():
+    assert d.log_events.NAME_TO_ID["LOG_EVT_TASK_STACK"] == TASK_STACK
+
+
+def test_the_minimum_free_words_per_task_is_kept_across_ticks_and_boots():
+    # @test REQ-LOG-016 : TASK_STACK records are read per task, the minimum kept
+    s = bs.summarize(stacks((1, 300), (3, 70)) + gateway_boot() + stacks((1, 280), (3, 90)))
+    assert s.min_free == {1: 280, 3: 70}
+    assert "task stacks, min free words: can 280, health 70" in bs.format_summary("nodeA", s)
+
+
+def test_measured_use_within_the_static_bound_passes():
+    # can: 2048 - 4*280 = 928 B measured <= 1488 B static
+    s = bs.summarize(stacks((1, 280), (6, 100)))
+    ok, lines = bs.check_stacks(s, stack_report(("can_task", 1488, 2048)))
+    assert ok
+    assert any("can_task" in l and "measured   928 B <= static  1488 B" in l and l.endswith("ok") for l in lines)
+    assert any(l.strip().startswith("idle") and "no static bound" in l for l in lines)
+
+
+def test_measured_use_above_the_static_bound_is_a_violation():
+    # @test REQ-LOG-016 : measured use above the static bound fails the bench check
+    # health: 512 - 4*10 = 472 B measured > 392 B static: the analysis missed a path
+    ok, lines = bs.check_stacks(bs.summarize(stacks((3, 10))), stack_report(("health_task", 392, 512)))
+    assert not ok and any("VIOLATION" in l for l in lines)
+
+
+def test_a_task_with_no_records_is_not_a_pass():
+    ok, lines = bs.check_stacks(bs.summarize(stacks((1, 280))),
+                                stack_report(("can_task", 1488, 2048), ("app_task", 1256, 2048)))
+    assert not ok and any("app_task" in l and "NO DATA" in l for l in lines)

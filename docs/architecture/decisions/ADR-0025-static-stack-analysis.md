@@ -107,11 +107,15 @@ FreeRTOS idle and timer tasks (newlib with no `.su`, see Table 7).
 
 ### D5. One new contract event: `LOG_EVT_TASK_STACK(task_id, free_words)`
 
-Emitted for every task by the health task (Node A) and the heartbeat task (Node B) on the 5 s tick of
-`LOG_EVT_APP_ALIVE`. `task_id` is a small per-node enum in `events.csv`; `free_words` is
-`uxTaskGetStackHighWaterMark()`. The bench check asserts `static_worst ≥ STACK_WORDS − free_words`
-per task. Cost: one record per task every 5 s (3 on Node A, 2 on Node B). `LOG_EVT_APP_ALIVE` keeps
-its `stack_free_words` field unchanged (contract IDs are API).
+Emitted for every task by the health task (Node A) and the heartbeat task (Node B) right after each
+`LOG_EVT_APP_ALIVE` (every 5 s). `task_id` is one id set for both nodes, fixed in `events.csv` (1 can,
+2 app, 3 health, 4 log, 5 heartbeat, 6 idle, 7 timer); `free_words` is `uxTaskGetStackHighWaterMark()`.
+Tasks are looked up by name (`xTaskGetHandle`), so a task an image doesn't create is skipped, never
+reported as 0. `bench_summary.py --stack-report CAPTURE=JSON` asserts, per task, that the measured use
+(configured − 4 × min free words) is ≤ stack_bound's static worst case, and that every task in the report
+has records (REQ-LOG-016). Cost: 6 records every 5 s on Node A, 5 on Node B, including the FreeRTOS idle
+and timer tasks, which have no static bound yet but get a measured one. `LOG_EVT_APP_ALIVE` keeps its
+`stack_free_words` field unchanged (contract IDs are API).
 
 *Rejected:* reading `g_hw_*` with the debugger (Node A only, outside the bench rule, not rerunnable
 from a capture).
@@ -122,6 +126,11 @@ from a capture).
 and **stop before flashing** on failure. There's no override: a failing stack is fixed or raised. The
 gate goes in only once every task passes D4 (F-021 first). The FBL is out of scope (super-loop on MSP,
 no tasks; ADR-0004).
+
+*Built 2026-11-11:* `tools/stack_gate.sh`, sourced by both scripts. It writes
+`build/stack_bound.{txt,json,html}` next to the ELF, prints the per-stack table, and exits the script
+on stack_bound exit 1 (a stack fails) or 2 (no result). Node A gates before signing. Node B's
+`program` was one make call (build + flash), so it is split: build, gate, `qprogram`.
 
 ### D7. The analysis flags stay in the build permanently
 
@@ -161,7 +170,7 @@ SHA-256 equal). Re-check on any toolchain bump, as one line of the `bench-test` 
 | Item | Next step |
 |---|---|
 | ~~F-021~~ | Done 2026-11-11: three stacks raised to 512 words (Table 4); bench cross-check with D5 |
-| Node A code bytes | Built with the flags and analysed (2026-11-11); identical bytes not yet compared |
+| ~~Node A code bytes~~ | Done 2026-11-11: `objcopy -O binary` identical with and without the flags, both nodes |
 | ~~`memcpy` / `memset` frames~~ | Done: 8 B (`push {r4, lr}`) and 0 B (leaf), newlib-nano, in both project files |
 | FreeRTOS idle + timer tasks | Reach newlib with no `.su` (`_reclaim_reent` has an indirect `bx r3`): stack_bound's binary witness (slice 2) |
-| MSP budget | Interrupt chain per core (stack_bound D9), after W46 |
+| MSP budget | **W47**: the interrupt stack slice (stack_bound REQ-SB-204..206) + an MSP high-water on the bench. Every report states it isn't analysed |

@@ -37,6 +37,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
+. "$ROOT/tools/stack_gate.sh"        # stack_gate (ADR-0025 D6)
 
 # Local bench settings (probe serials, signing key): bench.env at the repo root,
 # gitignored; template bench.env.example. Values already in the environment win.
@@ -80,10 +81,40 @@ esac
 
 # Pass CY_TOOLS_DIR directly so $(wildcard C:/...) in the MTB Makefiles resolves
 # correctly under Git Bash's make, which does not expand C:/ wildcard paths.
-if [ -n "${CY_TOOLS_PATHS:-}" ]; then
-    make CY_TOOLS_DIR="$CY_TOOLS_PATHS" "$MAKE_TARGET" "${EXTRA[@]}"
+run_make() {
+    if [ -n "${CY_TOOLS_PATHS:-}" ]; then
+        make CY_TOOLS_DIR="$CY_TOOLS_PATHS" "$1" "${EXTRA[@]}"
+    else
+        make "$1" "${EXTRA[@]}"
+    fi
+}
+
+# ADR-0025 D6: the CM7 image's stacks are checked between building and flashing. `program`
+# builds and flashes in one make call, so split it: build, gate, then qprogram (no rebuild).
+# The CM0+ project alone has no tasks to check.
+CM7_ELF="build/APP_KIT_T2G-B-H_LITE/Debug/actuator_cm7.elf"
+SUFFIX="${MAKE_TARGET#"$ACTION"}"     # "_proj" when scoped to one project
+if [ "$PROJECT" != "cm0p" ]; then
+    case "$ACTION" in
+        build|qbuild)
+            run_make "$MAKE_TARGET"
+            stack_gate "$APP/proj_cm7" "$CM7_ELF"
+            ;;
+        program)
+            run_make "build$SUFFIX"
+            stack_gate "$APP/proj_cm7" "$CM7_ELF"
+            run_make "qprogram$SUFFIX"
+            ;;
+        qprogram)
+            stack_gate "$APP/proj_cm7" "$CM7_ELF"
+            run_make "$MAKE_TARGET"
+            ;;
+        *)
+            run_make "$MAKE_TARGET"
+            ;;
+    esac
 else
-    make "$MAKE_TARGET" "${EXTRA[@]}"
+    run_make "$MAKE_TARGET"
 fi
 
 # The MTB application recipe merges the CM0+ + CM7 project hexes into

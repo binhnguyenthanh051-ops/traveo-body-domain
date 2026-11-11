@@ -35,6 +35,7 @@ drift apart.
 | REQ-LOG-012 | One generated event registry; stale generated files fail CI | D9 | `checks/` + `test_log_events` |
 | REQ-LOG-013 | C encoder and host decoder round-trip identically | D8 | `test_log_decode` |
 | REQ-LOG-014 | Drain latency is bounded and published, so absence-assertions can settle | D10 | `test_log`, `test_bvt_harness` |
+| REQ-LOG-016 | Each app image reports every task's stack high-water (task id, free words) right after each `APP_ALIVE`, as `LOG_EVT_TASK_STACK`, so the bench can check it against the static bound | ADR-0025 D5 | `test_bench_summary`, bench 2026-11-11 |
 
 ## Requirements
 
@@ -143,6 +144,13 @@ to the record leaving the sink, under a defined worst-case queue depth. A consum
 **absence** of an event shall wait at least this long before concluding absence. The drain task
 shall run at a period no greater than this bound and shall be schedulable at low priority
 without violating it. *(D10.)*
+
+### REQ-LOG-016 — per-task stack high-water
+Each app image shall emit, right after every `LOG_EVT_APP_ALIVE`, one `LOG_EVT_TASK_STACK(task_id,
+free_words)` per task it creates: the task's minimum free stack words since boot. `task_id` values
+are fixed in `events.csv`. The bench check (`bench_summary.py --stack-report`) shall fail when a
+task's measured use exceeds the static worst case from `stack_bound`, or when a task in the report
+has no record. *(ADR-0025 D5.)*
 
 ## Notes on tagging
 
