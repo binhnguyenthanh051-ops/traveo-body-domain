@@ -32,10 +32,12 @@ stack_gate() {
     (cd "$dir" && PYTHONPATH="$src" python -m stack_bound "$elf" --su build --project stack_bound.toml \
         --json build/stack_bound.json --html build/stack_bound.html > build/stack_bound.txt) || rc=$?
 
-    local result="none"
-    if [ -f "$dir/build/stack_bound.json" ]; then
+    local result="none" json="$dir/build/stack_bound.json"
+    if [ -f "$json" ]; then
+        json="$(cygpath -w "$json" 2>/dev/null || echo "$json")"     # Windows Python, Cygwin/MSYS path
         result="$(python -c "import json,sys; print(json.load(open(sys.argv[1], encoding='utf-8'))['result'])" \
-                  "$dir/build/stack_bound.json" 2>/dev/null || echo unreadable)"
+                  "$json" 2>/dev/null || echo unreadable)"
+        result="${result%$'\r'}"                                      # Windows Python prints CRLF
     fi
     [ -s "$dir/build/stack_bound.txt" ] && sed -n '4,/^$/p' "$dir/build/stack_bound.txt"   # per-stack table
 
