@@ -1,4 +1,4 @@
-stack_bound 0.1.1 | gateway_app.elf (sha256 c77007295d3a) | GCC: (Arm GNU Toolchain 14.2.Rel1 (Build arm-14.52)) 14.2.1 20241119
+stack_bound 0.2.0 | gateway_app.elf (sha256 c77007295d3a) | GCC: (Arm GNU Toolchain 14.2.Rel1 (Build arm-14.52)) 14.2.1 20241119
 profile cortex-m-freertos v1 | margin: required <= 80% of configured (tool default)
 
 STACK               REQUIRED  CONFIGURED   USED       RECOMMENDED  STATUS
