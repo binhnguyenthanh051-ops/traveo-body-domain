@@ -88,7 +88,7 @@ than compiler-given frames, an indirect target missed in review, and the next sm
 failure path (F-018's 160 B logging branch is the example). A fixed byte margin was rejected: 64 B is
 generous on 512 B and nothing on 1.5 KB.
 
-**Table 4.** Results, `stack_bound` 0.1.2 on both app images (GCC 14.2.1, 2026-11-11). Reports:
+**Table 4.** Results, `stack_bound` 0.2.0 on both app images (GCC 14.2.1, 2026-11-11). Reports (text, JSON, HTML):
 `docs/bench/2026-11-11/stack_bound_node*.txt`.
 
 | Node | Task | Path | + switch | Stack before → after | Used | Status |
