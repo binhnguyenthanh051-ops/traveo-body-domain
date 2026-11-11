@@ -1,0 +1,34 @@
+== nodeA.bin
+records: 9127   lost: 64   resyncs: 0
+boots: 4   max banners per boot: 1   jumps: 2
+  boot  1  fbl       banners=1  reset_reason=0x0  (FBL_RST_POWER_ON (mapped enum, F-016))
+  boot  2  app       banners=1  reset_reason=0x0  (none)
+  boot  3  fbl       banners=1  reset_reason=0x0  (FBL_RST_POWER_ON (mapped enum, F-016))
+  boot  4  app       banners=1  reset_reason=0x0  (none)
+accepts: 0x200 x8939, 0x2F0 x2
+rejects: 0
+task stacks, min free words: can 212, app 271, health 77, log 96, idle 118, timer 99
+stack check against gateway_app.elf (sha256 13631e8ab0e3, stack_bound 0.2.0):
+  can_task         measured  1200 B <= static  1488 B of  2048 B  ok
+  app_task         measured   964 B <= static  1256 B of  2048 B  ok
+  health_task      measured   204 B <= static   408 B of   512 B  ok
+  log_cyclic_task  measured   128 B <= static   308 B of   512 B  ok
+  idle             118 words free, no static bound (not in the report)
+  timer            99 words free, no static bound (not in the report)
+
+== nodeB.bin
+records: 9096   lost: 0   resyncs: 0
+boots: 2   max banners per boot: 1   jumps: 0
+  boot  1  actuator  banners=1  reset_reason=0x10010  (XRES | SOFT)
+  boot  2  actuator  banners=1  reset_reason=0x10010  (XRES | SOFT)
+accepts: 0x121 x8946, 0x1F0 x2
+rejects: 1
+  LOG_EVT_SECOC_REJECT_FRESHNESS can_id=0x121 x1
+task stacks, min free words: can 226, log 102, heartbeat 78, idle 116, timer 227
+stack check against actuator_cm7.elf (sha256 f55ed5eab3fa, stack_bound 0.2.0):
+  can_task         measured  1144 B <= static  1472 B of  2048 B  ok
+  heartbeat_task   measured   200 B <= static   400 B of   512 B  ok
+  log_cyclic_task  measured   104 B <= static   308 B of   512 B  ok
+  idle             116 words free, no static bound (not in the report)
+  timer            227 words free, no static bound (not in the report)
+
