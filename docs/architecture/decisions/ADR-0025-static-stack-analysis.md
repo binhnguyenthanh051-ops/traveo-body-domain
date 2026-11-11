@@ -1,6 +1,6 @@
 # ADR-0025: Static stack analysis with stack_bound (W46)
 
-**Status:** proposed · 2026-11-11 · method in [stack_bound ADR-0001](../../../tools/stack_bound/docs/adr/ADR-0001-architecture.md) (accepted)
+**Status:** accepted · 2026-11-11 · by the owner at the W46 retro (D1–D7 built, bench `docs/bench/2026-11-11/stack_crosscheck.md`) · method in [stack_bound ADR-0001](../../../tools/stack_bound/docs/adr/ADR-0001-architecture.md) (accepted)
 
 **Summary.** Every FreeRTOS task stack on both nodes is checked at build time by `stack_bound`
 (submodule `tools/stack_bound`), against an 80% margin, before flashing. This ADR holds only this
