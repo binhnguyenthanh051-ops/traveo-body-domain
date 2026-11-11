@@ -38,6 +38,7 @@ HEADER_OFFSET=0x100          # FBL_APP_HEADER_OFFSET
 OBJCOPY=arm-none-eabi-objcopy
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
+. "$ROOT/tools/stack_gate.sh"        # stack_gate (ADR-0025 D6)
 
 # Local bench settings (probe serials, signing key): bench.env at the repo root,
 # gitignored; template bench.env.example. Values already in the environment win.
@@ -83,6 +84,9 @@ make "${MAKE_ARGS[@]}" build
 
 ELF="$(ls build/*/Debug/*.elf 2>/dev/null | head -1)"
 [ -n "$ELF" ] || { echo "no .elf in build/*/Debug/ — build first" >&2; exit 1; }
+
+# ADR-0025 D6: no image whose stacks fail their margin gets signed or flashed.
+stack_gate "$PWD" "$ELF"
 
 # CM4-only raw image: drop the CM0+ prebuilt and the high signature slot so the
 # binary spans only the actual CM4 code/data (not the whole region). Then stamp

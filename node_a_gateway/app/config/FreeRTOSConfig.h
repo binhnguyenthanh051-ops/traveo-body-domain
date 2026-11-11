@@ -86,6 +86,7 @@ extern void vAssertCalled(const char *file, unsigned long line);
 #define INCLUDE_vTaskDelay                      1
 #define INCLUDE_uxTaskGetStackHighWaterMark     1              /* health task uses this */
 #define INCLUDE_xTaskGetIdleTaskHandle          1              /* idle high-water sample */
+#define INCLUDE_xTaskGetHandle                  1              /* LOG_EVT_TASK_STACK (ADR-0025 D5) */
 #define INCLUDE_xTaskGetSchedulerState          1
 
 /* The CM4F port maps these CMSIS handlers to the kernel. */

@@ -27,6 +27,9 @@
 #if (configUSE_TIMERS != 1)
 #error "health_task needs configUSE_TIMERS 1 in FreeRTOSConfig.h (timer daemon high-water)"
 #endif
+#if (INCLUDE_xTaskGetHandle != 1)
+#error "LOG_EVT_TASK_STACK needs INCLUDE_xTaskGetHandle 1 in FreeRTOSConfig.h (ADR-0025 D5)"
+#endif
 
 #define HEALTH_STACK_WORDS   128U   /* used ~26 words (g_hw_health) + margin (ADR-0010 D5) */
 
@@ -44,6 +47,43 @@ volatile UBaseType_t g_hw_timer;
 
 static StaticTask_t s_tcb;
 static StackType_t  s_stack[HEALTH_STACK_WORDS];
+
+/* -------------------------------------------------------------------
+ * Per-task stack high-water (ADR-0025 D5, LOG_EVT_TASK_STACK)
+ *
+ * Right after each APP_ALIVE, one record per task: its id and its minimum free
+ * stack words since boot. The bench check (bench_summary.py --stack-report)
+ * asserts that the measured use never exceeds stack_bound's static worst case,
+ * which is what shows the static number is an upper bound. The ids are the
+ * contract in events.csv. Tasks are found by name, so one this image doesn't
+ * create is skipped, not reported as zero.
+ * ----------------------------------------------------------------- */
+typedef struct
+{
+    uint32_t    id;
+    const char *name;
+} task_stack_src_t;
+
+static const task_stack_src_t k_task_stacks[] = {
+    { 1U, "can" }, { 2U, "app" }, { 3U, "health" }, { 4U, "LOG" },
+    /* FreeRTOS's own names: the defaults of configIDLE_TASK_NAME / configTIMER_SERVICE_TASK_NAME,
+     * which only tasks.c / timers.c can see. */
+    { 6U, "IDLE" }, { 7U, "Tmr Svc" },
+};
+
+/* @impl REQ-LOG-016 : every task's stack high-water after each APP_ALIVE */
+static void log_task_stacks(void)
+{
+    for (uint32_t i = 0U; i < (uint32_t)(sizeof k_task_stacks / sizeof k_task_stacks[0]); ++i)
+    {
+        TaskHandle_t h = xTaskGetHandle(k_task_stacks[i].name);
+        if (h != NULL)
+        {
+            log_evt(LOG_EVT_TASK_STACK, k_task_stacks[i].id,
+                    (uint16_t)uxTaskGetStackHighWaterMark(h));
+        }
+    }
+}
 
 /* -------------------------------------------------------------------
  * Liveness cadence (ADR-0023 / REQ-LOG-009)
@@ -92,6 +132,7 @@ static void health_log_alive(void)
     log_evt(LOG_EVT_APP_ALIVE,
             (uint32_t)((uint32_t)now * (uint32_t)portTICK_PERIOD_MS),
             (uint16_t)g_hw_health);
+    log_task_stacks();
 
     s_alive_last    = now;
     s_alive_started = true;

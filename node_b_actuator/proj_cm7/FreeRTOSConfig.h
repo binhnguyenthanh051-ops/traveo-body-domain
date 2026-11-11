@@ -166,7 +166,7 @@ to exclude the API function. */
 #define INCLUDE_xEventGroupSetBitFromISR        1
 #define INCLUDE_xTimerPendFunctionCall          1
 #define INCLUDE_xTaskAbortDelay                 0
-#define INCLUDE_xTaskGetHandle                  0
+#define INCLUDE_xTaskGetHandle                  1              /* LOG_EVT_TASK_STACK (ADR-0025 D5) */
 #define INCLUDE_xTaskResumeFromISR              1
 
 /* Normal assert() semantics without relying on the provision of an assert.h

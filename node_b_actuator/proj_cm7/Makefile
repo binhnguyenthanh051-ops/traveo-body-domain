@@ -175,7 +175,10 @@ VFP_SELECT=hardfp
 #
 # NOTE: Includes and defines should use the INCLUDES and DEFINES variable
 # above.
-CFLAGS=
+# -fstack-usage -fcallgraph-info=su: the compiler witness for stack_bound (ADR-0025 D7).
+# They write .su/.ci files next to the objects and do not change the code bytes (checked
+# with objcopy -O binary on both nodes, 2026-11-11). The build scripts gate on the result (D6).
+CFLAGS=-fstack-usage -fcallgraph-info=su
 
 # Additional / custom C++ compiler flags.
 #

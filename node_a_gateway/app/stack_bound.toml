@@ -80,3 +80,4 @@ reason = "port->*: g_crypto_port (port_crypto.c:67), the only ipc_port_if_t in t
 [frames]
 memcpy = { bytes = 8, source = "newlib-nano memcpy: push {r4, lr} (objdump, MTB GCC 14.2.1)" }
 memset = { bytes = 0, source = "newlib-nano memset: leaf, no push, SP untouched (objdump, MTB GCC 14.2.1)" }
+strlen = { bytes = 0, source = "newlib-nano strlen: leaf, no push, SP untouched (objdump, MTB GCC 14.2.1); called by xTaskGetHandle (LOG_EVT_TASK_STACK)" }

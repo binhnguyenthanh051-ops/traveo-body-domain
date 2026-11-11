@@ -22,6 +22,7 @@
 #define LOG_EVT_UDS_SESSION            0x0301U   /* contract: Diagnostic session changed */
 #define LOG_EVT_UDS_SECURITY           0x0302U   /* contract: SecurityAccess unlock result */
 #define LOG_EVT_APP_ALIVE              0x0401U   /* contract: Liveness every 5s; first is immediate after boot -- BVT timeouts must clear 5s */
+#define LOG_EVT_TASK_STACK             0x0402U   /* contract: One per task right after each APP_ALIVE (ADR-0025 D5): the task's stack high-water (uxTaskGetStackHighWaterMark). task_id: 1 can 2 app 3 health 4 log 5 heartbeat 6 idle 7 timer */
 #define LOG_EVT_DBG_U32                0x1001U   /* diagnostic: Ad-hoc developer value; delete freely */
 #define LOG_EVT_CRYPTO_MAC_US          0x1002U   /* diagnostic: MAC round-trip time -- timing only */
 
