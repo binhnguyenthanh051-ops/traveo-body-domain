@@ -497,6 +497,13 @@ Each boundary is enforced by the platform, not by the prompt.
    the result and nothing else. A check run needs a GitHub App; a commit status works with a
    fine-grained token. Step 8 picks one.
 4. The local test keys for the bench live in that user's profile, outside the repo.
+5. Agents stay around the script, not inside it: Claude Code starts it with the commit and
+   the CR number, and a cloud agent reads the failure log afterwards, as data, to write the
+   bug report or the rework finding. Why the hardware step itself is a script and not an
+   agent: as an agent it would break the separation rule (keys and the board, plus the
+   untrusted text it reads through the pull request), native Windows gives it no sandbox,
+   and one improvised flash or eFuse command can damage the board for good.
+   Agreed with me on 2026-11-12.
 
 Rejected for now, to verify if the proposal is not enough:
 
