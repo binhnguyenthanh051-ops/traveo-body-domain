@@ -17,7 +17,7 @@ reason=0x4` then `APP_REJECT`, no jump. The normal CM0+ was flashed back last an
 
 | Node | Image | Built from | Stack gate (ADR-0025 D6) |
 |---|---|---|---|
-| A | `node_a_gateway/bootloader` → `app_combined.hex` (FBL CM4 + CM0+) | branch `fix/f020-f022-findings` at `9835ace` (firmware = `main` + `82dd786` F-022 + `805afa6` F-020) | not gated (FBL) |
+| A | `node_a_gateway/bootloader` → `app_combined.hex` (FBL CM4 + CM0+) | branch `fix/f020-f022-findings` at the commit that is `71b7fe9` on `main` (firmware = `main` + `9af4915` F-022 + `c4e4327` F-020; hashes as merged) | not gated (FBL) |
 | A | `node_a_gateway/app` → `app_stamped.hex`, signed ECDSA P-256 key_id 1 | same | pass: `gate_nodeA_app.json` (ELF sha256 `60d6eb89202a`) |
 | B | `node_b_actuator` → `app_combined.hex` (CM0+ + CM7) | same | pass: `gate_nodeB_cm7.json` (ELF sha256 `7de1298d7ad0`) |
 | A | `proj_cm0p` only, `DEFINES=FBL_M4_SEAM6_GARBAGE` → `gateway_fbl_cm0p.hex` | same | fault image, step 6 |
@@ -82,7 +82,7 @@ The load is the one that showed the race on 2026-11-11: about 48 `SECOC_ACCEPT` 
 the fix it hit 1 tick in 40 on Node A (one observation, so the rate is rough). Today: 223 ticks, 0
 hits. At 1 in 40, 223 clean ticks by chance is about 0.4%. The bench shows the symptom is gone; the
 proof that the mechanism is closed is the host test (`test_preempted_producer_gets_its_own_sequence_number`,
-which failed before `82dd786` with the bench's own symptom).
+which failed before `9af4915` with the bench's own symptom).
 
 ## Check 2 (F-020): Seam 6 GARBAGE makes the FBL refuse — PASS
 
