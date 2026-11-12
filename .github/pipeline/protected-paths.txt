@@ -1,0 +1,41 @@
+# Protected paths: docs/design/agent-pipeline.md section 7.
+# A pull request that touches one of these fails the `protected-paths` check, unless the
+# owner added the label `protected-change-approved`. Read by host_tools/protected_paths.py.
+#
+# Rules: one pattern per line. A trailing / means the whole folder. Without a /, a pattern is
+# an exact path from the repo root. `*` stays inside one folder; `**/` is any number of folders.
+
+# Requirements, design notes, architecture
+docs/requirements/
+docs/design/
+docs/architecture/overview.md
+docs/architecture/decisions/
+
+# CI workflows
+.github/workflows/
+
+# Linker scripts, wherever they are
+**/*.ld
+**/*.sct
+**/*.icf
+
+# Anything with keys
+security/
+node_a_gateway/bootloader/proj_cm0p/src/crypto_pubkey_dev.h
+shared/crypto/include/crypto_keystore.h
+shared/crypto/src/crypto_keystore.c
+host_tools/gen_dev_key.py
+host_tools/sign_image.py
+host_tools/check_key_residency.py
+.gitignore
+
+# The plan and week files, and CLAUDE.md
+docs/project/
+CLAUDE.md
+
+# The agent definitions (prompts, skills, settings), and this pipeline's own config and tools
+.claude/
+.github/prompts/
+.github/pipeline/
+host_tools/protected_paths.py
+host_tools/pipeline_setup.py

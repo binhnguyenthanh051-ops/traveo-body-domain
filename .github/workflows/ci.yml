@@ -48,13 +48,21 @@ jobs:
       - name: Verify generated log event tables are current
         run: python host_tools/gen_log_events.py --check
 
-      # DoD check 6: the committed report must match the code, and every area that
-      # has been tagged must stay gap-free. Add a --gate per area as it is tagged.
-      - name: Verify traceability report is current (tagged areas gap-free)
-        run: python host_tools/trace_report.py --check --gate REQ-SECOC
-
       - name: Run Python tests (if any)
         run: |
           pip install pytest
           # No-op until host_tools/ has tests; -q so it passes cleanly when empty.
           pytest host_tools -q || [ $? -eq 5 ]   # exit 5 = "no tests collected"
+
+  # Its own job, so it is its own required check on main (agent pipeline, build step 2).
+  traceability:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      # DoD check 6: the committed report must match the code, and every area that
+      # has been tagged must stay gap-free. Add a --gate per area as it is tagged.
+      - name: Verify traceability report is current (tagged areas gap-free)
+        run: python host_tools/trace_report.py --check --gate REQ-SECOC

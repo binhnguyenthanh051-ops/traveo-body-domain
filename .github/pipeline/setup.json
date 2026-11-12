@@ -16,6 +16,11 @@
 
     { "name": "protected-change-approved", "kind": "control", "color": "e99695", "description": "Owner only: this pull request may touch a protected path" }
   ],
+  "ruleset": {
+    "_comment": "The existing ruleset on main (pull request, no force push, linear history). This tool only sets its required checks: tests, traceability and protected paths (design note section 5, build step 2).",
+    "name": "Protect_main_branch",
+    "required_checks": ["host-build-test", "static-analysis", "python-tools", "traceability", "protected-paths"]
+  },
   "milestones": [
     { "title": "Pipeline", "due_on": "2026-11-15", "description": "Build steps of the agent pipeline (docs/design/agent-pipeline.md, section 9). A bucket for CRs, not a tagged release." },
     { "title": "M6",       "due_on": null,         "description": "Resilience + capstone (docs/roadmap.md). Scope is set by its ADR at gate 1a." }
