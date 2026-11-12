@@ -168,6 +168,28 @@ void test_mac_garbled_reply_logs_bad_reply(void)
     assert_one_error(CRYPTO_OP_MAC, CRYPTO_FAIL_BAD_REPLY);
 }
 
+/* @test REQ-SECOC-012 : a tag reply with a wrong op code is a garbled reply,
+ * whatever its first byte is (F-020). A tag that starts with 0x00..0x02 used to
+ * read as a verdict, so about 1 flipped-op reply in 85 was logged as REFUSED. */
+void test_mac_wrong_op_reply_is_bad_reply_even_if_it_reads_as_a_verdict(void)
+{
+    uint8_t tag[CRYPTO_CMAC_TAG_LEN];
+    uint8_t reply_tag[CRYPTO_CMAC_TAG_LEN];
+    uint8_t buf[CRYPTO_MSG_MAX_WIRE];
+    crypto_msg_t m;
+    size_t n;
+
+    memset(reply_tag, 0xA5, sizeof reply_tag);
+    reply_tag[0] = (uint8_t)CRYPTO_VERDICT_ERROR;   /* looks like a verdict byte */
+    crypto_make_mac_response(reply_tag, &m);
+    n = crypto_msg_encode(&m, buf, sizeof buf);
+    buf[0] ^= 0xFFU;                                /* the op code no longer echoes MAC */
+    fake_ipc_script_response(buf, n);
+
+    TEST_ASSERT_FALSE(crypto_mac(KEY_ID, g_msg, sizeof g_msg, tag));
+    assert_one_error(CRYPTO_OP_MAC, CRYPTO_FAIL_BAD_REPLY);
+}
+
 /* @test REQ-SECOC-012 : no port bound ⇒ fail-safe false, logged as REQUEST */
 void test_mac_without_port_logs_request(void)
 {
@@ -202,6 +224,14 @@ void test_verify_timeout_logs_timeout(void)
     assert_one_error(CRYPTO_OP_VERIFY_IMAGE, CRYPTO_FAIL_IPC_TIMEOUT);
 }
 
+/* F-020: a verdict that answers another op is a garbled reply, not an answer. */
+void test_verify_wrong_op_verdict_logs_bad_reply(void)
+{
+    script_verdict(CRYPTO_OP_MAC, CRYPTO_VERDICT_VALID);
+    TEST_ASSERT_EQUAL(CRYPTO_VERDICT_ERROR, crypto_verify_image(0x10040000U, 0x8000U, KEY_ID));
+    assert_one_error(CRYPTO_OP_VERIFY_IMAGE, CRYPTO_FAIL_BAD_REPLY);
+}
+
 void test_verify_error_verdict_logs_refused(void)
 {
     script_verdict(CRYPTO_OP_VERIFY_IMAGE, CRYPTO_VERDICT_ERROR);
@@ -217,10 +247,12 @@ int main(void)
     RUN_TEST(test_mac_timeout_logs_timeout);
     RUN_TEST(test_mac_busy_logs_busy);
     RUN_TEST(test_mac_garbled_reply_logs_bad_reply);
+    RUN_TEST(test_mac_wrong_op_reply_is_bad_reply_even_if_it_reads_as_a_verdict);
     RUN_TEST(test_mac_without_port_logs_request);
     RUN_TEST(test_verify_invalid_is_an_answer_not_an_error);
     RUN_TEST(test_verify_valid_logs_nothing);
     RUN_TEST(test_verify_timeout_logs_timeout);
+    RUN_TEST(test_verify_wrong_op_verdict_logs_bad_reply);
     RUN_TEST(test_verify_error_verdict_logs_refused);
     return UNITY_END();
 }

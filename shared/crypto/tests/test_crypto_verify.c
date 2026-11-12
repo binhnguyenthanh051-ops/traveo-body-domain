@@ -76,6 +76,36 @@ void test_malformed_reply_maps_to_error(void)
                       crypto_verify_image(0x10040000U, 0x8000U, 1U));
 }
 
+/* F-020: a VALID verdict that answers a DIFFERENT op is not an answer to
+ * VERIFY_IMAGE. This is byte for byte what FBL_M4_SEAM6_GARBAGE puts in the
+ * mailbox: the encoded reply with byte 0 (the op code) inverted and the
+ * verdict byte intact. The FBL jumped on it on the bench (2026-11-06). */
+void test_valid_verdict_for_another_op_maps_to_error(void)
+{
+    crypto_msg_t m;
+    crypto_make_verdict(CRYPTO_OP_VERIFY_IMAGE, CRYPTO_VERDICT_VALID, &m);
+    uint8_t buf[CRYPTO_MSG_MAX_WIRE];
+    size_t n = crypto_msg_encode(&m, buf, sizeof buf);
+    buf[0] ^= 0xFFU;                         /* the Seam 6 GARBAGE hook */
+    fake_ipc_script_response(buf, n);
+
+    TEST_ASSERT_EQUAL(CRYPTO_VERDICT_ERROR,
+                      crypto_verify_image(0x10040000U, 0x8000U, 1U));
+}
+
+/* The same rule for a well-formed reply to a real op: VALID echoing MAC. */
+void test_valid_verdict_echoing_mac_maps_to_error(void)
+{
+    crypto_msg_t m;
+    crypto_make_verdict(CRYPTO_OP_MAC, CRYPTO_VERDICT_VALID, &m);
+    uint8_t buf[CRYPTO_MSG_MAX_WIRE];
+    size_t n = crypto_msg_encode(&m, buf, sizeof buf);
+    fake_ipc_script_response(buf, n);
+
+    TEST_ASSERT_EQUAL(CRYPTO_VERDICT_ERROR,
+                      crypto_verify_image(0x10040000U, 0x8000U, 1U));
+}
+
 void test_busy_mailbox_maps_to_error(void)
 {
     fake_ipc_script_deny_sema();
@@ -111,6 +141,8 @@ int main(void)
     RUN_TEST(test_m0plus_says_invalid);
     RUN_TEST(test_timeout_maps_to_error);
     RUN_TEST(test_malformed_reply_maps_to_error);
+    RUN_TEST(test_valid_verdict_for_another_op_maps_to_error);
+    RUN_TEST(test_valid_verdict_echoing_mac_maps_to_error);
     RUN_TEST(test_busy_mailbox_maps_to_error);
     RUN_TEST(test_request_carries_the_verify_parameters);
     return UNITY_END();
