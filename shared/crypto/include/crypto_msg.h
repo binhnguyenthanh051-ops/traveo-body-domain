@@ -32,9 +32,21 @@ bool crypto_parse_verify_request(const crypto_msg_t *m,
 
 /* -------------------------------------------------------------------
  * Verdict response payload: verdict (u8). op_code echoes the request.
+ *
+ * crypto_parse_verdict() takes the op the caller ASKED for and returns false
+ * unless the reply echoes it (F-020). The echo is the only thing that ties a
+ * verdict to a request: without the check, VALID for any other op, or a reply
+ * with a corrupted op code, was accepted as the answer to VERIFY_IMAGE. The
+ * other parsers (verify request, MAC request, MAC response) already check
+ * their op the same way.
+ *
+ * One consequence: when the M0+ cannot decode a request at all it echoes
+ * CRYPTO_OP_NONE, so the client reports that reply as CRYPTO_FAIL_BAD_REPLY,
+ * not CRYPTO_FAIL_REFUSED. The outcome is the same (ERROR, fail-safe).
  * ----------------------------------------------------------------- */
 void crypto_make_verdict(crypto_op_t echo_op, crypto_verdict_t v, crypto_msg_t *m);
-bool crypto_parse_verdict(const crypto_msg_t *m, crypto_verdict_t *v);
+bool crypto_parse_verdict(const crypto_msg_t *m, crypto_op_t expect_op,
+                          crypto_verdict_t *v);
 
 /* -------------------------------------------------------------------
  * MAC op (ADR-0021 D7 / REQ-SECOC-012).
