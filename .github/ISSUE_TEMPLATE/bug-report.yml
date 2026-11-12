@@ -1,0 +1,64 @@
+# Bug report form: docs/design/agent-pipeline.md section 4.
+#
+# The field labels below are a contract. GitHub renders each one as a "### <label>"
+# heading in the issue body, and the pipeline reads the body by those headings. The
+# Planner writes its issues with the same headings. Rename a label only together with
+# host_tools/tests/test_pipeline_setup.py.
+name: Bug report
+description: Something in existing work is wrong. Starts as draft; only the owner sets ready.
+title: "Bug: "
+labels: ["draft", "bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A bug report is **agent-ready** only when every field is filled and the owner has set `ready`.
+        If a field does not apply, write `none:` and the reason. Do not leave it empty.
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed
+      description: What happened. Paste the log lines or the failing check, not a summary of them.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected
+      description: What should have happened, and where that is written (requirement, ADR, test).
+    validations:
+      required: true
+  - type: textarea
+    id: how-to-reproduce
+    attributes:
+      label: How to reproduce
+      description: The exact steps or command. For a bench bug, the image, the trigger and the capture file.
+    validations:
+      required: true
+  - type: input
+    id: affected-requirement
+    attributes:
+      label: Affected requirement
+      description: "The REQ-* ID that does not hold, or 'none:' and the reason."
+      placeholder: "REQ-LOG-008"
+    validations:
+      required: true
+  - type: dropdown
+    id: test-level
+    attributes:
+      label: Test level
+      description: "on-target and both send the fix through needs-bench before merge."
+      options:
+        - host
+        - on-target
+        - both
+    validations:
+      required: true
+  - type: input
+    id: milestone
+    attributes:
+      label: Milestone
+      description: The GitHub milestone this bug belongs to. Set the same milestone on the issue.
+      placeholder: "M6"
+    validations:
+      required: true

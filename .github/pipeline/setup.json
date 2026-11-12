@@ -1,0 +1,23 @@
+{
+  "_comment": "Labels and milestones of the agent pipeline (docs/design/agent-pipeline.md, sections 4 and 7). Applied by host_tools/pipeline_setup.py. The order of the state labels is the order of the board columns.",
+  "labels": [
+    { "name": "draft",          "kind": "state", "color": "c5def5", "description": "Written by the Planner, waiting for the owner's approval (gate 1b)" },
+    { "name": "ready",          "kind": "state", "color": "0e8a16", "description": "Approved by the owner, waiting for the Builder" },
+    { "name": "building",       "kind": "state", "color": "fbca04", "description": "Builder is implementing; host tests run on each push" },
+    { "name": "review",         "kind": "state", "color": "5319e7", "description": "Inspector is reviewing" },
+    { "name": "rework",         "kind": "state", "color": "d93f0b", "description": "Builder is fixing findings or a failed test" },
+    { "name": "needs-bench",    "kind": "state", "color": "006b75", "description": "Waiting for the owner to plug the board for the on-target test" },
+    { "name": "awaiting-merge", "kind": "state", "color": "0052cc", "description": "All evidence is there, waiting for the owner to merge (gate 2)" },
+    { "name": "waiting-for-me", "kind": "state", "color": "b60205", "description": "Blocked, disputed, rework cap reached or protected change: the owner referees" },
+    { "name": "done",           "kind": "state", "color": "cfd3d7", "description": "Merged" },
+
+    { "name": "cr",  "kind": "type", "color": "1d76db", "description": "Change request: one unit of work for the agent pipeline" },
+    { "name": "bug", "kind": "type", "color": "d73a4a", "description": "Something isn't working" },
+
+    { "name": "protected-change-approved", "kind": "control", "color": "e99695", "description": "Owner only: this pull request may touch a protected path" }
+  ],
+  "milestones": [
+    { "title": "Pipeline", "due_on": "2026-11-15", "description": "Build steps of the agent pipeline (docs/design/agent-pipeline.md, section 9). A bucket for CRs, not a tagged release." },
+    { "title": "M6",       "due_on": null,         "description": "Resilience + capstone (docs/roadmap.md). Scope is set by its ADR at gate 1a." }
+  ]
+}
