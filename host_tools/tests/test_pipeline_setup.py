@@ -200,19 +200,87 @@ def test_plan_leaves_the_due_date_alone_when_the_config_sets_none():
     assert ops(pipeline_setup.plan_milestones(wanted, existing)) == [("milestone", "keep", "M6")]
 
 
+# --- ruleset: the required checks on main (build step 2) ---------------------------------
+
+# Design note section 5 and build step 2: tests, traceability and protected paths.
+REQUIRED_CHECKS = ["host-build-test", "static-analysis", "python-tools",
+                   "traceability", "protected-paths"]
+
+
+def ruleset(checks, name="Protect_main_branch", rid=7):
+    """A ruleset as GET /rulesets/{id} returns it, with the rules the owner set up."""
+    return {"id": rid, "name": name, "enforcement": "active", "rules": [
+        {"type": "deletion", "parameters": None},
+        {"type": "non_fast_forward", "parameters": None},
+        {"type": "required_status_checks", "parameters": {
+            "strict_required_status_checks_policy": True,
+            "required_status_checks": [{"context": c, "integration_id": 15368} for c in checks]}},
+        {"type": "required_linear_history", "parameters": None},
+    ]}
+
+
+def test_real_config_requires_the_three_kinds_of_check():
+    assert real_config()["ruleset"]["required_checks"] == REQUIRED_CHECKS
+
+
+def test_every_required_check_is_a_job_in_a_pull_request_workflow():
+    jobs = set()
+    for wf in (REPO / ".github" / "workflows").glob("*.yml"):
+        text = wf.read_text(encoding="utf-8")
+        if "pull_request" in text:
+            jobs |= set(re.findall(r"^  ([a-z][a-z0-9-]*):\s*$", text, re.M))
+    assert set(real_config()["ruleset"]["required_checks"]) <= jobs
+
+
+def test_plan_keeps_a_ruleset_with_the_same_checks_in_any_order():
+    action = pipeline_setup.plan_ruleset(
+        {"name": "Protect_main_branch", "required_checks": ["b", "a"]}, ruleset(["a", "b"]))
+    assert (action.op, action.number) == ("keep", 7)
+
+
+def test_plan_updates_a_ruleset_with_other_checks():
+    action = pipeline_setup.plan_ruleset(
+        {"name": "Protect_main_branch", "required_checks": ["a", "b"]}, ruleset(["a"]))
+    assert (action.op, action.number) == ("update", 7)
+
+
+def test_plan_reports_a_missing_ruleset_and_never_creates_one():
+    action = pipeline_setup.plan_ruleset({"name": "Protect_main_branch", "required_checks": []}, None)
+    assert action.op == "missing"
+
+
+def test_new_rules_change_only_the_required_checks():
+    before = ruleset(["a"])
+    after = pipeline_setup.ruleset_rules(before, ["a", "b"])
+    checks = next(r for r in after if r["type"] == "required_status_checks")["parameters"]
+    assert [c["context"] for c in checks["required_status_checks"]] == ["a", "b"]
+    assert all(c["integration_id"] == 15368 for c in checks["required_status_checks"])
+    assert checks["strict_required_status_checks_policy"] is True
+    others = [r for r in after if r["type"] != "required_status_checks"]
+    assert others == [r for r in before["rules"] if r["type"] != "required_status_checks"]
+
+
 # --- main: dry run by default, writes only with --apply ----------------------------------
 
 class FakeGh:
-    """Stands in for the `gh` CLI: answers the two reads, records every call."""
+    """Stands in for the `gh` CLI: answers the reads, records every call and its stdin."""
 
-    def __init__(self, labels=(), milestones=()):
+    def __init__(self, labels=(), milestones=(), rulesets=()):
         self.labels, self.milestones, self.calls = list(labels), list(milestones), []
+        self.rulesets = {r["id"]: r for r in rulesets}
+        self.stdin = []
 
-    def __call__(self, args):
+    def __call__(self, args, stdin=None):
         self.calls.append(args)
+        self.stdin.append(stdin)
         if args[:2] == ["label", "list"]:
             return json.dumps(self.labels)
         if args[0] == "api" and "--method" not in args:
+            path = args[1]
+            if "/rulesets/" in path:
+                return json.dumps(self.rulesets[int(path.rsplit("/", 1)[1])])
+            if "/rulesets" in path:
+                return json.dumps([{"id": i, "name": r["name"]} for i, r in self.rulesets.items()])
             return json.dumps(self.milestones)
         return ""
 
@@ -220,17 +288,36 @@ class FakeGh:
         return [c for c in self.calls if c[:2] == ["label", "create"] or "--method" in c]
 
 
-def write_config(tmp_path):
+def write_config(tmp_path, checks=("a",)):
     path = tmp_path / "setup.json"
     path.write_text(json.dumps({
         "labels": [label("draft"), label("ready")],
         "milestones": [{"title": "M6", "description": "d", "due_on": "2026-11-15"}],
+        "ruleset": {"name": "Protect_main_branch", "required_checks": list(checks)},
     }), encoding="utf-8")
     return path
 
 
+def test_apply_puts_the_new_checks_on_the_existing_ruleset(tmp_path):
+    gh = FakeGh(rulesets=[ruleset(["a"])])
+    config = write_config(tmp_path, checks=("a", "b"))
+    assert pipeline_setup.main(["--config", str(config), "--apply"], gh=gh) == 0
+    (put,) = [c for c in gh.writes() if "PUT" in c]
+    assert put[-1].endswith("/rulesets/7")
+    body = json.loads(gh.stdin[gh.calls.index(put)])
+    checks = next(r for r in body["rules"] if r["type"] == "required_status_checks")
+    assert [c["context"] for c in checks["parameters"]["required_status_checks"]] == ["a", "b"]
+
+
+def test_a_missing_ruleset_stops_with_an_error(tmp_path, capsys):
+    gh = FakeGh(rulesets=[ruleset(["a"], name="Something_else")])
+    assert pipeline_setup.main(["--config", str(write_config(tmp_path)), "--apply"], gh=gh) == 1
+    assert gh.writes() == []
+    assert "Protect_main_branch" in capsys.readouterr().out
+
+
 def test_dry_run_reads_github_and_changes_nothing(tmp_path, capsys):
-    gh = FakeGh()
+    gh = FakeGh(rulesets=[ruleset(["a"])])
     assert pipeline_setup.main(["--config", str(write_config(tmp_path))], gh=gh) == 0
     assert gh.writes() == []
     out = capsys.readouterr().out
@@ -238,7 +325,8 @@ def test_dry_run_reads_github_and_changes_nothing(tmp_path, capsys):
 
 
 def test_apply_makes_exactly_the_planned_changes(tmp_path):
-    gh = FakeGh(labels=[{"name": "draft", "color": "aaaaaa", "description": "d"}])
+    gh = FakeGh(labels=[{"name": "draft", "color": "aaaaaa", "description": "d"}],
+                rulesets=[ruleset(["a"])])
     assert pipeline_setup.main(["--config", str(write_config(tmp_path)), "--apply"], gh=gh) == 0
     writes = gh.writes()
     assert len(writes) == 2                                   # draft is kept
@@ -251,6 +339,7 @@ def test_apply_is_idempotent(tmp_path, capsys):
         labels=[{"name": n, "color": "aaaaaa", "description": "d"} for n in ("draft", "ready")],
         milestones=[{"number": 1, "title": "M6", "description": "d",
                      "due_on": "2026-11-15T08:00:00Z"}],
+        rulesets=[ruleset(["a"])],
     )
     assert pipeline_setup.main(["--config", str(write_config(tmp_path)), "--apply"], gh=gh) == 0
     assert gh.writes() == []
