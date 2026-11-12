@@ -3,7 +3,8 @@
  *
  * Build a VERIFY_IMAGE request, hand it to the transport, decode the verdict.
  * Every failure path — no port, unencodable request, transport busy/timeout/
- * malformed, undecodable reply, out-of-range verdict — collapses to
+ * malformed, undecodable reply, a verdict for another op, out-of-range verdict —
+ * collapses to
  * CRYPTO_VERDICT_ERROR, which the boot layer treats identically to INVALID
  * (stay in FBL, never jump — ADR-0016 D5). There is no path that hangs and no
  * path that returns VALID without a decoded VALID from the M0+.
@@ -84,7 +85,7 @@ crypto_verdict_t crypto_verify_image(uint32_t base, uint32_t len, uint32_t key_i
     }
 
     crypto_verdict_t v = CRYPTO_VERDICT_ERROR;
-    if (!crypto_parse_verdict(&respm, &v))
+    if (!crypto_parse_verdict(&respm, CRYPTO_OP_VERIFY_IMAGE, &v))
     {
         crypto_report(CRYPTO_OP_VERIFY_IMAGE, CRYPTO_FAIL_BAD_REPLY);
         return CRYPTO_VERDICT_ERROR;
@@ -156,8 +157,9 @@ bool crypto_mac(uint32_t key_id, const uint8_t *msg, size_t msg_len,
     {
         crypto_verdict_t v = CRYPTO_VERDICT_ERROR;
         crypto_report(CRYPTO_OP_MAC,
-                      crypto_parse_verdict(&respm, &v) ? CRYPTO_FAIL_REFUSED
-                                                       : CRYPTO_FAIL_BAD_REPLY);
+                      crypto_parse_verdict(&respm, CRYPTO_OP_MAC, &v)
+                          ? CRYPTO_FAIL_REFUSED
+                          : CRYPTO_FAIL_BAD_REPLY);
         return false;
     }
     return true;

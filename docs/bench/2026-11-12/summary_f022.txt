@@ -1,0 +1,22 @@
+== nodeA.bin
+records: 19752   lost: 0   resyncs: 0
+boots: 6   max banners per boot: 1   jumps: 3
+  boot  1  fbl       banners=1  reset_reason=0x0  (FBL_RST_POWER_ON (mapped enum, F-016))
+  boot  2  app       banners=1  reset_reason=0x0  (none)
+  boot  3  fbl       banners=1  reset_reason=0x0  (FBL_RST_POWER_ON (mapped enum, F-016))
+  boot  4  app       banners=1  reset_reason=0x0  (none)
+  boot  5  fbl       banners=1  reset_reason=0x0  (FBL_RST_POWER_ON (mapped enum, F-016))
+  boot  6  app       banners=1  reset_reason=0x0  (none)
+accepts: 0x200 x19158, 0x2F0 x2
+rejects: 0
+task stacks, min free words: can 212, app 271, health 77, log 94, idle 118, timer 99
+
+== nodeB.bin
+records: 19696   lost: 0   resyncs: 0
+boots: 2   max banners per boot: 1   jumps: 0
+  boot  1  actuator  banners=1  reset_reason=0x10010  (XRES | SOFT)
+  boot  2  actuator  banners=1  reset_reason=0x10010  (XRES | SOFT)
+accepts: 0x121 x19180, 0x1F0 x3
+rejects: 0
+task stacks, min free words: can 220, log 102, heartbeat 78, idle 116, timer 227
+

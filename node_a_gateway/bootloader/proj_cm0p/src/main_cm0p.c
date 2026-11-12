@@ -88,10 +88,16 @@ static void service_mailbox_once(void)
                               &resp_len);
         IPC_MAILBOX->len = (uint32_t)resp_len;
 #ifdef FBL_M4_SEAM6_GARBAGE
-        /* Seam 6 fault injection (bench, ADR-0016 D5): corrupt the encoded reply
-         * so the CM4's crypto_msg_decode rejects it -> CRYPTO_VERDICT_ERROR ->
+        /* Seam 6 fault injection (bench, ADR-0016 D5): corrupt the encoded reply.
+         * Byte 0 is the op code, so the reply no longer echoes the request and
+         * the CM4's crypto_parse_verdict rejects it -> CRYPTO_VERDICT_ERROR ->
          * the FBL stays in FBL, never jumping to the unverified app. Proves the
-         * "lying M0+" fail-safe on real silicon, not just the host fake. */
+         * "lying M0+" fail-safe on real silicon, not just the host fake.
+         *
+         * Until F-020 (2026-11-12) the client did not check the op, the intact
+         * VALID verdict was accepted and the FBL jumped. The envelope still
+         * decodes (crypto_msg_decode only checks the length), so the rejection
+         * comes from the op check: CRYPTO_ERROR reason 4 (BAD_REPLY). */
         if (resp_len > 0U)
         {
             ((volatile uint8_t *)(uintptr_t)IPC_MAILBOX->payload)[0] ^= 0xFFU;

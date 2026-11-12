@@ -1,0 +1,14 @@
+== nodeA_soak.bin
+records: 29576   lost: 0   resyncs: 0
+boots: 0   max banners per boot: 0   jumps: 0
+accepts: 0x200 x28729
+rejects: 0
+task stacks, min free words: can 212, app 271, health 79, log 94, idle 118, timer 99
+
+== nodeB_soak.bin
+records: 29453   lost: 0   resyncs: 0
+boots: 0   max banners per boot: 0   jumps: 0
+accepts: 0x121 x28727
+rejects: 0
+task stacks, min free words: can 218, log 102, heartbeat 80, idle 116, timer 227
+

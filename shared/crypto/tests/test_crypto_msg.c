@@ -73,8 +73,23 @@ void test_verdict_round_trip_and_echo(void)
     TEST_ASSERT_EQUAL_UINT8((uint8_t)CRYPTO_OP_VERIFY_IMAGE, m.op_code);
 
     crypto_verdict_t v = CRYPTO_VERDICT_ERROR;
-    TEST_ASSERT_TRUE(crypto_parse_verdict(&m, &v));
+    TEST_ASSERT_TRUE(crypto_parse_verdict(&m, CRYPTO_OP_VERIFY_IMAGE, &v));
     TEST_ASSERT_EQUAL(CRYPTO_VERDICT_VALID, v);
+}
+
+/* F-020: the echoed op is what ties a verdict to a request. */
+void test_verdict_for_another_op_is_rejected_and_output_untouched(void)
+{
+    crypto_msg_t m;
+    crypto_make_verdict(CRYPTO_OP_VERIFY_IMAGE, CRYPTO_VERDICT_VALID, &m);
+
+    crypto_verdict_t v = CRYPTO_VERDICT_ERROR;
+    TEST_ASSERT_FALSE(crypto_parse_verdict(&m, CRYPTO_OP_MAC, &v));
+    TEST_ASSERT_EQUAL_MESSAGE(CRYPTO_VERDICT_ERROR, v, "a rejected reply must not write the verdict");
+
+    m.op_code ^= 0xFFU;                          /* a corrupted op code */
+    TEST_ASSERT_FALSE(crypto_parse_verdict(&m, CRYPTO_OP_VERIFY_IMAGE, &v));
+    TEST_ASSERT_EQUAL(CRYPTO_VERDICT_ERROR, v);
 }
 
 int main(void)
@@ -86,5 +101,6 @@ int main(void)
     RUN_TEST(test_decode_rejects_length_beyond_bytes_present);
     RUN_TEST(test_verify_request_round_trip);
     RUN_TEST(test_verdict_round_trip_and_echo);
+    RUN_TEST(test_verdict_for_another_op_is_rejected_and_output_untouched);
     return UNITY_END();
 }

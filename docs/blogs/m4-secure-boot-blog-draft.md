@@ -415,7 +415,7 @@ flowchart TD
 *The wait is **bounded** (a 1 s timeout over a real millisecond clock, not a spin
 count) and every non-VALID path — timeout, malformed reply, bad verdict — becomes
 `STAY IN FBL`. Proven on silicon by compiling the CM0+ to play dead (→ 1 s timeout →
-stay) and to corrupt its reply (→ decode reject → stay): the same good app that boots
+stay) and to corrupt its reply (→ reply rejected → stay): the same good app that boots
 with a live verifier does not boot when the verifier can't be trusted, and the FBL
 never hangs.*
 
