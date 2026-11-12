@@ -22,8 +22,8 @@
 | REQ-LOG-002 | Record layout, LE fields, CRC-16/CCITT-FALSE, 16 B, byte-offset encoded | ADR-0023 D2 | `shared/log/src/log.c` ×2 | `shared/log/tests/test_log.c` ×3 | *(no column)* | *(no column)* | ✅ |
 | REQ-LOG-003 | `LOG_SYNC` outside ASCII; text runs pass through unescaped and are never assertable | ADR-0023 D3, D6 | `shared/log/src/log.c` | `shared/log/tests/test_log.c` ×5 | *(no column)* | *(no column)* | ❌ matrix-drift |
 | REQ-LOG-004 | One SPSC ring **per image**, image-private RAM; the security core does not log | ADR-0023 D4; ADR-0021 D1; ADR-0016 D2 | `shared/log/src/log.c` | `shared/log/tests/test_log.c` | *(no column)* | *(no column)* | ✅ |
-| REQ-LOG-005 | `log_evt()` is bounded, non-blocking, ISR-safe; critical section covers reservation only | ADR-0023 D7 | `shared/log/src/log.c` ×2 | `shared/log/tests/test_log.c` ×6 | *(no column)* | *(no column)* | ✅ |
-| REQ-LOG-006 | Overflow drops the **newest**, counts it, and emits `LOG_EVT_OVERFLOW`; `seq` gaps detect loss independently | ADR-0023 D5 | `shared/log/src/log.c` | `shared/log/tests/test_log.c` ×4 | *(no column)* | *(no column)* | ✅ |
+| REQ-LOG-005 | `log_evt()` is bounded, non-blocking, ISR-safe; one critical section covers numbering, encode, reservation, copy and publication | ADR-0023 D7 | `shared/log/src/log.c` ×2 | `shared/log/tests/test_log.c` ×6 | *(no column)* | *(no column)* | ✅ |
+| REQ-LOG-006 | Overflow drops the **newest**, counts it, and emits `LOG_EVT_OVERFLOW`; `seq` gaps detect loss independently | ADR-0023 D5 | `shared/log/src/log.c` | `shared/log/tests/test_log.c` ×6 | *(no column)* | *(no column)* | ✅ |
 | REQ-LOG-007 | A consumer shall treat any overflow within a window as **failing** that window | ADR-0023 D5 | — | — | *(no column)* | *(no column)* | ❌ matrix-drift, no-impl, no-test |
 | REQ-LOG-008 | Contract IDs (`< 0x1000`) are assertable and breaking to change; diagnostic IDs are never asserted | ADR-0023 D6 | — | — | *(no column)* | *(no column)* | ❌ matrix-drift, no-impl, no-test |
 | REQ-LOG-009 | SecOC accept/reject events emitted with reason + CAN ID, on the verify path | ADR-0023 D6, D11; ADR-0021 D9, D5 | `node_a_gateway/app/src/health_task.c`<br>`node_a_gateway/bootloader/proj_cm4/src/fbl_main.c` ×2<br>`node_b_actuator/proj_cm7/src/main.c`<br>`shared/secoc/src/secoc_rx.c` | `shared/secoc/tests/test_secoc_rx.c` ×9 | *(no column)* | *(no column)* | ✅ |
@@ -49,7 +49,7 @@
 | REQ-SECOC-009 | Counter rollover bumps the epoch (durable) and resets counters | ADR-0021 D3 | `shared/secoc/src/secoc_freshness.c` | `shared/secoc/tests/test_secoc_freshness.c` ×2 | deferred — host-verified only. A wrap needs ~22 min of `0x200` at 20 ms; the longest capture reached ctr 34964. Capture one on the next long bench run (M5-R8) | bus `0x200` (the epoch bumps at the counter wrap; not captured yet, see On silicon) | ✅ |
 | REQ-SECOC-010 | `key_id`-selected key; unknown `key_id` ⇒ fail (never key 0) | ADR-0021 D6; ADR-0019 D3 | `shared/crypto/src/crypto_keystore.c` | `shared/crypto/tests/test_crypto_error.c`<br>`shared/crypto/tests/test_crypto_mac.c` ×2<br>`shared/secoc/tests/test_secoc.c` | `docs/bench/2026-10-24/kat_f010.md` (a crypto failure reaches the caller as an error). Unknown key_id itself: host-verified only | `LOG_EVT_CRYPTO_ERROR` (`op` 3, `reason` 5 refused: the M0+ answers an unknown `key_id` with an error, not a tag; ADR-0023 D12) | ✅ |
 | REQ-SECOC-011 | Secret key resides only in the M0+ image; app uses the MAC oracle only | ADR-0021 D6, D7; ADR-0017; ADR-0020 | `node_a_gateway/bootloader/proj_cm0p/src/crypto_ops_cm0p.c`<br>`node_b_actuator/proj_cm0p/src/crypto_ops_cm0p.c`<br>design-only: `node_a_gateway/bootloader/proj_cm0p/src/crypto_ops_cm0p.c`<br>design-only: `node_b_actuator/proj_cm0p/src/crypto_ops_cm0p.c` | `shared/crypto/tests/test_crypto_mac.c` | `docs/bench/2026-10-30/key_residency.md` (key bytes in both CM0+ ELFs, absent from the CM4 FBL, CM4 app and CM7 app) | structural — key bytes only in the CM0+ ELFs (`host_tools/check_key_residency.py`) | ✅ |
-| REQ-SECOC-012 | `CRYPTO_OP_MAC=0x03` generic op: `key_id∥len∥msg ⇒ tag[16]` | ADR-0021 D7; ADR-0017 D3 | `shared/crypto/src/crypto_msg.c` ×4 | `shared/crypto/tests/test_crypto_error.c` ×5<br>`shared/crypto/tests/test_crypto_mac.c` ×3 | `docs/bench/2026-10-24/kat_f010.md` (op returns an error, not a tag, on a crypto fault; NIST tags on both CM0+) | `LOG_EVT_CRYPTO_ERROR` (a failed op names `op` 3 and why, e.g. `reason` 2 when the M0+ is dead; a working op shows as `LOG_EVT_SECOC_ACCEPT`) | ✅ |
+| REQ-SECOC-012 | `CRYPTO_OP_MAC=0x03` generic op: `key_id∥len∥msg ⇒ tag[16]` | ADR-0021 D7; ADR-0017 D3 | `shared/crypto/src/crypto_msg.c` ×4 | `shared/crypto/tests/test_crypto_error.c` ×6<br>`shared/crypto/tests/test_crypto_mac.c` ×3 | `docs/bench/2026-10-24/kat_f010.md` (op returns an error, not a tag, on a crypto fault; NIST tags on both CM0+) | `LOG_EVT_CRYPTO_ERROR` (a failed op names `op` 3 and why, e.g. `reason` 2 when the M0+ is dead; a working op shows as `LOG_EVT_SECOC_ACCEPT`) | ✅ |
 | REQ-SECOC-013 | Telemetry `0x200` (B→A) is authenticated on the same path | ADR-0021 D7 | `node_b_actuator/proj_cm7/src/secoc_app.c`<br>`shared/secoc/src/secoc.c` | `shared/secoc/tests/test_secoc.c` | `docs/bench/2026-10-24/nodeA_round2.txt` (Node A SECOC_ACCEPT on 0x200, continuous counters) | `LOG_EVT_SECOC_ACCEPT` on `0x200` | ✅ |
 
 ## Gaps
@@ -73,12 +73,12 @@
 - **REQ-LOG-013** · `no-impl` · no impl tag (and no design-only tag)
 - **REQ-LOG-013** · `no-test` · no test tag (and no design-only tag)
 - **REQ-LOG-014** · `matrix-drift` · matrix names `test_bvt_harness`, but no such test file exists — `docs/requirements/logging.md`
-- **REQ-LOG-015** · `dangling` · tag names an undefined requirement — `shared/log/src/log.c:342`
-- **REQ-LOG-015** · `dangling` · tag names an undefined requirement — `shared/log/tests/test_log.c:309`
-- **REQ-LOG-015** · `dangling` · tag names an undefined requirement — `shared/log/tests/test_log.c:320`
-- **REQ-LOG-015** · `dangling` · tag names an undefined requirement — `shared/log/tests/test_log.c:338`
-- **REQ-LOG-015** · `dangling` · tag names an undefined requirement — `shared/log/tests/test_log.c:349`
-- **REQ-LOG-015** · `dangling` · tag names an undefined requirement — `shared/log/tests/test_log.c:355`
+- **REQ-LOG-015** · `dangling` · tag names an undefined requirement — `shared/log/src/log.c:369`
+- **REQ-LOG-015** · `dangling` · tag names an undefined requirement — `shared/log/tests/test_log.c:388`
+- **REQ-LOG-015** · `dangling` · tag names an undefined requirement — `shared/log/tests/test_log.c:399`
+- **REQ-LOG-015** · `dangling` · tag names an undefined requirement — `shared/log/tests/test_log.c:417`
+- **REQ-LOG-015** · `dangling` · tag names an undefined requirement — `shared/log/tests/test_log.c:428`
+- **REQ-LOG-015** · `dangling` · tag names an undefined requirement — `shared/log/tests/test_log.c:434`
 
 ## Deferred on silicon
 
