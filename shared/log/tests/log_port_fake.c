@@ -32,6 +32,8 @@ static uint32_t s_lock_max_depth;
 static uint32_t s_lock_enter;
 static uint32_t s_barriers;
 
+static log_fake_preempt_fn_t s_preempt;
+
 /* ---- test hooks --------------------------------------------------- */
 
 void log_fake_reset(void)
@@ -52,6 +54,12 @@ void log_fake_reset(void)
     s_lock_max_depth = 0U;
     s_lock_enter     = 0U;
     s_barriers       = 0U;
+    s_preempt        = NULL;
+}
+
+void log_fake_preempt_before_next_lock(log_fake_preempt_fn_t fn)
+{
+    s_preempt = fn;
 }
 
 void log_fake_reset_sink_only(void)
@@ -95,6 +103,17 @@ void log_port_publish_barrier(void) { s_barriers++; }
 
 uint32_t log_port_lock(void)
 {
+    /* The last instant a preemption can land: interrupts are not masked yet.
+     * One-shot, and cleared BEFORE the call so the preempting producer's own
+     * lock does not fire it again. It runs to completion and unlocks before
+     * the preempted caller goes on, as an ISR or a higher-priority task does. */
+    if (s_preempt != NULL) {
+        const log_fake_preempt_fn_t fn = s_preempt;
+
+        s_preempt = NULL;
+        fn();
+    }
+
     s_lock_depth++;
     s_lock_enter++;
     if ((uint32_t)s_lock_depth > s_lock_max_depth) {

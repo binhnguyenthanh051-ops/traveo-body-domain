@@ -88,28 +88,27 @@ static void log_ring_copy_in(uint32_t start, const uint8_t *src, size_t len)
  *
  * Bounded by construction: LOG_REC_SIZE (16) per record, LOG_TEXT_MAX (64) for
  * text -- so the masked region stays short even though it now spans the copy.
+ *
+ * The CALLER holds the lock (log_port_lock): log_evt() must also number its
+ * records inside the same masked region (F-022), so the lock moved up a level.
  */
-static bool log_try_enqueue(const uint8_t *first, size_t first_len,
-                            const uint8_t *second, size_t second_len)
+static bool log_ring_put_locked(const uint8_t *first, size_t first_len,
+                                const uint8_t *second, size_t second_len)
 {
     volatile uint32_t * const       head_cell = log_port_head();
     volatile uint32_t const * const tail_cell = log_port_tail();
     const size_t                    cap       = log_port_ring_cap();
     const size_t                    need      = first_len + second_len;
     uint32_t                        start;
-    uint32_t                        state;
     size_t                          used;
 
     if (need == 0U) {
         return true;
     }
 
-    state = log_port_lock();
-
     start = *head_cell;
     used  = (size_t)(start - *tail_cell);
     if ((need > cap) || ((cap - used) < need)) {
-        log_port_unlock(state);
         return false;
     }
 
@@ -119,11 +118,11 @@ static bool log_try_enqueue(const uint8_t *first, size_t first_len,
     log_port_publish_barrier();
     *head_cell = start + (uint32_t)need;
 
-    log_port_unlock(state);
     return true;
 }
 
-static void log_note_drop(void)
+/* Caller holds the lock: both counters are shared by every producer. */
+static void log_note_drop_locked(void)
 {
     s_dropped++;
     s_pending_overflow++;
@@ -188,10 +187,31 @@ void log_init(log_core_t core)
 }
 
 /* @impl REQ-LOG-005 : bounded, non-blocking, ISR-safe; the masked region spans
- *                     reserve+copy+publish as one indivisible step, bounded by
- *                     LOG_REC_SIZE (see log_try_enqueue for why).
+ *                     number+encode+reserve+copy+publish as one indivisible
+ *                     step, bounded by two records (see below, and
+ *                     log_ring_put_locked for the reserve+copy+publish part).
  * @impl REQ-LOG-006 : no room => drop the NEWEST, count it, arm an overflow
- *                     report for when space frees.
+ *                     report for when space frees. Sequence numbers follow
+ *                     ring order: no duplicate, and a gap only for a real loss.
+ *
+ * Why the sequence number is taken INSIDE the mask (F-022). It used to be read
+ * before the lock and advanced after it. A second producer that preempted in
+ * between read the same number:
+ *
+ *   can task    reads seq 38, encodes        -- preempted before it masks
+ *   health task reads seq 38, enqueues, seq = 39
+ *   can task    enqueues its seq 38, seq = 40
+ *
+ * Two records carry 38 and 39 never appears, so the decoder reports 64 records
+ * lost when none were. Reserving only the NUMBER under the lock and encoding
+ * outside is not enough either: the preempting producer would then enqueue 39
+ * before 38, and the decoder would again see a gap. Number and ring position
+ * have to be taken together, so the encode is inside too.
+ *
+ * Cost: the masked region now includes the encode (a 14-byte CRC per record,
+ * two records when an overflow report is pending). Still bounded, still no
+ * UART. The timestamp stays outside: it is when the caller asked, and reading
+ * the clock with interrupts masked would add a rule to every port.
  * @impl ADR-0023 D10 : ts_ms is sampled HERE, at production time -- never at
  *                     drain time. That is what keeps the recorded timeline
  *                     truthful despite cyclic output. */
@@ -200,11 +220,15 @@ void log_evt(uint16_t evt, uint32_t arg0, uint16_t arg1)
     uint8_t  overflow_rec[LOG_REC_SIZE] = { 0U };
     uint8_t  event_rec[LOG_REC_SIZE];
     uint32_t now_ms;
+    uint32_t state;
     uint8_t  seq;
     size_t   overflow_len = 0U;
 
     now_ms = log_port_now_ms();
-    seq    = s_seq;
+
+    state = log_port_lock();
+
+    seq = s_seq;
 
     if (s_pending_overflow != 0U) {
         log_rec_encode(overflow_rec, s_core, seq, LOG_EVT_OVERFLOW, now_ms, s_pending_overflow, 0U);
@@ -214,28 +238,29 @@ void log_evt(uint16_t evt, uint32_t arg0, uint16_t arg1)
 
     log_rec_encode(event_rec, s_core, seq, evt, now_ms, arg0, arg1);
 
-    if (!log_try_enqueue((overflow_len != 0U) ? overflow_rec : NULL,
-                         overflow_len,
-                         event_rec,
-                         LOG_REC_SIZE)) {
-        log_note_drop();
-        return;
+    if (log_ring_put_locked((overflow_len != 0U) ? overflow_rec : NULL,
+                            overflow_len,
+                            event_rec,
+                            LOG_REC_SIZE)) {
+        /* `seq` is the event record's number, with or without a report. */
+        s_seq = (uint8_t)((seq + 1U) & LOG_SEQ_MASK);
+        if (overflow_len != 0U) {
+            s_pending_overflow = 0U;
+        }
+    } else {
+        log_note_drop_locked();
     }
 
-    if (overflow_len != 0U) {
-        s_seq = (uint8_t)((s_seq + 2U) & LOG_SEQ_MASK);
-        s_pending_overflow = 0U;
-    } else {
-        s_seq = (uint8_t)((s_seq + 1U) & LOG_SEQ_MASK);
-    }
+    log_port_unlock(state);
 }
 
 /* @impl REQ-LOG-003 : ASCII only -- a high-bit byte would forge LOG_SYNC.
- * @impl REQ-LOG-005 : truncated at LOG_TEXT_MAX so the masked region in
- *                     log_try_enqueue stays bounded. */
+ * @impl REQ-LOG-005 : truncated at LOG_TEXT_MAX so the masked region stays
+ *                     bounded. */
 void log_text(const char *s)
 {
-    size_t len;
+    size_t   len;
+    uint32_t state;
 
     if (s == NULL) {
         return;
@@ -262,9 +287,11 @@ void log_text(const char *s)
         len++;
     }
 
-    if (!log_try_enqueue((const uint8_t *)s, len, NULL, 0U)) {
-        log_note_drop();
+    state = log_port_lock();
+    if (!log_ring_put_locked((const uint8_t *)s, len, NULL, 0U)) {
+        log_note_drop_locked();
     }
+    log_port_unlock(state);
 }
 
 /* Identifies the IMAGE (LOG_IMAGE_NAME) and, for the security core, the role.

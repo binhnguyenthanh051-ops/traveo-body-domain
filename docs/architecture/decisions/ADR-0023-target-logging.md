@@ -194,8 +194,10 @@ evidence named in Context — e.g. `SECOC_REJECT_FRESHNESS`, `SECOC_REJECT_MAC`,
 ### D7. Logging never changes system behaviour — including when it fails
 
 - `log_evt()` is safe from task or ISR context, on any core, and is **bounded and
-  non-blocking**. Its critical section spans **reserve + copy + publish** as one indivisible
-  step, with interrupts masked (`BASEPRI`). Never the UART.
+  non-blocking**. Its critical section spans **number + encode + reserve + copy + publish**
+  as one indivisible step, with interrupts masked (`BASEPRI` in the two apps, `PRIMASK` in the
+  Node A FBL, which has no RTOS). Never the UART. The timestamp is taken just before the
+  lock: it records when the caller asked.
 
   > **Corrected 2026-08-02.** This decision originally said the masked region covered "the
   > reservation only — not the copy". That is wrong, and review of the first implementation
@@ -207,6 +209,18 @@ evidence named in Context — e.g. `SECOC_REJECT_FRESHNESS`, `SECOC_REJECT_MAC`,
   > 16 bytes under mask costs well under a microsecond, and buying it back would require a
   > separate commit-ordering index. `LOG_TEXT_MAX` (64 B) bounds the longest single enqueue
   > so the masked duration stays bounded for text too.
+
+  > **Corrected 2026-11-12 (F-022).** The section still left out the sequence number:
+  > `log_evt()` read it before the lock and advanced it after. A producer that preempted in
+  > between took the same number. On the bench (2026-11-11) two records carried seq 38, seq 39
+  > never existed, and the decoder reported 64 records lost with none lost: a false failure of
+  > the evidence rule in D5. Taking only the *number* under the lock is not enough either: the
+  > preempting producer can then enqueue 39 before 38 reaches the ring, and the decoder sees a
+  > gap again. The number and the ring position have to be taken together, so the encode moved
+  > inside too. Cost: one 14-byte CRC per record under mask (two when an overflow report is
+  > pending), still bounded, still no UART. Host-tested by staging a preemption just before the
+  > lock (`test_log`); on silicon, 0 lost in about 54,000 records per node under the same load
+  > (`docs/bench/2026-11-12/f020_f022_closeout.md`).
 - The sink is drained by a **low-priority task** on the UART-owning core. If that task never
   runs, producers degrade to dropping (D5); nothing stalls.
 - A full ring, a dead sink, or an unconfigured port are all **non-errors** at the call site.
@@ -396,8 +410,9 @@ port. All three target images already link `log.c`.
 - **(−)** Two generated files and a staleness check — new build machinery, however small.
 - **(−)** Cross-core timestamps carry uncorrected skew (D4). Fine for reading a sequence; **not**
   a basis for cross-core latency claims until the shared-counter follow-up lands.
-- **(−)** `log_evt()` on a hot path still costs a short interrupt-masked region. Bounded and
-  measured at bring-up, but it is not free, and a log site added inside a tight loop can still
+- **(−)** `log_evt()` on a hot path still costs a short interrupt-masked region, which since
+  F-022 includes encoding the record (its CRC). Bounded and measured at bring-up, but it is not
+  free, and a log site added inside a tight loop can still
   hurt. Reviewer's job, not the format's.
 - **(±)** D11 makes `shared/secoc` depend on `shared/log`. Every image containing SecOC must now
   link `log.c` and a log port — true for both node apps already, and host suites bind the fake.

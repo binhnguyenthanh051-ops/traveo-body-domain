@@ -1,0 +1,41 @@
+== nodeA.bin
+records: 24308   lost: 0   resyncs: 0
+boots: 12   max banners per boot: 1   jumps: 5
+  boot  1  fbl       banners=1  reset_reason=0x0  (FBL_RST_POWER_ON (mapped enum, F-016))
+  boot  2  app       banners=1  reset_reason=0x0  (none)
+  boot  3  fbl       banners=1  reset_reason=0x0  (FBL_RST_POWER_ON (mapped enum, F-016))
+  boot  4  app       banners=1  reset_reason=0x0  (none)
+  boot  5  fbl       banners=1  reset_reason=0x0  (FBL_RST_POWER_ON (mapped enum, F-016))
+  boot  6  app       banners=1  reset_reason=0x0  (none)
+  boot  7  fbl       banners=1  reset_reason=0x0  (FBL_RST_POWER_ON (mapped enum, F-016))
+  boot  8  fbl       banners=1  reset_reason=0x0  (FBL_RST_POWER_ON (mapped enum, F-016))
+  boot  9  fbl       banners=1  reset_reason=0x0  (FBL_RST_POWER_ON (mapped enum, F-016))
+  boot 10  app       banners=1  reset_reason=0x0  (none)
+  boot 11  fbl       banners=1  reset_reason=0x0  (FBL_RST_POWER_ON (mapped enum, F-016))
+  boot 12  app       banners=1  reset_reason=0x0  (none)
+accepts: 0x200 x23569, 0x2F0 x2
+rejects: 0
+task stacks, min free words: can 212, app 271, health 77, log 94, idle 118, timer 99
+stack check against gateway_app.elf (sha256 60d6eb89202a, stack_bound 0.2.0):
+  can_task         measured  1200 B <= static  1480 B of  2048 B  ok
+  app_task         measured   964 B <= static  1248 B of  2048 B  ok
+  health_task      measured   204 B <= static   400 B of   512 B  ok
+  log_cyclic_task  measured   136 B <= static   308 B of   512 B  ok
+  idle             118 words free, no static bound (not in the report)
+  timer            99 words free, no static bound (not in the report)
+
+== nodeB.bin
+records: 24271   lost: 0   resyncs: 0
+boots: 2   max banners per boot: 1   jumps: 0
+  boot  1  actuator  banners=1  reset_reason=0x10010  (XRES | SOFT)
+  boot  2  actuator  banners=1  reset_reason=0x10010  (XRES | SOFT)
+accepts: 0x121 x23571, 0x1F0 x5
+rejects: 0
+task stacks, min free words: can 218, log 102, heartbeat 78, idle 116, timer 227
+stack check against actuator_cm7.elf (sha256 7de1298d7ad0, stack_bound 0.2.0):
+  can_task         measured  1176 B <= static  1464 B of  2048 B  ok
+  heartbeat_task   measured   200 B <= static   392 B of   512 B  ok
+  log_cyclic_task  measured   104 B <= static   308 B of   512 B  ok
+  idle             116 words free, no static bound (not in the report)
+  timer            227 words free, no static bound (not in the report)
+

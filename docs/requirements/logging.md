@@ -25,7 +25,7 @@ drift apart.
 | REQ-LOG-002 | Record layout, LE fields, CRC-16/CCITT-FALSE, 16 B, byte-offset encoded | D2 | `test_log` |
 | REQ-LOG-003 | `LOG_SYNC` outside ASCII; text runs pass through unescaped and are never assertable | D3, D6 | `test_log`, `test_log_decode` |
 | REQ-LOG-004 | One SPSC ring **per image**, image-private RAM; the security core does not log | D4 | `test_log` + `@design-only` |
-| REQ-LOG-005 | `log_evt()` is bounded, non-blocking, ISR-safe; critical section covers reservation only | D7 | `test_log` |
+| REQ-LOG-005 | `log_evt()` is bounded, non-blocking, ISR-safe; one critical section covers numbering, encode, reservation, copy and publication | D7 | `test_log` |
 | REQ-LOG-006 | Overflow drops the **newest**, counts it, and emits `LOG_EVT_OVERFLOW`; `seq` gaps detect loss independently | D5 | `test_log` |
 | REQ-LOG-007 | A consumer shall treat any overflow within a window as **failing** that window | D5 | `test_bvt_harness` |
 | REQ-LOG-008 | Contract IDs (`< 0x1000`) are assertable and breaking to change; diagnostic IDs are never asserted | D6 | `test_log_events` |
@@ -73,12 +73,16 @@ format change. *(D4; revised 2026-08-16 — see the ADR for the withdrawn per-co
 `log_evt()` shall be callable from task or ISR context on any core, shall complete in bounded
 time, and shall never block, spin, or wait on the sink. It shall return no status.
 
-Its interrupt-masked critical section shall span **reservation, payload copy and head
-publication as one indivisible step**, and shall never include the UART. The ring head shall
+Its interrupt-masked critical section shall span **sequence numbering, record encoding,
+reservation, payload copy and head publication as one indivisible step**, and shall never
+include the UART. A record's sequence number and its ring position shall be taken together:
+numbering outside the mask lets two producers on one core share a number, and a consumer then
+reports a loss that did not happen (F-022). The ring head shall
 advance monotonically and shall never name bytes that have not been written — releasing the
 mask between reserve and publish permits an ISR to publish over a task's unwritten
 reservation, and permits head to move backwards. The masked duration shall be bounded by
-`LOG_REC_SIZE` for records and `LOG_TEXT_MAX` for text. *(D7.)*
+`LOG_REC_SIZE` for records (two records when an overflow report is pending) and
+`LOG_TEXT_MAX` for text. *(D7; numbering added 2026-11-12, F-022.)*
 
 ### REQ-LOG-006 — loss is bounded, counted, and announced
 When a ring lacks room the producer shall drop the **newest** record (never advance the

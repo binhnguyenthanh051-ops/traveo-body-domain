@@ -137,9 +137,16 @@ void crypto_make_verdict(crypto_op_t echo_op, crypto_verdict_t v, crypto_msg_t *
     payload_zero_from(m, 1U);
 }
 
-bool crypto_parse_verdict(const crypto_msg_t *m, crypto_verdict_t *v)
+bool crypto_parse_verdict(const crypto_msg_t *m, crypto_op_t expect_op,
+                          crypto_verdict_t *v)
 {
     if ((m == NULL) || (v == NULL))
+    {
+        return false;
+    }
+    /* A verdict answers one op. A reply that echoes another op is not an
+     * answer to this request, whatever its payload says (F-020). */
+    if (m->op_code != (uint8_t)expect_op)
     {
         return false;
     }

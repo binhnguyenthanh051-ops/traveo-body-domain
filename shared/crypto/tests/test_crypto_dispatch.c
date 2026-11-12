@@ -42,7 +42,8 @@ static crypto_verdict_t dispatch_and_read_verdict(const crypto_msg_t *req_msg)
     crypto_msg_t resp_msg;
     TEST_ASSERT_TRUE(crypto_msg_decode(resp, resp_len, &resp_msg));
     crypto_verdict_t v = CRYPTO_VERDICT_INVALID;
-    TEST_ASSERT_TRUE(crypto_parse_verdict(&resp_msg, &v));
+    /* The dispatcher echoes the op it decoded, known or not. */
+    TEST_ASSERT_TRUE(crypto_parse_verdict(&resp_msg, (crypto_op_t)req_msg->op_code, &v));
     return v;
 }
 
@@ -70,8 +71,11 @@ void test_malformed_request_yields_error_verdict(void)
     crypto_msg_t resp_msg;
     TEST_ASSERT_TRUE(crypto_msg_decode(resp, resp_len, &resp_msg));
     crypto_verdict_t v = CRYPTO_VERDICT_INVALID;
-    TEST_ASSERT_TRUE(crypto_parse_verdict(&resp_msg, &v));
+    /* Nothing was decoded, so there is no op to echo: the reply carries
+     * CRYPTO_OP_NONE, and a client asking for VERIFY_IMAGE rejects it. */
+    TEST_ASSERT_TRUE(crypto_parse_verdict(&resp_msg, CRYPTO_OP_NONE, &v));
     TEST_ASSERT_EQUAL(CRYPTO_VERDICT_ERROR, v);
+    TEST_ASSERT_FALSE(crypto_parse_verdict(&resp_msg, CRYPTO_OP_VERIFY_IMAGE, &v));
 }
 
 int main(void)
