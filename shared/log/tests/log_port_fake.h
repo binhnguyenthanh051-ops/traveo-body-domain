@@ -63,6 +63,15 @@ bool     log_fake_lock_balanced(void);
 uint32_t log_fake_lock_max_depth(void);
 uint32_t log_fake_lock_enter_count(void);
 
+/* Scripted preemption (F-022). `fn` runs once, at the start of the next
+ * log_port_lock() call, BEFORE the mask is taken: the place where an ISR or a
+ * higher-priority task can still cut in on a producer. `fn` is a second
+ * producer (it normally calls log_evt()), and it finishes before the first one
+ * continues. A single-threaded test cannot interleave two producers any other
+ * way. Cleared by log_fake_reset(). */
+typedef void (*log_fake_preempt_fn_t)(void);
+void log_fake_preempt_before_next_lock(log_fake_preempt_fn_t fn);
+
 /* Bytes currently queued in the ring (head - tail, mod capacity). */
 size_t log_fake_ring_used(void);
 
