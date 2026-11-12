@@ -37,10 +37,11 @@ void log_init(log_core_t core);
 /* Emit one event record. THE call site everywhere in the firmware.
  *
  * Safe from task or ISR context, on any core. Bounded and NON-BLOCKING: one
- * short interrupt-masked region covering reserve+copy+publish as an
- * indivisible step -- never the UART (ADR-0023 D7). Splitting that region
- * lets an ISR publish over a task's unwritten reservation; see the comment on
- * log_try_enqueue() in log.c.
+ * short interrupt-masked region covering number+encode+reserve+copy+publish
+ * as an indivisible step -- never the UART (ADR-0023 D7). Splitting that
+ * region lets an ISR publish over a task's unwritten reservation, or lets two
+ * producers take the same sequence number (F-022); see the comments on
+ * log_ring_put_locked() and log_evt() in log.c.
  *
  * Returns void deliberately. A full ring, a dead sink and an uninitialised
  * port are all non-errors at the call site: there is nothing a caller could

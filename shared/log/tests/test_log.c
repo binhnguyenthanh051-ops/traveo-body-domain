@@ -502,7 +502,7 @@ void test_log_text_is_truncated_at_the_bound(void)
 /* @test REQ-LOG-005 : head must never move backwards.
  *
  * The publish step runs under the lock so reserve+copy+publish is indivisible
- * (see log_try_enqueue). A single-threaded host test cannot stage the
+ * (see log_ring_put_locked). A single-threaded host test cannot stage the
  * task/ISR interleaving that breaks it, but it CAN pin the invariant that
  * interleaving would violate: head is monotonic across every enqueue. If a
  * future change reintroduces publish-outside-the-lock, head regression is what
