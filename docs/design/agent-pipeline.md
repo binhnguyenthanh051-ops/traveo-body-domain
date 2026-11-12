@@ -3,9 +3,10 @@
 - status: approved by me on 2026-11-12
 - owner: Binh
 - repo path: `docs/design/agent-pipeline.md`
-- open items: the six `[TODO]` entries were filled in from the repo by Claude Code on
-  2026-11-12 (sections 7 and 11). I confirm them by merging this note. One stays open: the
-  scope of the release integration test (section 11).
+- open items: the nine `[TODO]` entries were filled in by Claude Code on 2026-11-12, from the
+  repo, the TRM, the GitHub API and the Claude Code docs (sections 7, 11 and 13). I confirm
+  them by merging this note. Still open: the scope of the release integration test
+  (section 11), and the irreversible steps on Node B, whose TRM is not in the repo (section 13).
 
 ---
 
@@ -309,6 +310,10 @@ Target: all steps this week, by 2026-11-15. Each step is its own CR and pull req
 9. Release check against the Definition of Done, as a script or workflow (section 11).
 10. Pause switch and the three numbers per CR.
 11. Later: integration test for release, as its own CR (section 11).
+12. Security (section 13): the threat model is the first ADR through the milestone loop. Its
+    CRs are the CI security checks and the security-check skill. It can start after step 3.
+
+Outside the build order, done by me this week in about 15 minutes: the quick actions in section 13.
 
 ---
 
@@ -360,6 +365,7 @@ stateDiagram-v2
   - `/architecture-doc check` reports no drift between the architecture doc and the code.
   - The traceability report is complete for the milestone's requirements.
   - Release notes are generated from the merged CRs.
+  - The security check passes: no open finding against the threat model (section 13).
 
 **Test level at release**
 
@@ -406,10 +412,162 @@ In this repo (`traveo-body-domain`), not in a separate repo.
 
 ---
 
+## 13. Security
+
+Section 7 protects the pipeline from strangers. This section also protects the people who
+check out the repo. None of this guarantees security. It reduces risk and writes down the
+risk that remains.
+
+**Who is protected**
+
+| Who | What can go wrong |
+|---|---|
+| Me and my PC | a stranger's text steers an agent, a fork's code runs on my machine, a key leaks |
+| Someone who clones the repo | my hooks, scripts or agent settings run on their machine; a flashing script changes their board in a way that cannot be undone; they mistake my test keys for real ones |
+| Someone who reuses my code | they copy a security pattern that was only meant as a demo |
+
+**Three pieces**
+
+1. **Threat model, written by me:** `docs/security/threat-model.md`. What I protect, who could
+   attack, how they get in, what stops them, and which risk I accept. The Challenger attacks
+   it. It is the first ADR through the milestone loop.
+2. **Deterministic checks in CI.** They fail the pull request:
+   - secret scanning
+   - third-party actions pinned to a commit
+   - minimal token permissions in every workflow
+   - no agent run, and no workflow that uses secrets, starts on a pull request from a fork
+3. **A security-check skill,** same pattern as the architecture-doc skill. It compares the
+   repo against the threat model and reports drift. It runs at the release gate and when a
+   protected path changes. It only reports, as `draft` bug reports. Fixes go through the CR loop.
+
+**Sandbox per agent**
+
+A sandbox here means four boundaries around an agent run: which files it can touch, which
+network hosts it can reach, which credentials it holds, and how long its environment lives.
+Each boundary is enforced by the platform, not by the prompt.
+
+| Agent | Runs in | Can reach | Cannot reach |
+|---|---|---|---|
+| Challenger, Planner, Inspector | a fresh cloud environment, destroyed after the run | a fresh checkout (read), comments on issues and pull requests, allowlisted network hosts | push, `main`, workflows, tags, keys, my PC, the board |
+| Builder | a fresh cloud environment, destroyed after the run | a fresh checkout, push to its own branch, open a pull request, allowlisted network hosts | `main`, workflows, tags, keys, my PC, the board |
+| Bench run | my PC, started by me | the repo folder, the flashing tool, the board, local test keys | issue text, comments and the web: its only inputs are a commit and a CR number |
+
+- Separation rule: no agent has all three of untrusted input, access to keys or hardware,
+  and a way to send data out. The cloud agents see untrusted input but hold no keys and no
+  hardware. The bench run holds keys and hardware but takes no untrusted input.
+- A prompt is not a sandbox. The boundaries are token scopes, branch protection, the network
+  allowlist and the lifetime of the environment.
+- The sandbox is tested with negative tests, at setup and at every release as part of the
+  security check:
+  - the Builder's credentials try to push to `main`: must fail
+  - a cloud run tries to reach a host that is not on the allowlist: must fail
+  - a cloud run looks for key material: finds none
+- The sandbox limits the damage of a bad run. It does not stop a bad change from being
+  proposed. The gates do that.
+
+**What exists today** (checked by Claude Code on 2026-11-12, against the Claude Code docs)
+
+| | Cloud runs (Claude Code cloud sessions and cloud scheduled tasks) | Local runs on my PC (native Windows) |
+|---|---|---|
+| Files | a fresh checkout in its own VM; the VM is reclaimed after the session goes idle | no OS isolation: the Claude Code sandbox runs on macOS, Linux and WSL2 only, and on native Windows commands run unsandboxed |
+| Network | one level per cloud environment: None, Limited (a default allowlist of registries and GitHub, plus domains I add) or Full. The Anthropic API stays reachable even at None | no OS limit; only Claude Code's permission rules (for example deny `WebFetch`) |
+| Credentials | GitHub credentials never enter the VM: a proxy adds them to each git request | whatever my Windows user holds (`gh` login, SSH key, browser) |
+| Push limits | the proxy refuses tags and branch deletions, but **not a push to `main`**. Only branch protection stops that (step 2) | the same: only branch protection |
+
+**Two gaps against the table above**
+
+- **Least privilege per agent does not exist in cloud sessions.** Every cloud session uses the
+  same GitHub credential, so the Challenger, Planner and Inspector could push as well as the
+  Builder. Per-agent rights need GitHub Actions jobs, each with its own `permissions:` block
+  (read-only agents: `contents: read`, `issues: write`, `pull-requests: write`). This is
+  decided in step 4, together with how each agent is started. Until then branch protection
+  is the limit, and the note's "can read and comment" is a rule, not a boundary.
+- **No sandbox for local runs on this PC.** A local Claude Code session on native Windows is
+  limited by permission rules, which Claude Code enforces but the OS does not.
+
+**Proposal for the bench run** (the strongest isolation found that still reaches the probe)
+
+1. The bench run is a **script, not an agent session**. Inputs: a commit SHA and a CR number.
+   Outputs: the exit code, the capture in `docs/bench/`, and the result posted on the pull
+   request. Claude Code may start it, but the script reads nothing from issues or comments.
+2. It runs under a **separate standard (non-admin) Windows user** kept only for the bench, in
+   a fresh clone checked out at that commit. That user has no `gh` login, no SSH key and no
+   browser profile, so a bad image or script cannot reach my account.
+3. Its only credential is a **fine-grained token limited to this repository** that can post
+   the result and nothing else. A check run needs a GitHub App; a commit status works with a
+   fine-grained token. Step 8 picks one.
+4. The local test keys for the bench live in that user's profile, outside the repo.
+
+Rejected for now, to verify if the proposal is not enough:
+
+- **WSL2 with `usbipd-win`:** the Claude Code sandbox works there and the KitProg3 probe can
+  be passed through, but the Vector CAN interface needs its Windows driver, so CAN tests
+  cannot run inside WSL2.
+- **Windows Sandbox or a Hyper-V VM:** no simple USB passthrough for the probe.
+
+**Layers against a leaked secret or a changed protected file**
+
+| Layer | When it runs | Enforced? |
+|---|---|---|
+| Pre-commit hook | on the local machine, before the commit exists | no: it is local, opt-in and can be skipped |
+| Push protection | on GitHub, before the push is accepted | yes, for the secret types it knows |
+| CI checks | after the push, on every pull request | yes: the pull request fails |
+
+- The pre-commit hook is the earliest layer. On a public repo a pushed secret is already
+  public, so catching it before the commit is worth having.
+- The hook is a convenience, not a gate. The CI checks stay the gate, because a hook can be
+  skipped and a cloud agent run may not have it.
+- The hook and the CI job call the same script, so the rules cannot drift apart.
+- The hook is fast: secrets, key-like files and protected paths only. Tests stay in CI.
+- Installing the hook is one documented command. It is never installed automatically on a
+  cloner's machine, and its tools are pinned to a version.
+
+**Rules for what travels with the repo**
+
+- Hooks and everything in `.claude/` stay short and readable, with no network access and
+  narrow permissions, because they can run on a cloner's machine.
+- Any script that writes keys or changes a lifecycle state asks for explicit confirmation,
+  and the README says so. Which steps are irreversible, from the Body Entry TRM (Node A,
+  `docs/references/TraveoT2G_BodyControlEntry_TRM.pdf`, rev. \*J):
+  - **Any life-cycle transition.** Life-cycle stages are set in eFuse and "follow a strict,
+    irreversible progression" (section 13.2.1, page 195; also 11.3.1, page 164). The parts
+    arrive in NORMAL_PROVISIONED.
+  - **`TransitionToSecure`** (section 33.4.24, page 697): NORMAL_PROVISIONED to SECURE or
+    SECURE_WITH_DEBUG. It also writes the secure hash and the SECURE and DEAD access
+    restrictions into eFuse.
+  - **`TransitionToRMA`** (section 33.4.23, page 696): SECURE to RMA. After it, only Infineon's
+    "Open for RMA" call works from outside, with a certificate for that part.
+  - **`BlowFuseBit`** (section 33.4.2): any single eFuse bit.
+  - **Debug access ports in eFuse** (table 11-6): the value `1x` permanently disables the CM0+,
+    CM4 or system access port.
+  - Reversible but risky: the NORMAL access restrictions sit in supervisory flash (SFlash) and
+    can be rewritten (figure 11-2). If such a write disables the debug access ports, the probe
+    may not be able to undo it. My reading, not a TRM statement: SFlash writes also ask for
+    confirmation.
+
+  Today no script in the repo calls these APIs. But the OpenOCD logs in `docs/bench/` show
+  "SFlash programming allowed for regions: USER, TOC, KEY", so the flashing tool would write
+  SFlash if an image contained SFlash data. Node B (Body High, CYT4BF) is **not verified**: its
+  TRM is not in `docs/references/`.
+- Test keys are labelled as test-only wherever they appear.
+- Build and setup scripts do not download and run code without a pinned version.
+
+**Quick actions (by me, this week)**
+
+- Turn on secret scanning and push protection in the repo's security settings.
+  **Already done:** the GitHub API shows both enabled for this repo (2026-11-12). Still off in
+  the same settings: scanning for non-provider patterns, validity checks, and Dependabot
+  security updates.
+- Check the git history once for keys or secrets committed by mistake.
+- Add a short `SECURITY.md`: the keys are test-only, and how to report a problem.
+
+---
+
 ## History
 
 - 2026-11-11: design started from scratch.
 - 2026-11-12: Planner role, split gate 1, milestone and release loop, tests before code,
   trust boundary, agent location. Approved by me.
-- 2026-11-12: `[TODO]` entries filled in from the repo by Claude Code (sections 7 and 11).
+- 2026-11-12, later: section 13 (security) added, with the security check in the release DoD list.
+- 2026-11-12: the nine `[TODO]` entries filled in by Claude Code (sections 7, 11 and 13).
 - M5 (SecOC) was closed before this pipeline starts.
