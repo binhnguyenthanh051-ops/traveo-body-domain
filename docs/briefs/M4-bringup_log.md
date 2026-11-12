@@ -229,9 +229,11 @@ link.
   byte 0 of the reply, which is the op code; `crypto_msg_decode` only checks the
   length, and the verdict parser did not check the op, so the intact `VALID` was
   accepted. M4 had no log channel, so what was seen on 2026-07-14 can't be checked.
-  The parser now rejects a reply that doesn't echo the op (host-tested); the bench
-  re-run is recorded in `docs/project/findings.md` (F-020). The "play dead" half was
-  confirmed again on 2026-11-06.
+  The parser now rejects a reply that doesn't echo the op. Re-run on 2026-11-12 with
+  the fix: two FBL boots, each `CRYPTO_ERROR op=2 reason=0x4` then `APP_REJECT`, no
+  jump (`docs/bench/2026-11-12/f020_f022_closeout.md`). So the claim above holds from
+  that date, and the rejection comes from the op check, not from `crypto_msg_decode`.
+  The "play dead" half was confirmed again on 2026-11-06.
 - **Confirmation, not a fix:** the fault was *injected* with two default-off CM0+
   compile hooks — the CM0+ can't be debugger-halted, and it must run far enough to
   release the CM4, so "don't start it" was never an option.

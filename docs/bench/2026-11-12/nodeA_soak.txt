@@ -1,0 +1,970 @@
+[  125000 app] LOG_EVT_APP_ALIVE uptime_ms=125000 stack_free_words=79
+[  125000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  125000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  125000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  125000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  125000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  125000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  129718 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=5924..6161 over 4985 ms (folded)
+[  130000 app] LOG_EVT_APP_ALIVE uptime_ms=130000 stack_free_words=79
+[  130000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  130000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  130000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  130000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  130000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  130000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  134728 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=6162..6399 over 4989 ms (folded)
+[  135000 app] LOG_EVT_APP_ALIVE uptime_ms=135000 stack_free_words=79
+[  135000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  135000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  135000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  135000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  135000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  135000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  139740 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=6400..6637 over 4991 ms (folded)
+[  140000 app] LOG_EVT_APP_ALIVE uptime_ms=140000 stack_free_words=79
+[  140000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  140000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  140000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  140000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  140000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  140000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  144752 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=6638..6875 over 4990 ms (folded)
+[  145000 app] LOG_EVT_APP_ALIVE uptime_ms=145000 stack_free_words=79
+[  145000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  145000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  145000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  145000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  145000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  145000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  149767 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=6876..7113 over 4994 ms (folded)
+[  150000 app] LOG_EVT_APP_ALIVE uptime_ms=150000 stack_free_words=79
+[  150000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  150000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  150000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  150000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  150000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  150000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  154779 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=7114..7351 over 4991 ms (folded)
+[  155000 app] LOG_EVT_APP_ALIVE uptime_ms=155000 stack_free_words=79
+[  155000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  155000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  155000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  155000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  155000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  155000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  159790 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=7352..7589 over 4990 ms (folded)
+[  160000 app] LOG_EVT_APP_ALIVE uptime_ms=160000 stack_free_words=79
+[  160000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  160000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  160000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  160000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  160000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  160000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  164802 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=7590..7827 over 4991 ms (folded)
+[  165000 app] LOG_EVT_APP_ALIVE uptime_ms=165000 stack_free_words=79
+[  165000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  165000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  165000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  165000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  165000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  165000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  169814 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=7828..8065 over 4991 ms (folded)
+[  170000 app] LOG_EVT_APP_ALIVE uptime_ms=170000 stack_free_words=79
+[  170000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  170000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  170000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  170000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  170000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  170000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  174829 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=8066..8303 over 4994 ms (folded)
+[  175000 app] LOG_EVT_APP_ALIVE uptime_ms=175000 stack_free_words=79
+[  175000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  175000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  175000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  175000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  175000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  175000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  179837 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=8304..8541 over 4987 ms (folded)
+[  180000 app] LOG_EVT_APP_ALIVE uptime_ms=180000 stack_free_words=79
+[  180000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  180000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  180000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  180000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  180000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  180000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  184845 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=8542..8779 over 4987 ms (folded)
+[  185000 app] LOG_EVT_APP_ALIVE uptime_ms=185000 stack_free_words=79
+[  185000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  185000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  185000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  185000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  185000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  185000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  189857 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=8780..9017 over 4991 ms (folded)
+[  190000 app] LOG_EVT_APP_ALIVE uptime_ms=190000 stack_free_words=79
+[  190000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  190000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  190000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  190000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  190000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  190000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  194869 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=9018..9255 over 4991 ms (folded)
+[  195000 app] LOG_EVT_APP_ALIVE uptime_ms=195000 stack_free_words=79
+[  195000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  195000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  195000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  195000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  195000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  195000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  199882 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=9256..9493 over 4992 ms (folded)
+[  200000 app] LOG_EVT_APP_ALIVE uptime_ms=200000 stack_free_words=79
+[  200000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  200000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  200000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  200000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  200000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  200000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  204893 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=9494..9731 over 4990 ms (folded)
+[  205000 app] LOG_EVT_APP_ALIVE uptime_ms=205000 stack_free_words=79
+[  205000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  205000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  205000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  205000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  205000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  205000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  209905 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=9732..9969 over 4990 ms (folded)
+[  210000 app] LOG_EVT_APP_ALIVE uptime_ms=210000 stack_free_words=79
+[  210000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  210000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  210000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  210000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  210000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  210000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  214916 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=9970..10207 over 4990 ms (folded)
+[  215000 app] LOG_EVT_APP_ALIVE uptime_ms=215000 stack_free_words=79
+[  215000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  215000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  215000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  215000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  215001 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  215001 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  219929 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=10208..10445 over 4992 ms (folded)
+[  220000 app] LOG_EVT_APP_ALIVE uptime_ms=220000 stack_free_words=79
+[  220000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  220000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  220000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  220000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  220000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  220000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  224940 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=10446..10683 over 4990 ms (folded)
+[  225000 app] LOG_EVT_APP_ALIVE uptime_ms=225000 stack_free_words=79
+[  225000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  225000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  225000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  225000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  225000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  225000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  229954 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=10684..10921 over 4993 ms (folded)
+[  230000 app] LOG_EVT_APP_ALIVE uptime_ms=230000 stack_free_words=79
+[  230000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  230000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  230000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  230000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  230000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  230000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  234964 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=10922..11159 over 4989 ms (folded)
+[  235000 app] LOG_EVT_APP_ALIVE uptime_ms=235000 stack_free_words=79
+[  235000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  235000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  235000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  235000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  235000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  235000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  239975 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=11160..11397 over 4990 ms (folded)
+[  240000 app] LOG_EVT_APP_ALIVE uptime_ms=240000 stack_free_words=79
+[  240000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  240000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  240000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  240000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  240000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  240000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  244986 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=11398..11635 over 4990 ms (folded)
+[  245000 app] LOG_EVT_APP_ALIVE uptime_ms=245000 stack_free_words=79
+[  245000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  245000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  245000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  245000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  245000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  245000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  250000 app] LOG_EVT_APP_ALIVE uptime_ms=250000 stack_free_words=79
+[  250000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  250000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  250000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  250000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  250000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  250000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  249999 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=11636..11873 over 4992 ms (folded)
+[  255000 app] LOG_EVT_APP_ALIVE uptime_ms=255000 stack_free_words=79
+[  255000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  255000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  255000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  255000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  255000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  255000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  255011 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=11874..12111 over 4991 ms (folded)
+[  260000 app] LOG_EVT_APP_ALIVE uptime_ms=260000 stack_free_words=79
+[  260000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  260000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  260000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  260000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  260000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  260000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  260024 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=12112..12349 over 4992 ms (folded)
+[  265000 app] LOG_EVT_APP_ALIVE uptime_ms=265000 stack_free_words=79
+[  265000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  265000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  265000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  265000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  265000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  265000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  265037 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=12350..12587 over 4992 ms (folded)
+[  270000 app] LOG_EVT_APP_ALIVE uptime_ms=270000 stack_free_words=79
+[  270000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  270000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  270000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  270000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  270000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  270000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  270049 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=12588..12825 over 4991 ms (folded)
+[  275000 app] LOG_EVT_APP_ALIVE uptime_ms=275000 stack_free_words=79
+[  275000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  275000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  275000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  275000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  275000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  275000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  275059 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=12826..13063 over 4989 ms (folded)
+[  280000 app] LOG_EVT_APP_ALIVE uptime_ms=280000 stack_free_words=79
+[  280000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  280000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  280000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  280000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  280000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  280000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  280068 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=13064..13301 over 4988 ms (folded)
+[  285000 app] LOG_EVT_APP_ALIVE uptime_ms=285000 stack_free_words=79
+[  285000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  285000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  285000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  285000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  285000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  285000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  285078 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=13302..13539 over 4989 ms (folded)
+[  290000 app] LOG_EVT_APP_ALIVE uptime_ms=290000 stack_free_words=79
+[  290000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  290000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  290000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  290000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  290000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  290000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  290091 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=13540..13777 over 4992 ms (folded)
+[  295000 app] LOG_EVT_APP_ALIVE uptime_ms=295000 stack_free_words=79
+[  295000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  295000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  295000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  295000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  295000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  295000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  295103 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=13778..14015 over 4991 ms (folded)
+[  300000 app] LOG_EVT_APP_ALIVE uptime_ms=300000 stack_free_words=79
+[  300000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  300000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  300000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  300000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  300000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  300000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  300117 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=14016..14253 over 4993 ms (folded)
+[  305000 app] LOG_EVT_APP_ALIVE uptime_ms=305000 stack_free_words=79
+[  305000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  305000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  305000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  305000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  305000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  305000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  305132 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=14254..14491 over 4994 ms (folded)
+[  310000 app] LOG_EVT_APP_ALIVE uptime_ms=310000 stack_free_words=79
+[  310000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  310000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  310000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  310000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  310000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  310000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  310147 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=14492..14729 over 4994 ms (folded)
+[  315000 app] LOG_EVT_APP_ALIVE uptime_ms=315000 stack_free_words=79
+[  315000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  315000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  315000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  315000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  315000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  315000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  315159 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=14730..14967 over 4991 ms (folded)
+[  320000 app] LOG_EVT_APP_ALIVE uptime_ms=320000 stack_free_words=79
+[  320000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  320000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  320000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  320000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  320000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  320000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  320172 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=14968..15205 over 4992 ms (folded)
+[  325000 app] LOG_EVT_APP_ALIVE uptime_ms=325000 stack_free_words=79
+[  325000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  325000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  325000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  325000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  325000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  325000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  325178 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=15206..15443 over 4985 ms (folded)
+[  330000 app] LOG_EVT_APP_ALIVE uptime_ms=330000 stack_free_words=79
+[  330000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  330000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  330000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  330000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  330000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  330000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  330191 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=15444..15681 over 4992 ms (folded)
+[  335000 app] LOG_EVT_APP_ALIVE uptime_ms=335000 stack_free_words=79
+[  335000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  335000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  335000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  335000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  335000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  335000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  335203 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=15682..15919 over 4991 ms (folded)
+[  340000 app] LOG_EVT_APP_ALIVE uptime_ms=340000 stack_free_words=79
+[  340000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  340000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  340000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  340000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  340000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  340000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  340212 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=15920..16157 over 4988 ms (folded)
+[  345000 app] LOG_EVT_APP_ALIVE uptime_ms=345000 stack_free_words=79
+[  345000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  345000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  345000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  345000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  345000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  345000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  345218 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=16158..16395 over 4985 ms (folded)
+[  350000 app] LOG_EVT_APP_ALIVE uptime_ms=350000 stack_free_words=79
+[  350000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  350000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  350000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  350000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  350000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  350000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  350230 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=16396..16633 over 4991 ms (folded)
+[  355000 app] LOG_EVT_APP_ALIVE uptime_ms=355000 stack_free_words=79
+[  355000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  355000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  355000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  355000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  355000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  355000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  355244 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=16634..16871 over 4992 ms (folded)
+[  360000 app] LOG_EVT_APP_ALIVE uptime_ms=360000 stack_free_words=79
+[  360000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  360000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  360000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  360000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  360000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  360000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  360258 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=16872..17109 over 4992 ms (folded)
+[  365000 app] LOG_EVT_APP_ALIVE uptime_ms=365000 stack_free_words=79
+[  365000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  365000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  365000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  365000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  365000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  365000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  365270 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=17110..17347 over 4991 ms (folded)
+[  370000 app] LOG_EVT_APP_ALIVE uptime_ms=370000 stack_free_words=79
+[  370000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  370000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  370000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  370000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  370000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  370000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  370277 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=17348..17585 over 4986 ms (folded)
+[  375000 app] LOG_EVT_APP_ALIVE uptime_ms=375000 stack_free_words=79
+[  375000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  375000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  375000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  375000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  375000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  375000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  375290 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=17586..17823 over 4992 ms (folded)
+[  380000 app] LOG_EVT_APP_ALIVE uptime_ms=380000 stack_free_words=79
+[  380000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  380000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  380000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  380000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  380000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  380000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  380303 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=17824..18061 over 4992 ms (folded)
+[  385000 app] LOG_EVT_APP_ALIVE uptime_ms=385000 stack_free_words=79
+[  385000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  385000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  385000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  385001 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  385001 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  385001 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  385315 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=18062..18299 over 4991 ms (folded)
+[  390000 app] LOG_EVT_APP_ALIVE uptime_ms=390000 stack_free_words=79
+[  390000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  390000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  390000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  390000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  390000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  390000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  390329 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=18300..18537 over 4993 ms (folded)
+[  395000 app] LOG_EVT_APP_ALIVE uptime_ms=395000 stack_free_words=79
+[  395000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  395000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  395000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  395000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  395000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  395000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  395343 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=18538..18775 over 4993 ms (folded)
+[  400000 app] LOG_EVT_APP_ALIVE uptime_ms=400000 stack_free_words=79
+[  400000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  400000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  400000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  400000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  400000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  400000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  400352 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=18776..19013 over 4988 ms (folded)
+[  405000 app] LOG_EVT_APP_ALIVE uptime_ms=405000 stack_free_words=79
+[  405000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  405000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  405000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  405000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  405000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  405000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  405363 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=19014..19251 over 4990 ms (folded)
+[  410000 app] LOG_EVT_APP_ALIVE uptime_ms=410000 stack_free_words=79
+[  410000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  410000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  410000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  410000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  410000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  410000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  410374 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=19252..19489 over 4990 ms (folded)
+[  415000 app] LOG_EVT_APP_ALIVE uptime_ms=415000 stack_free_words=79
+[  415000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  415000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  415000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  415000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  415000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  415000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  415387 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=19490..19727 over 4992 ms (folded)
+[  420000 app] LOG_EVT_APP_ALIVE uptime_ms=420000 stack_free_words=79
+[  420000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  420000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  420001 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  420001 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  420001 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  420001 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  420400 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=19728..19965 over 4992 ms (folded)
+[  425000 app] LOG_EVT_APP_ALIVE uptime_ms=425000 stack_free_words=79
+[  425000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  425000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  425000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  425000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  425000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  425000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  425414 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=19966..20203 over 4992 ms (folded)
+[  430000 app] LOG_EVT_APP_ALIVE uptime_ms=430000 stack_free_words=79
+[  430000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  430000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  430000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  430000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  430000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  430000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  430426 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=20204..20441 over 4991 ms (folded)
+[  435000 app] LOG_EVT_APP_ALIVE uptime_ms=435000 stack_free_words=79
+[  435000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  435000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  435000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  435000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  435000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  435000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  435436 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=20442..20679 over 4989 ms (folded)
+[  440000 app] LOG_EVT_APP_ALIVE uptime_ms=440000 stack_free_words=79
+[  440000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  440000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  440000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  440000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  440000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  440000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  440449 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=20680..20917 over 4992 ms (folded)
+[  445000 app] LOG_EVT_APP_ALIVE uptime_ms=445000 stack_free_words=79
+[  445000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  445000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  445000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  445000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  445000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  445000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  445459 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=20918..21155 over 4989 ms (folded)
+[  450000 app] LOG_EVT_APP_ALIVE uptime_ms=450000 stack_free_words=79
+[  450000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  450000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  450000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  450000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  450000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  450000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  450470 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=21156..21393 over 4990 ms (folded)
+[  455000 app] LOG_EVT_APP_ALIVE uptime_ms=455000 stack_free_words=79
+[  455000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  455000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  455000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  455000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  455000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  455000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  455478 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=21394..21631 over 4987 ms (folded)
+[  460000 app] LOG_EVT_APP_ALIVE uptime_ms=460000 stack_free_words=79
+[  460000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  460001 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  460001 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  460001 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  460001 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  460001 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  460484 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=21632..21869 over 4985 ms (folded)
+[  465000 app] LOG_EVT_APP_ALIVE uptime_ms=465000 stack_free_words=79
+[  465000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  465000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  465000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  465000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  465000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  465000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  465489 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=21870..22107 over 4984 ms (folded)
+[  470000 app] LOG_EVT_APP_ALIVE uptime_ms=470000 stack_free_words=79
+[  470000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  470000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  470000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  470000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  470000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  470000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  470495 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=22108..22345 over 4985 ms (folded)
+[  475000 app] LOG_EVT_APP_ALIVE uptime_ms=475000 stack_free_words=79
+[  475000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  475001 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  475001 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  475001 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  475001 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  475001 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  475505 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=22346..22583 over 4989 ms (folded)
+[  480000 app] LOG_EVT_APP_ALIVE uptime_ms=480000 stack_free_words=79
+[  480000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  480000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  480000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  480000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  480000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  480000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  480517 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=22584..22821 over 4991 ms (folded)
+[  485000 app] LOG_EVT_APP_ALIVE uptime_ms=485000 stack_free_words=79
+[  485000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  485000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  485000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  485000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  485000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  485000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  485524 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=22822..23059 over 4986 ms (folded)
+[  490000 app] LOG_EVT_APP_ALIVE uptime_ms=490000 stack_free_words=79
+[  490000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  490000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  490000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  490000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  490000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  490000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  490531 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=23060..23297 over 4986 ms (folded)
+[  495000 app] LOG_EVT_APP_ALIVE uptime_ms=495000 stack_free_words=79
+[  495000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  495000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  495000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  495000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  495000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  495000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  495542 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=23298..23535 over 4990 ms (folded)
+[  500000 app] LOG_EVT_APP_ALIVE uptime_ms=500000 stack_free_words=79
+[  500000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  500000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  500000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  500000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  500000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  500000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  500552 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=23536..23773 over 4989 ms (folded)
+[  505000 app] LOG_EVT_APP_ALIVE uptime_ms=505000 stack_free_words=79
+[  505000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  505000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  505000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  505000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  505000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  505000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  505559 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=23774..24011 over 4986 ms (folded)
+[  510000 app] LOG_EVT_APP_ALIVE uptime_ms=510000 stack_free_words=79
+[  510000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  510000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  510000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  510000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  510000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  510000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  510566 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=24012..24249 over 4986 ms (folded)
+[  515000 app] LOG_EVT_APP_ALIVE uptime_ms=515000 stack_free_words=79
+[  515000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  515000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  515000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  515000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  515000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  515000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  515580 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=24250..24487 over 4993 ms (folded)
+[  520000 app] LOG_EVT_APP_ALIVE uptime_ms=520000 stack_free_words=79
+[  520000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  520000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  520000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  520000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  520000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  520000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  520592 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=24488..24725 over 4991 ms (folded)
+[  525000 app] LOG_EVT_APP_ALIVE uptime_ms=525000 stack_free_words=79
+[  525000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  525000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  525000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  525000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  525000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  525000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  525600 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=24726..24963 over 4987 ms (folded)
+[  530000 app] LOG_EVT_APP_ALIVE uptime_ms=530000 stack_free_words=79
+[  530000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  530000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  530000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  530000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  530000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  530000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  530607 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=24964..25201 over 4986 ms (folded)
+[  535000 app] LOG_EVT_APP_ALIVE uptime_ms=535000 stack_free_words=79
+[  535000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  535000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  535000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  535000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  535000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  535000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  535613 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=25202..25439 over 4985 ms (folded)
+[  540000 app] LOG_EVT_APP_ALIVE uptime_ms=540000 stack_free_words=79
+[  540000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  540000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  540000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  540000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  540000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  540000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  540628 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=25440..25677 over 4994 ms (folded)
+[  545000 app] LOG_EVT_APP_ALIVE uptime_ms=545000 stack_free_words=79
+[  545000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  545000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  545000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  545000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  545000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  545000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  545640 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=25678..25915 over 4991 ms (folded)
+[  550000 app] LOG_EVT_APP_ALIVE uptime_ms=550000 stack_free_words=79
+[  550000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  550000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  550000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  550000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  550000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  550000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  550647 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=25916..26153 over 4986 ms (folded)
+[  555000 app] LOG_EVT_APP_ALIVE uptime_ms=555000 stack_free_words=79
+[  555000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  555000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  555000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  555000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  555000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  555000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  555659 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=26154..26391 over 4991 ms (folded)
+[  560000 app] LOG_EVT_APP_ALIVE uptime_ms=560000 stack_free_words=79
+[  560000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  560000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  560000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  560000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  560000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  560000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  560670 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=26392..26629 over 4990 ms (folded)
+[  565000 app] LOG_EVT_APP_ALIVE uptime_ms=565000 stack_free_words=79
+[  565000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  565000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  565000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  565000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  565000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  565000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  565678 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=26630..26867 over 4987 ms (folded)
+[  570000 app] LOG_EVT_APP_ALIVE uptime_ms=570000 stack_free_words=79
+[  570000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  570000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  570000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  570000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  570000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  570000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  570685 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=26868..27105 over 4986 ms (folded)
+[  575000 app] LOG_EVT_APP_ALIVE uptime_ms=575000 stack_free_words=79
+[  575000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  575000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  575000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  575000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  575000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  575000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  575692 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=27106..27343 over 4986 ms (folded)
+[  580000 app] LOG_EVT_APP_ALIVE uptime_ms=580000 stack_free_words=79
+[  580000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  580000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  580000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  580000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  580000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  580000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  580704 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=27344..27581 over 4991 ms (folded)
+[  585000 app] LOG_EVT_APP_ALIVE uptime_ms=585000 stack_free_words=79
+[  585000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  585000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  585000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  585000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  585000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  585000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  585714 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=27582..27819 over 4989 ms (folded)
+[  590000 app] LOG_EVT_APP_ALIVE uptime_ms=590000 stack_free_words=79
+[  590000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  590000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  590000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  590000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  590000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  590000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  590721 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=27820..28057 over 4986 ms (folded)
+[  595000 app] LOG_EVT_APP_ALIVE uptime_ms=595000 stack_free_words=79
+[  595000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  595000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  595000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  595000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  595000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  595000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  595729 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=28058..28295 over 4987 ms (folded)
+[  600000 app] LOG_EVT_APP_ALIVE uptime_ms=600000 stack_free_words=79
+[  600000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  600000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  600000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  600000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  600000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  600000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  600743 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=28296..28533 over 4993 ms (folded)
+[  605000 app] LOG_EVT_APP_ALIVE uptime_ms=605000 stack_free_words=79
+[  605000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  605000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  605000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  605000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  605000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  605000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  605756 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=28534..28771 over 4992 ms (folded)
+[  610000 app] LOG_EVT_APP_ALIVE uptime_ms=610000 stack_free_words=79
+[  610000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  610000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  610000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  610000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  610000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  610000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  610765 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=28772..29009 over 4988 ms (folded)
+[  615000 app] LOG_EVT_APP_ALIVE uptime_ms=615000 stack_free_words=79
+[  615000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  615000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  615000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  615000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  615000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  615000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  615776 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=29010..29247 over 4990 ms (folded)
+[  620000 app] LOG_EVT_APP_ALIVE uptime_ms=620000 stack_free_words=79
+[  620000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  620000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  620000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  620000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  620000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  620000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  620790 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=29248..29485 over 4992 ms (folded)
+[  625000 app] LOG_EVT_APP_ALIVE uptime_ms=625000 stack_free_words=79
+[  625000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  625000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  625000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  625000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=96
+[  625000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  625000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  625801 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=29486..29723 over 4990 ms (folded)
+[  630000 app] LOG_EVT_APP_ALIVE uptime_ms=630000 stack_free_words=79
+[  630000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  630000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  630000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  630000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=94
+[  630000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  630000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  630811 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=29724..29961 over 4989 ms (folded)
+[  635000 app] LOG_EVT_APP_ALIVE uptime_ms=635000 stack_free_words=79
+[  635000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  635000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  635000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  635000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=94
+[  635000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  635000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  635819 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=29962..30199 over 4987 ms (folded)
+[  640000 app] LOG_EVT_APP_ALIVE uptime_ms=640000 stack_free_words=79
+[  640000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  640000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  640000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  640000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=94
+[  640000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  640000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  640825 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=30200..30437 over 4985 ms (folded)
+[  645000 app] LOG_EVT_APP_ALIVE uptime_ms=645000 stack_free_words=79
+[  645000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  645000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  645000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  645000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=94
+[  645000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  645000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  645836 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=30438..30675 over 4989 ms (folded)
+[  650000 app] LOG_EVT_APP_ALIVE uptime_ms=650000 stack_free_words=79
+[  650000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  650000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  650000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  650000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=94
+[  650000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  650000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  650849 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=30676..30913 over 4992 ms (folded)
+[  655000 app] LOG_EVT_APP_ALIVE uptime_ms=655000 stack_free_words=79
+[  655000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  655000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  655000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  655000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=94
+[  655000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  655000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  655863 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=30914..31151 over 4993 ms (folded)
+[  660000 app] LOG_EVT_APP_ALIVE uptime_ms=660000 stack_free_words=79
+[  660000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  660000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  660000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  660000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=94
+[  660000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  660000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  660874 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=31152..31389 over 4990 ms (folded)
+[  665000 app] LOG_EVT_APP_ALIVE uptime_ms=665000 stack_free_words=79
+[  665000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  665000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  665000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  665000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=94
+[  665000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  665000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  665886 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=31390..31627 over 4991 ms (folded)
+[  670000 app] LOG_EVT_APP_ALIVE uptime_ms=670000 stack_free_words=79
+[  670000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  670000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  670000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  670000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=94
+[  670000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  670000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  670900 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=31628..31865 over 4993 ms (folded)
+[  675000 app] LOG_EVT_APP_ALIVE uptime_ms=675000 stack_free_words=79
+[  675000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  675000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  675000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  675000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=94
+[  675000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  675000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  675908 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=31866..32103 over 4987 ms (folded)
+[  680000 app] LOG_EVT_APP_ALIVE uptime_ms=680000 stack_free_words=79
+[  680000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  680000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  680000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  680000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=94
+[  680000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  680000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  680918 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=32104..32341 over 4989 ms (folded)
+[  685000 app] LOG_EVT_APP_ALIVE uptime_ms=685000 stack_free_words=79
+[  685000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  685000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  685000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  685000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=94
+[  685000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  685000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  685934 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=32342..32579 over 4995 ms (folded)
+[  690000 app] LOG_EVT_APP_ALIVE uptime_ms=690000 stack_free_words=79
+[  690000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  690000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  690000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  690000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=94
+[  690000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  690000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  690944 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=32580..32817 over 4989 ms (folded)
+[  695000 app] LOG_EVT_APP_ALIVE uptime_ms=695000 stack_free_words=79
+[  695000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  695000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  695000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  695000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=94
+[  695000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  695000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  695956 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=32818..33055 over 4991 ms (folded)
+[  700000 app] LOG_EVT_APP_ALIVE uptime_ms=700000 stack_free_words=79
+[  700000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  700000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  700000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  700000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=94
+[  700000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  700000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  700970 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=33056..33293 over 4993 ms (folded)
+[  705000 app] LOG_EVT_APP_ALIVE uptime_ms=705000 stack_free_words=79
+[  705000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  705000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  705000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  705000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=94
+[  705000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  705000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  705981 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=33294..33531 over 4990 ms (folded)
+[  710000 app] LOG_EVT_APP_ALIVE uptime_ms=710000 stack_free_words=79
+[  710000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  710000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  710000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  710000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=94
+[  710000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  710000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  710993 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=33532..33769 over 4991 ms (folded)
+[  715000 app] LOG_EVT_APP_ALIVE uptime_ms=715000 stack_free_words=79
+[  715000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  715000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  715000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  715000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=94
+[  715000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  715000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  716006 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=33770..34007 over 4992 ms (folded)
+[  720000 app] LOG_EVT_APP_ALIVE uptime_ms=720000 stack_free_words=79
+[  720000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  720000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  720000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  720000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=94
+[  720000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  720000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  721021 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=34008..34245 over 4994 ms (folded)
+[  725000 app] LOG_EVT_APP_ALIVE uptime_ms=725000 stack_free_words=79
+[  725000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212
+[  725000 app] LOG_EVT_TASK_STACK task_id=0x2 free_words=271
+[  725000 app] LOG_EVT_TASK_STACK task_id=0x3 free_words=79
+[  725000 app] LOG_EVT_TASK_STACK task_id=0x4 free_words=94
+[  725000 app] LOG_EVT_TASK_STACK task_id=0x6 free_words=118
+[  725000 app] LOG_EVT_TASK_STACK task_id=0x7 free_words=99
+[  726030 app] LOG_EVT_SECOC_ACCEPT x238 can_id=0x200 freshness_ctr=34246..34483 over 4988 ms (folded)
+[  729591 app] LOG_EVT_SECOC_ACCEPT x169 can_id=0x200 freshness_ctr=34484..34652 over 3540 ms (folded)
+
+# 29576 records, 0 text bytes, 0 resync(s), 0 record(s) lost

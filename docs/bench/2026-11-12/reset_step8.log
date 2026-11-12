@@ -1,0 +1,47 @@
+﻿==> reset Node A on probe 1F110D8900212400
+Open On-Chip Debugger 0.12.0+dev-5.16.1.4486 (2026-04-14-18:10)
+Licensed under GNU GPL v2
+For bug reports, read
+	http://openocd.org/doc/doxygen/bugs.html
+adapter speed: 2000 kHz
+adapter srst delay: 25
+adapter srst pulse_width: 25
+** Auto-acquire enabled, use "set ENABLE_ACQUIRE 0" to disable
+cortex_m reset_config sysresetreq
+Warn : Using CMSIS-DAPv2 interface 0 with wrong class 0 subclass 0 or protocol 0
+Info : Using CMSIS-DAPv2 interface with VID:PID=0x04b4:0xf155, serial=1F110D8900212400
+Info : CMSIS-DAP: SWD supported
+Info : CMSIS-DAP: Atomic commands supported
+Info : CMSIS-DAP: FW Version = 2.0.0
+Info : CMSIS-DAP: Interface Initialised (SWD)
+Info : SWCLK/TCK = 1 SWDIO/TMS = 1 TDI = 0 TDO = 0 nTRST = 0 nRESET = 1
+Info : CMSIS-DAP: Interface ready
+Info : KitProg3: FW version: 256.256.0
+Info : KitProg3: Pipelined transfers enabled
+Info : KitProg3: Asynchronous USB transfers enabled
+Info : VTarget = 0.000 V
+Info : kitprog3: acquiring device in Test Mode using 'TraveoII/XMC7xxx/XMC5xxx' target and 'xres' reset...
+Info : clock speed 2000 kHz
+Info : SWD DPIDR 0x6ba02477
+Info : [traveo2.cpu.cm0] Cortex-M0+ r0p1 processor detected
+Info : [traveo2.cpu.cm0] target has 4 breakpoints, 2 watchpoints
+***************************************
+** Use overriden Main Flash size, kb: 1088
+** Use overriden Work Flash size, kb: 96
+** Silicon: 0xE3DA, Family: 0x101, Rev.: 0x23 (B2)
+** Detected Device: CYT2B75CXE
+** Flash Boot version: 3.1.0.556
+** SFlash version: 0x5abd3
+** Chip Protection: NORMAL
+***************************************
+Info : [traveo2.cpu.cm0] Examination succeed
+Info : [traveo2.cpu.cm4] Cortex-M4 r0p1 processor detected
+Info : [traveo2.cpu.cm4] target has 6 breakpoints, 4 watchpoints
+Info : [traveo2.cpu.cm4] Examination succeed
+Info : starting gdb server for traveo2.cpu.cm0 on 3333
+Info : Listening on port 3333 for gdb connections
+Info : starting gdb server for traveo2.cpu.cm4 on 3334
+Info : Listening on port 3334 for gdb connections
+Info : SWD DPIDR 0x6ba02477
+shutdown command invoked
+Info : traveo2.dap: powering down debug domain...
