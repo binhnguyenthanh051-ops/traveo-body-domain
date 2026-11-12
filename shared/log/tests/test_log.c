@@ -232,6 +232,85 @@ void test_sequence_number_advances_per_record_and_wraps(void)
     TEST_ASSERT_EQUAL_UINT8((uint8_t)((first + 1U) & LOG_SEQ_MASK), second);
 }
 
+/* ---- two producers on one core (F-022) ---------------------------- */
+
+static uint8_t seq_at(size_t rec_index)
+{
+    return (uint8_t)(log_fake_sink()[(rec_index * LOG_REC_SIZE) + LOG_OFF_CORE_SEQ] & LOG_SEQ_MASK);
+}
+
+static uint16_t evt_at(size_t rec_index)
+{
+    return rd16(&log_fake_sink()[(rec_index * LOG_REC_SIZE) + LOG_OFF_EVT]);
+}
+
+static uint32_t arg0_at(size_t rec_index)
+{
+    return rd32(&log_fake_sink()[(rec_index * LOG_REC_SIZE) + LOG_OFF_ARG0]);
+}
+
+/* The second producer: what the health task did to the can task on the bench. */
+static void preempting_producer(void)
+{
+    log_evt(0x0402U, 200U, 0U);
+}
+
+/* @test REQ-LOG-006 : a producer that is preempted by another producer still
+ * gets its own sequence number, so `seq` never shows a loss that did not
+ * happen (F-022). On the bench two records carried seq 38, seq 39 never
+ * appeared, and the decoder counted 64 records lost with nothing lost. */
+void test_preempted_producer_gets_its_own_sequence_number(void)
+{
+    log_fake_preempt_before_next_lock(preempting_producer);
+    log_evt(0x0401U, 100U, 0U);      /* preempted just before it masks */
+    (void)log_drain(0U);
+
+    TEST_ASSERT_EQUAL_UINT(2U * LOG_REC_SIZE, log_fake_sink_len());
+
+    /* The preempting producer finished first, so its record is first. */
+    TEST_ASSERT_EQUAL_UINT32(200U, arg0_at(0U));
+    TEST_ASSERT_EQUAL_UINT32(100U, arg0_at(1U));
+
+    /* Ring order is sequence order: consecutive, no duplicate, no gap. */
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE((uint8_t)((seq_at(0U) + 1U) & LOG_SEQ_MASK), seq_at(1U),
+                                    "two producers shared a sequence number");
+
+    /* And the next record carries on from there. */
+    log_fake_reset_sink_only();
+    log_evt(0x0401U, 300U, 0U);
+    (void)log_drain(0U);
+    TEST_ASSERT_EQUAL_UINT(LOG_REC_SIZE, log_fake_sink_len());
+    TEST_ASSERT_EQUAL_UINT32(300U, arg0_at(0U));
+}
+
+/* @test REQ-LOG-006 : the overflow report is emitted ONCE and numbered in
+ * line, even when two producers both arrive while it is pending (F-022). */
+void test_overflow_report_is_emitted_once_under_preemption(void)
+{
+    const uint32_t fits = (uint32_t)(FAKE_RING_CAP / LOG_REC_SIZE);
+    uint32_t i;
+
+    for (i = 0U; i < (fits + 2U); i++) {
+        log_evt(0x0401U, i, 0U);
+    }
+    TEST_ASSERT_EQUAL_UINT32(2U, log_dropped());
+    drain_all_and_forget();          /* space frees; the report is pending */
+
+    log_fake_preempt_before_next_lock(preempting_producer);
+    log_evt(0x0401U, 100U, 0U);
+    (void)log_drain(0U);
+
+    /* Exactly: OVERFLOW(2), the preempting record, the preempted record. */
+    TEST_ASSERT_EQUAL_UINT(3U * LOG_REC_SIZE, log_fake_sink_len());
+    TEST_ASSERT_EQUAL_HEX16(0x0004U, evt_at(0U));           /* LOG_EVT_OVERFLOW */
+    TEST_ASSERT_EQUAL_UINT32(2U, arg0_at(0U));
+    TEST_ASSERT_EQUAL_UINT32(200U, arg0_at(1U));
+    TEST_ASSERT_EQUAL_UINT32(100U, arg0_at(2U));
+
+    TEST_ASSERT_EQUAL_UINT8((uint8_t)((seq_at(0U) + 1U) & LOG_SEQ_MASK), seq_at(1U));
+    TEST_ASSERT_EQUAL_UINT8((uint8_t)((seq_at(1U) + 1U) & LOG_SEQ_MASK), seq_at(2U));
+}
+
 /* ---- ring mechanics ----------------------------------------------- */
 
 /* @test REQ-LOG-004 : a record straddling the ring wrap survives intact */
@@ -525,6 +604,8 @@ int main(void)
     RUN_TEST(test_overflow_preserves_the_earliest_records);
     RUN_TEST(test_overflow_event_is_emitted_with_the_lost_count);
     RUN_TEST(test_sequence_number_advances_per_record_and_wraps);
+    RUN_TEST(test_preempted_producer_gets_its_own_sequence_number);
+    RUN_TEST(test_overflow_report_is_emitted_once_under_preemption);
 
     RUN_TEST(test_record_spanning_the_ring_wrap_is_intact);
 
