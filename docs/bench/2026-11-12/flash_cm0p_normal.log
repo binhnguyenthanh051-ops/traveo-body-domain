@@ -1,0 +1,363 @@
+﻿==> flashing on probe 1F110D8900212400
+Tools Directory: C:/Infineon/Tools/ModusToolbox/tools_3.8
+Searching installed tools in progress...
+Searching installed tools complete
+NOTE: Using 'C:/Infineon/Tools/ModusToolbox/tools_3.8/ninja/ninja.exe' from PATH.
+Generating mtbninja data files...
+Generating mtbninja data complete...
+
+Prebuild operations complete
+Toolchain validation: PASS
+Initializing build: gateway_fbl_cm0p Debug CYTVII-B-E-1M-SK GCC_ARM
+# 0: Loading the application in directory 'C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p'
+# 0: Loading the ModusToolbox Technology Packs and Early Access Packs
+# 0: Loading the tools information
+[1/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/TOOLCHAIN_GCC_ARM/cy_syslib_ext.o
+[2/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/local/src/prot_config_cm0p.o
+[3/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/bsps/CYTVII-B-E-1M-SK/COMPONENT_CM0P/TOOLCHAIN_GCC_ARM/startup_tviibe1m_cm0plus.o
+[4/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/local/src/crypto_ops_cm0p.o
+[5/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/pin_packages/cyhal_psoc6_01_104_m_csp_ble.o
+[6/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/local/src/main_cm0p.o
+[7/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/pin_packages/cyhal_psoc6_01_116_bga_usb.o
+[8/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/pin_packages/cyhal_psoc6_01_124_bga.o
+[9/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/pin_packages/cyhal_psoc6_01_116_bga_ble.o
+[10/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/pin_packages/cyhal_psoc6_01_104_m_csp_ble_usb.o
+[11/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/pin_packages/cyhal_psoc6_01_43_smt.o
+[12/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/pin_packages/cyhal_psoc6_01_124_bga_sip.o
+[13/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/pin_packages/cyhal_psoc6_01_68_qfn_ble.o
+[14/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/pin_packages/cyhal_psoc6_01_80_wlcsp.o
+[15/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/pin_packages/cyhal_psoc6_02_128_tqfp.o
+[16/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/pin_packages/cyhal_psoc6_02_124_bga.o
+[17/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/pin_packages/cyhal_psoc6_03_100_tqfp.o
+[18/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/pin_packages/cyhal_psoc6_02_68_qfn.o
+[19/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/pin_packages/cyhal_psoc6_02_100_wlcsp.o
+[20/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/pin_packages/cyhal_psoc6_04_64_tqfp.o
+[21/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/pin_packages/cyhal_psoc6_03_68_qfn.o
+[22/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/pin_packages/cyhal_psoc6_03_49_wlcsp.o
+[23/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/pin_packages/cyhal_psoc6_04_68_qfn.o
+[24/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/pin_packages/cyhal_psoc6_04_80_m_csp.o
+[25/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/pin_packages/cyhal_psoc6_04_80_tqfp.o
+[26/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/pin_packages/cyhal_tviibe1m_64_lqfp.o
+[27/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/pin_packages/cyhal_tviibe1m_80_lqfp.o
+[28/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/pin_packages/cyhal_tviibe1m_176_lqfp.o
+[29/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/pin_packages/cyhal_tviibe1m_144_lqfp.o
+[30/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/pin_packages/cyhal_tviibe1m_100_lqfp.o
+[31/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/pin_packages/cyhal_tviibe2m_100_lqfp.o
+[32/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/pin_packages/cyhal_tviibe2m_144_lqfp.o
+[33/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/pin_packages/cyhal_tviibe2m_176_lqfp.o
+[34/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/pin_packages/cyhal_tviibe2m_64_lqfp.o
+[35/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/pin_packages/cyhal_tviibe2m_80_lqfp.o
+[36/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/pin_packages/cyhal_tviibe4m_144_lqfp.o
+[37/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/pin_packages/cyhal_tviibe4m_100_lqfp.o
+[38/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/pin_packages/cyhal_tviibe4m_64_lqfp.o
+[39/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/triggers/cyhal_triggers_psoc6_01.o
+[40/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/pin_packages/cyhal_tviibe4m_80_lqfp.o
+[41/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/pin_packages/cyhal_tviibe4m_176_lqfp.o
+[42/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/triggers/cyhal_triggers_psoc6_02.o
+[43/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/triggers/cyhal_triggers_psoc6_03.o
+[44/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/triggers/cyhal_triggers_psoc6_04.o
+[45/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/triggers/cyhal_triggers_tviibe1m.o
+[46/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/triggers/cyhal_triggers_tviibe2m.o
+[47/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_adc_mic.o
+[48/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/COMPONENT_CAT1A/source/triggers/cyhal_triggers_tviibe4m.o
+[49/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_analog_common.o
+[50/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_audio_common.o
+[51/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_comp.o
+[52/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_adc_sar.o
+[53/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_comp_ctb.o
+[54/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_clock.o
+[55/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_comp_lp.o
+[56/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_crc.o
+[57/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_dac.o
+[58/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_crypto_common.o
+[59/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_dma.o
+[60/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_dma_dmac.o
+[61/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_ezi2c.o
+[62/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_dma_dw.o
+[63/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_hwmgr.o
+[64/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_gpio.o
+[65/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_i2s.o
+[66/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_interconnect.o
+[67/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_i2c.o
+[68/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_irq_impl.o
+[69/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_ipc.o
+[70/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_keyscan.o
+[71/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_lptimer.o
+[72/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_opamp.o
+[73/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_pdmpcm.o
+[74/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_nvm.o
+[75/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_qspi.o
+[76/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_quaddec.o
+[77/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_pwm.o
+[78/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_rtc.o
+[79/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_scb_common.o
+[80/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_sdhc.o
+[81/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_system.o
+[82/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_syspm.o
+[83/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_spi.o
+[84/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_trng.o
+[85/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_tdm.o
+[86/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_tcpwm_common.o
+[87/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_timer.o
+[88/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/devices/COMPONENT_CAT1A/source/cy_device.o
+[89/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_udb_sdio.o
+[90/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_adcmic.o
+[91/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_axidmac.o
+[92/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_ble_clk.o
+[93/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_usb_dev.o
+[94/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_cordic.o
+[95/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_uart.o
+[96/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_utils.o
+[97/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_utils_impl.o
+[98/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-hal-cat1/source/cyhal_wdt.o
+C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/mtb_shared/mtb-hal-cat1/release-v2.7.4/source/cyhal_wdt.c:86:9: warning: "_CYHAL_WDT_MAX_TIMEOUT_MS" redefined
+   86 | #define _CYHAL_WDT_MAX_TIMEOUT_MS 131073812
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/mtb_shared/mtb-hal-cat1/release-v2.7.4/source/cyhal_wdt.c:49:
+../../../mtb_shared/mtb-hal-cat1/release-v2.7.4/include_pvt/cyhal_wdt_impl.h:108:9: note: this is the location of the previous definition
+  108 | #define _CYHAL_WDT_MAX_TIMEOUT_MS 6000
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~
+[99/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_crypto_core_aes_v1.o
+[100/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_canfd.o
+[101/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_crypto_core_cmac_v1.o
+[102/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_crypto.o
+[103/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_crypto_core_crc_v1.o
+[104/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_crypto_core_des_v1.o
+[105/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_crypto_core_ecc_domain_params.o
+[106/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_crypto_core_crc_v2.o
+[107/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_crypto_core_cmac_v2.o
+[108/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_crypto_core_des_v2.o
+[109/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_crypto_core_aes_v2.o
+[110/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_crypto_core_ecc_ecdsa.o
+[111/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_crypto_core_ecc_ec25519.o
+[112/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_crypto_core_ecc_key_gen.o
+[113/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_crypto_core_hmac_v1.o
+[114/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_crypto_core_hkdf_v2.o
+[115/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_crypto_core_mem_v1.o
+[116/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_crypto_core_hw_v1.o
+[117/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_crypto_core_hw.o
+[118/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_crypto_core_hmac_v2.o
+[119/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_crypto_core_mem_v2.o
+[120/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_crypto_core_prng_v1.o
+[121/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_crypto_core_ecc_eddsa.o
+[122/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_crypto_core_prng_v2.o
+[123/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_crypto_core_ecc_nist_p.o
+[124/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_crypto_core_sha_v1.o
+[125/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_crypto_core_trng.o
+[126/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_crypto_core_rsa.o
+[127/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_cryptolite_cmac.o
+[128/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_crypto_core_vu.o
+[129/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_cryptolite_aes_ccm.o
+[130/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_cryptolite_aes.o
+[131/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_crypto_core_sha_v2.o
+[132/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_cryptolite_ecc_ec25519.o
+[133/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_crypto_server.o
+[134/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_cryptolite_ecdsa.o
+[135/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_cryptolite_ecc_eddsa.o
+[136/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_cryptolite_ecc_key_gen.o
+[137/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_cryptolite_hmac.o
+[138/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_cryptolite_hkdf.o
+[139/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_cryptolite_trng.o
+[140/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_cryptolite_sha256.o
+[141/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_cryptolite_nist_p.o
+[142/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_cryptolite_rsa.o
+[143/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_cryptolite_utils.o
+[144/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_ctb.o
+[145/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_ctdac.o
+[146/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_cryptolite_vu.o
+[147/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_csd.o
+[148/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_ephy.o
+[149/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_efuse_v3.o
+[150/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_efuse.o
+[151/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_dma.o
+[152/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_ethif.o
+[153/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_dmac.o
+[154/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_evtgen.o
+[155/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_flash.o
+[156/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_hppass_csg.o
+[157/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_hppass.o
+[158/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_flash_srom.o
+[159/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_hppass_ac.o
+[160/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_gpio.o
+[161/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_i2s.o
+[162/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_ipc_bt.o
+[163/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_hppass_sar.o
+[164/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_flash_v2.o
+[165/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_ipc_drv.o
+[166/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_keyscan.o
+[167/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_lin.o
+[168/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_ipc_pipe.o
+[169/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_ipc_sema.o
+[170/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_lpcomp.o
+[171/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_mcwdt.o
+[172/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_lvd.o
+[173/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_mcwdt_b.o
+[174/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_lvd_ht.o
+[175/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_mpc.o
+[176/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_mixer.o
+[177/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_ppc.o
+[178/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_pdm_pcm_v2.o
+[179/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_pdm_pcm.o
+[180/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_pra_cfg.o
+[181/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_profile.o
+[182/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_pra.o
+[183/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_sar.o
+[184/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_scb_common.o
+[185/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_rtc.o
+[186/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_prot.o
+[187/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_scb_ezi2c.o
+[188/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_sar2.o
+[189/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_scb_spi.o
+[190/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_sd_host.o
+[191/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_seglcd.o
+[192/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_smif.o
+[193/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_scb_uart.o
+[194/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_smif_hb_flash.o
+[195/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_smif_memslot.o
+[196/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_scb_i2c.o
+[197/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_smartio.o
+[198/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_smif_sfdp.o
+[199/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_sysanalog.o
+[200/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_sysclk.o
+[201/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_sysint_v2.o
+[202/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_sysfault.o
+[203/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_sysint.o
+[204/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_syspm_btss.o
+[205/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_syspm.o
+[206/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_syspm_pdcm.o
+[207/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_syspm_ppu.o
+[208/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_syslib.o
+[209/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_syspm_v2.o
+[210/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_systick.o
+[211/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_tcpwm_counter.o
+[212/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_syspm_v4.o
+[213/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_ms_ctl.o
+[214/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_tcpwm_motif.o
+[215/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_systick_v2.o
+[216/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_sysclk_v2.o
+[217/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_tcpwm_pwm.o
+[218/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_syspm_v3.o
+[219/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_tcpwm_quaddec.o
+[220/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_tcpwm_shiftreg.o
+[221/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_tdm.o
+[222/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_usbfs_dev_drv.o
+[223/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_trigmux.o
+[224/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_usbfs_dev_drv_io.o
+[225/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_usbfs_dev_drv_io_dma.o
+[226/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_wdt_b.o
+[227/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/cy_wdt.o
+[228/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/source/ppu_v1.o
+[229/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/third_party/ethernet/src/edd.o
+[230/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/third_party/ethernet/src/edd_rx.o
+[231/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/drivers/third_party/ethernet/src/edd_tx.o
+[232/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/bsps/CYTVII-B-E-1M-SK/COMPONENT_CM0P/system_psoc6_cm0plus.o
+[233/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/libraries_shared/mtb-pdl-cat1/utils/TOOLCHAIN_GCC_ARM/mtb_stdlib_stubs.o
+[234/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/external/C/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/shared/crypto/src/crypto_dispatch.o
+[235/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/external/C/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/shared/crypto/src/crypto_keystore.o
+[236/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/bsps/CYTVII-B-E-1M-SK/config/GeneratedSource/cycfg.o
+[237/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/external/C/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/shared/prot/src/prot_region.o
+[238/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/external/C/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/shared/crypto/src/crypto_msg.o
+[239/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/bsps/CYTVII-B-E-1M-SK/config/GeneratedSource/cycfg_clocks.o
+[240/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/bsps/CYTVII-B-E-1M-SK/config/GeneratedSource/cycfg_peripherals.o
+[241/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/bsps/CYTVII-B-E-1M-SK/config/GeneratedSource/cycfg_pins.o
+[242/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/bsps/CYTVII-B-E-1M-SK/cybsp.o
+[243/244] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/Debug/bsps/CYTVII-B-E-1M-SK/config/GeneratedSource/cycfg_system.o
+[244/244] Linking, creating elf file build/CYTVII-B-E-1M-SK/Debug/gateway_fbl_cm0p.elf
+C:/Infineon/Tools/mtb-gcc-arm-eabi/14.2.1/gcc/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/bin/ld.exe: warning: build/CYTVII-B-E-1M-SK/Debug/gateway_fbl_cm0p.elf has a LOAD segment with RWX permissions
+
+C:/Infineon/Tools/mtb-gcc-arm-eabi/14.2.1/gcc/bin/arm-none-eabi-objcopy -O ihex C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/CYTVII-B-E-1M-SK/Debug/gateway_fbl_cm0p.elf C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/CYTVII-B-E-1M-SK/Debug/gateway_fbl_cm0p.hex
+==============================================================================
+= Build complete =
+==============================================================================
+
+  --------------------------------------------------
+ | Section             |    Address |          Used |
+  --------------------------------------------------
+ |   .text             | 0x10000000 |        30,376 |
+ |   .ARM.exidx        | 0x100076a8 |             8 |
+ |   .copy.table       | 0x100076b0 |            24 |
+ |   .zero.table       | 0x100076c8 |             8 |
+ |   .data             | 0x08000880 |            64 |
+ |   .data (load data) | 0x100076d0 |            64 |
+ |   .noinit           | 0x080008c0 |         1,608 |
+ |   .bss              | 0x08000f08 |           260 |
+ |   .heap             | 0x08001010 |        24,560 |
+  --------------------------------------------------
+
+Total FLASH (Available): 1,114,112
+Total FLASH (Utilized) : 30,480
+
+Open On-Chip Debugger 0.12.0+dev-5.16.1.4486 (2026-04-14-18:10)
+Licensed under GNU GPL v2
+For bug reports, read
+	http://openocd.org/doc/doxygen/bugs.html
+adapter speed: 2000 kHz
+adapter srst delay: 25
+adapter srst pulse_width: 25
+** Auto-acquire enabled, use "set ENABLE_ACQUIRE 0" to disable
+cortex_m reset_config sysresetreq
+Warn : SFlash programming allowed for regions: USER, TOC, KEY
+Warn : Using CMSIS-DAPv2 interface 0 with wrong class 0 subclass 0 or protocol 0
+Info : Using CMSIS-DAPv2 interface with VID:PID=0x04b4:0xf155, serial=1F110D8900212400
+Info : CMSIS-DAP: SWD supported
+Info : CMSIS-DAP: Atomic commands supported
+Info : CMSIS-DAP: FW Version = 2.0.0
+Info : CMSIS-DAP: Interface Initialised (SWD)
+Info : SWCLK/TCK = 1 SWDIO/TMS = 1 TDI = 0 TDO = 0 nTRST = 0 nRESET = 1
+Info : CMSIS-DAP: Interface ready
+Info : KitProg3: FW version: 256.256.0
+Info : KitProg3: Pipelined transfers enabled
+Info : KitProg3: Asynchronous USB transfers enabled
+Info : VTarget = 0.000 V
+Info : kitprog3: acquiring device in Test Mode using 'TraveoII/XMC7xxx/XMC5xxx' target and 'xres' reset...
+Info : clock speed 2000 kHz
+Info : SWD DPIDR 0x6ba02477
+Info : [traveo2.cpu.cm0] Cortex-M0+ r0p1 processor detected
+Info : [traveo2.cpu.cm0] target has 4 breakpoints, 2 watchpoints
+***************************************
+** Use overriden Main Flash size, kb: 1088
+** Use overriden Work Flash size, kb: 96
+** Silicon: 0xE3DA, Family: 0x101, Rev.: 0x23 (B2)
+** Detected Device: CYT2B75CXE
+** Flash Boot version: 3.1.0.556
+** SFlash version: 0x5abd3
+** Chip Protection: NORMAL
+***************************************
+Info : [traveo2.cpu.cm0] Examination succeed
+Info : [traveo2.cpu.cm4] Cortex-M4 r0p1 processor detected
+Info : [traveo2.cpu.cm4] target has 6 breakpoints, 4 watchpoints
+Info : [traveo2.cpu.cm4] Examination succeed
+Info : starting gdb server for traveo2.cpu.cm0 on 3333
+Info : Listening on port 3333 for gdb connections
+Info : starting gdb server for traveo2.cpu.cm4 on 3334
+Info : Listening on port 3334 for gdb connections
+Info : SWD DPIDR 0x6ba02477
+[traveo2.cpu.cm0] halted due to debug-request, current mode: Thread 
+xPSR: 0x61000000 pc: 0x000000f8 msp: 0x0801f800
+Info : kitprog3: acquiring device in Test Mode using 'TraveoII/XMC7xxx/XMC5xxx' target and 'xres' reset...
+Info : [traveo2.cpu.cm0] external reset detected
+[traveo2.cpu.cm0] halted due to debug-request, current mode: Thread 
+xPSR: 0x41000000 pc: 0x000002a4 msp: 0x08020000
+** Device acquired successfully
+** traveo2.cpu.cm4: Ran after reset and before halt...
+[traveo2.cpu.cm4] halted due to debug-request, current mode: Thread 
+xPSR: 0x01000000 pc: 0x000001bc msp: 0x0801f800
+** Programming Started **
+auto erase enabled
+Info : Padding image section 0 at 0x10007710 with 240 bytes (bank write end alignment)
+Warn : Adding extra erase range, 0x10007800 .. 0x10007fff
+
+[100%] [################################] [ Erasing     ]
+
+[ 96%] [##############################  ] [ Programming ]
+[ 98%] [############################### ] [ Programming ]
+[100%] [################################] [ Programming ]
+wrote 30720 bytes from file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_a_gateway/bootloader/proj_cm0p/build/last_config/gateway_fbl_cm0p.hex in 0.334602s (89.659 KiB/s)
+** Programming Finished **
+** Verify Started **
+verified 30480 bytes in 0.045255s (657.731 KiB/s)
+** Verified OK **
+** Resetting Target **
+Info : SWD DPIDR 0x6ba02477
+shutdown command invoked
+Info : traveo2.dap: powering down debug domain...

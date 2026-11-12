@@ -1,0 +1,287 @@
+﻿==> flashing on probe 1C09043C03272400
+Tools Directory: C:/Infineon/Tools/ModusToolbox/tools_3.8
+Searching installed tools in progress...
+Searching installed tools complete
+make -C proj_cm0p build_proj MTB_APPLICATION_SUBPROJECTS="proj_cm0p proj_cm7" MTB_APPLICATION_NAME="node_b_actuator" MTB_APPLICATION_PROMOTE=true && make -C proj_cm7 build_proj MTB_APPLICATION_SUBPROJECTS="proj_cm0p proj_cm7" MTB_APPLICATION_NAME="node_b_actuator" MTB_APPLICATION_PROMOTE=true && true
+make[1]: Entering directory '/cygdrive/c/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm0p'
+Tools Directory: C:/Infineon/Tools/ModusToolbox/tools_3.8
+NOTE: Using 'C:/Infineon/Tools/ModusToolbox/tools_3.8/ninja/ninja.exe' from PATH.
+Generating mtbninja data files...
+Generating mtbninja data complete...
+
+Prebuild operations complete
+Toolchain validation: PASS
+Initializing build: actuator_cm0p Debug APP_KIT_T2G-B-H_LITE GCC_ARM
+# 0: Loading the application in directory 'C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm0p'
+# 0: Loading the ModusToolbox Technology Packs and Early Access Packs
+# 0: Loading the tools information
+[1/4] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm0p/build/Debug/external/C/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/shared/crypto/src/crypto_dispatch.o
+[2/4] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm0p/build/Debug/external/C/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/shared/crypto/src/crypto_msg.o
+[3/4] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm0p/build/Debug/local/src/crypto_ops_cm0p.o
+[4/4] Linking, creating elf file build/APP_KIT_T2G-B-H_LITE/Debug/actuator_cm0p.elf
+C:/Infineon/Tools/mtb-gcc-arm-eabi/14.2.1/gcc/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/bin/ld.exe: warning: build/APP_KIT_T2G-B-H_LITE/Debug/actuator_cm0p.elf has a LOAD segment with RWX permissions
+
+C:/Infineon/Tools/mtb-gcc-arm-eabi/14.2.1/gcc/bin/arm-none-eabi-objcopy -O ihex C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm0p/build/APP_KIT_T2G-B-H_LITE/Debug/actuator_cm0p.elf C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm0p/build/APP_KIT_T2G-B-H_LITE/Debug/actuator_cm0p.hex
+==============================================================================
+= Build complete =
+==============================================================================
+
+make[1]: Leaving directory '/cygdrive/c/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm0p'
+make[1]: Entering directory '/cygdrive/c/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7'
+Tools Directory: C:/Infineon/Tools/ModusToolbox/tools_3.8
+NOTE: Using 'C:/Infineon/Tools/ModusToolbox/tools_3.8/ninja/ninja.exe' from PATH.
+Generating mtbninja data files...
+Generating mtbninja data complete...
+
+Prebuild operations complete
+Toolchain validation: PASS
+Initializing build: actuator_cm7 Debug APP_KIT_T2G-B-H_LITE GCC_ARM
+# 0: Loading the application in directory 'C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7'
+# 0: Loading the ModusToolbox Technology Packs and Early Access Packs
+# 0: Loading the tools information
+[1/34] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/Debug/local/src/log_task.o
+[2/34] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/Debug/local/src/port_crypto.o
+[3/34] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/Debug/libraries_shared/clib-support/source/COMPONENT_FREERTOS/cy_mutex_pool.o
+[4/34] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/Debug/local/src/port_log.o
+[5/34] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/Debug/libraries_shared/freertos/Source/croutine.o
+[6/34] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/Debug/libraries_shared/clib-support/source/TOOLCHAIN_GCC_ARM/cy_clib_support_newlib.o
+[7/34] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/Debug/libraries_shared/freertos/Source/event_groups.o
+[8/34] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/Debug/libraries_shared/freertos/Source/list.o
+[9/34] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/Debug/libraries_shared/freertos/Source/portable/COMPONENT_CM7/TOOLCHAIN_GCC_ARM/port.o
+[10/34] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/Debug/libraries_shared/abstraction-rtos/source/COMPONENT_FREERTOS/cyabs_freertos_common.o
+[11/34] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/Debug/libraries_shared/abstraction-rtos/source/COMPONENT_FREERTOS/cyabs_freertos_helpers.o
+[12/34] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/Debug/local/src/main.o
+[13/34] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/Debug/libraries_shared/abstraction-rtos/source/COMPONENT_FREERTOS/cyabs_rtos_dsram.o
+[14/34] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/Debug/libraries_shared/abstraction-rtos/source/cy_worker_thread.o
+[15/34] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/Debug/libraries_shared/clib-support/source/cy_time.o
+[16/34] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/Debug/local/src/can_task.o
+[17/34] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/Debug/libraries_shared/freertos/Source/portable/MemMang/heap_1.o
+[18/34] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/Debug/libraries_shared/abstraction-rtos/source/COMPONENT_FREERTOS/cyabs_rtos_freertos.o
+[19/34] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/Debug/libraries_shared/freertos/Source/portable/MemMang/heap_5.o
+[20/34] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/Debug/libraries_shared/freertos/Source/portable/MemMang/heap_3.o
+[21/34] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/Debug/libraries_shared/freertos/Source/portable/MemMang/heap_2.o
+[22/34] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/Debug/libraries_shared/freertos/Source/portable/MemMang/heap_4.o
+[23/34] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/Debug/libraries_shared/freertos/Source/timers.o
+[24/34] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/Debug/libraries_shared/freertos/Source/stream_buffer.o
+[25/34] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/Debug/external/C/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/shared/crypto/src/crypto_service.o
+[26/34] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/Debug/external/C/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/shared/crypto/src/crypto_msg.o
+[27/34] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/Debug/libraries_shared/freertos/Source/queue.o
+[28/34] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/Debug/external/C/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/shared/secoc/src/secoc_rx.o
+[29/34] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/Debug/external/C/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/shared/log/src/log.o
+[30/34] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/Debug/libraries_shared/freertos/Source/tasks.o
+[31/34] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/Debug/libraries_shared/mtb-hal-t2gbh8m/source/mtb_hal_system.o
+[32/34] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/Debug/libraries_shared/mtb-hal-t2gbh8m/source/mtb_hal_sdhc.o
+[33/34] Building object file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/Debug/libraries_shared/retarget-io/source/cy_retarget_io.o
+[34/34] Linking, creating elf file build/APP_KIT_T2G-B-H_LITE/Debug/actuator_cm7.elf
+C:/Infineon/Tools/mtb-gcc-arm-eabi/14.2.1/gcc/bin/../lib/gcc/arm-none-eabi/14.2.1/../../../../arm-none-eabi/bin/ld.exe: warning: build/APP_KIT_T2G-B-H_LITE/Debug/actuator_cm7.elf has a LOAD segment with RWX permissions
+
+C:/Infineon/Tools/mtb-gcc-arm-eabi/14.2.1/gcc/bin/arm-none-eabi-objcopy -O ihex C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/APP_KIT_T2G-B-H_LITE/Debug/actuator_cm7.elf C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/APP_KIT_T2G-B-H_LITE/Debug/actuator_cm7.hex
+==============================================================================
+= Build complete =
+==============================================================================
+
+make[1]: Leaving directory '/cygdrive/c/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7'
+make -C proj_cm0p application_postbuild MTB_APPLICATION_SUBPROJECTS="proj_cm0p proj_cm7"
+make[1]: Entering directory '/cygdrive/c/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm0p'
+Tools Directory: C:/Infineon/Tools/ModusToolbox/tools_3.8
+Generating combined hex file: C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/build/app_combined.hex
+  ------------------------------------------------------------
+ | Elf/Section                   |    Address |          Used |
+  ------------------------------------------------------------
+ |   proj_cm0p.elf               |            |               |
+ |     .text                     | 0x10000000 |        21,688 |
+ |     .ARM.extab                | 0x100054b8 |            60 |
+ |     .ARM.exidx                | 0x100054f4 |           160 |
+ |     .copy.table               | 0x10005594 |            12 |
+ |     .zero.table               | 0x100055a0 |             8 |
+ |     .data                     | 0x28000880 |           116 |
+ |     .data (load data)         | 0x100055a8 |           116 |
+ |     .noinit                   | 0x280008f8 |         2,364 |
+ |     .bss                      | 0x28001234 |           412 |
+ |     .heap                     | 0x280013d0 |         7,216 |
+ |   proj_cm7.elf                |            |               |
+ |     .text                     | 0x10080000 |        32,644 |
+ |     .ARM.exidx                | 0x10087f84 |             8 |
+ |     .copy.table               | 0x10087f8c |            48 |
+ |     .zero.table               | 0x10087fbc |             8 |
+ |     .cy_itcm                  | 0x00000000 |           152 |
+ |     .cy_itcm (load data)      | 0x10087fc4 |           152 |
+ |     .ramVectors               | 0x28004000 |           128 |
+ |     .data                     | 0x28004080 |           192 |
+ |     .data (load data)         | 0x1008805c |           192 |
+ |     .secoc_ipc_mailbox        | 0x280e0000 |           256 |
+ |     .ram_noncache             | 0x280e0100 |           144 |
+ |     .ram_noncache (load data) | 0x1008811c |           144 |
+ |     .noinit                   | 0x28004140 |         2,452 |
+ |     .bss                      | 0x28004ad4 |        10,208 |
+ |     .heap                     | 0x280072b4 |       884,044 |
+  ------------------------------------------------------------
+
+Total FLASH (Available): 8,585,216
+Total FLASH (Utilized) : 55,240
+make[1]: Leaving directory '/cygdrive/c/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm0p'
+==> stack gate (ADR-0025 D6): /cygdrive/c/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/APP_KIT_T2G-B-H_LITE/Debug/actuator_cm7.elf
+STACK                   REQUIRED  CONFIGURED   USED       RECOMMENDED  STATUS
+task can_task             1464 B      2048 B    71%    1832 B (458 w)  ok
+task heartbeat_task        392 B       512 B    77%     496 B (124 w)  ok
+task log_cyclic_task       308 B       512 B    60%      392 B (98 w)  ok
+not analysed: main stack (MSP): the interrupt chain and the code before the scheduler starts (REQ-SB-204..206, not implemented yet)
+
+worst path, task can_task (1256 B + 208 B switch frame, stack from ELF symbol s_stack):
+     can_task 168 B
+   -> secoc_app_verify_and_decode 104 B
+   -> secoc_rx_process 64 B
+   -> secoc_verify_len 56 B
+   -> verify_core 136 B
+   ~> crypto_mac 568 B   [listed: cy->oracle->mac: g_oracle = { crypto_mac } (secoc_app.c:27), the only secoc_mac_if_t in the image]
+   -> crypto_report 8 B
+   -> log_evt 80 B
+   -> log_ring_put_locked 40 B
+   -> log_ring_copy_in 24 B
+   -> memcpy 8 B
+
+worst path, task heartbeat_task (184 B + 208 B switch frame, stack from ELF symbol s_hb_stack):
+     heartbeat_task 8 B
+   -> heartbeat_log_alive 8 B
+   -> log_task_stacks 16 B
+   -> log_evt 80 B
+   -> log_ring_put_locked 40 B
+   -> log_ring_copy_in 24 B
+   -> memcpy 8 B
+
+worst path, task log_cyclic_task (100 B + 208 B switch frame, stack from ELF symbol s_log_stack):
+     log_cyclic_task 16 B
+   -> log_drain 56 B
+   -> log_port_tx 8 B
+   -> Cy_SCB_UART_PutArray 8 B
+   -> Cy_SCB_WriteArray 8 B
+   -> Cy_SCB_WriteArrayNoCheck 4 B
+
+  ->  direct call    ~>  function-pointer target (from the [[indirect]] list)
+
+assumptions:
+  - indirect verify_core -> crypto_mac: cy->oracle->mac: g_oracle = { crypto_mac } (secoc_app.c:27), the only secoc_mac_if_t in the image
+  - indirect secoc_secure -> crypto_mac: cy->oracle->mac: g_oracle = { crypto_mac } (secoc_app.c:27), the only secoc_mac_if_t in the image
+  - indirect secoc_rx_process -> body_msg_pdu_len: rx->pdu_len_of: secoc_rx_set_pdu_len_of(&g_secoc_rx, body_msg_pdu_len) (secoc_app.c:92), the only setter call
+  - indirect secoc_tx_next -> store_commit: ctx->store->commit: g_store = &g_secoc_store (secoc_app.c:57), .commit = store_commit (secoc_store.c:293)
+  - indirect secoc_tx_adopt_floor -> store_commit: ctx->store->commit: g_store = &g_secoc_store (secoc_app.c:57), .commit = store_commit (secoc_store.c:293)
+  - indirect secoc_rx_accept -> store_commit: ctx->store->commit: g_store = &g_secoc_store (secoc_app.c:57), .commit = store_commit (secoc_store.c:293)
+  - indirect read_slot -> wf_blank_check, wf_read_checked: f->blank_check / f->read_checked: the store's flash is wflash_port_init()'s s_hal (wflash_port.c:182), the only hal_flash_if_t in the image
+  - indirect store_commit -> wf_erase_sector, wf_write: f->erase_sector / f->write: the store's flash is wflash_port_init()'s s_hal (wflash_port.c:182), the only hal_flash_if_t in the image
+  - indirect ipc_transact -> port_sema_try_acquire, port_sema_release, port_mailbox, port_notify, port_response_ready, port_response_len, port_now_ms: port->*: g_crypto_port (port_crypto.c:98), the only ipc_port_if_t in the image; every member bound, so the deepest one counts
+  - frame memcpy = 8 B: newlib-nano memcpy: push {r4, lr} (objdump, MTB GCC 14.2.1)
+  - frame memset = 0 B: newlib-nano memset: leaf, no push, SP untouched (objdump, MTB GCC 14.2.1)
+  - frame strlen = 0 B: newlib-nano strlen: leaf, no push, SP untouched (objdump, MTB GCC 14.2.1); called by xTaskGetHandle (LOG_EVT_TASK_STACK)
+  - switch frame 208 B (FPU) / 72 B [profile cortex-m-freertos]: ARMv7-M Architecture Reference Manual B1.5.7 (exception entry, STKALIGN) + FreeRTOS GCC port.c xPortPendSVHandler
+  - stack alignment 8 B [profile cortex-m-freertos]
+  - margin rule 0.80 [tool default]
+  - 2006 compiler frame entries name functions not in the image (removed by the linker), ignored
+    stacks ok; report: /cygdrive/c/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/build/stack_bound.html
+Tools Directory: C:/Infineon/Tools/ModusToolbox/tools_3.8
+Searching installed tools in progress...
+Searching installed tools complete
+make -C proj_cm0p qprogram_proj MTB_APPLICATION_SUBPROJECTS="proj_cm0p proj_cm7" MTB_APPLICATION_NAME="node_b_actuator"
+make[1]: Entering directory '/cygdrive/c/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm0p'
+Tools Directory: C:/Infineon/Tools/ModusToolbox/tools_3.8
+NOTE: Using 'C:/Infineon/Tools/ModusToolbox/tools_3.8/ninja/ninja.exe' from PATH.
+Generating mtbninja data files...
+Generating mtbninja data complete...
+
+Open On-Chip Debugger 0.12.0+dev-5.16.1.4486 (2026-04-14-18:10)
+Licensed under GNU GPL v2
+For bug reports, read
+	http://openocd.org/doc/doxygen/bugs.html
+adapter speed: 2000 kHz
+adapter srst delay: 25
+adapter srst pulse_width: 25
+** Auto-acquire enabled, use "set ENABLE_ACQUIRE 0" to disable
+cortex_m reset_config sysresetreq
+Info : Using CMSIS-flash algorithms 'CAT1C_SMIF' for bank 'cat1c_smif0_cm0' (footprint 40776 bytes)
+Info : CMSIS-flash: ELF path: ../flm/infineon/xmc7xxx/CAT1C_SMIF.FLM
+Info : CMSIS-flash: Address range:     0x60000000-0x67FFFFFF
+Info : CMSIS-flash: Program page size: 0x00001000 bytes
+Info : CMSIS-flash: Erase sector size: 0x00040000 bytes, unified
+Warn : SFlash programming allowed for regions: USER, TOC, KEY
+Warn : Using CMSIS-DAPv2 interface 0 with wrong class 0 subclass 0 or protocol 0
+Info : Using CMSIS-DAPv2 interface with VID:PID=0x04b4:0xf155, serial=1C09043C03272400
+Info : CMSIS-DAP: SWD supported
+Info : CMSIS-DAP: Atomic commands supported
+Info : CMSIS-DAP: FW Version = 2.0.0
+Info : CMSIS-DAP: Interface Initialised (SWD)
+Info : SWCLK/TCK = 1 SWDIO/TMS = 1 TDI = 0 TDO = 0 nTRST = 0 nRESET = 1
+Info : CMSIS-DAP: Interface ready
+Info : KitProg3: FW version: 256.256.0
+Info : KitProg3: Pipelined transfers enabled
+Info : KitProg3: Asynchronous USB transfers enabled
+Info : VTarget = 0.000 V
+Info : kitprog3: acquiring device in Test Mode using 'TraveoII/XMC7xxx/XMC5xxx' target and 'xres' reset...
+Info : clock speed 2000 kHz
+Info : SWD DPIDR 0x6ba02477
+Info : [cat1c.cpu.cm0] Cortex-M0+ r0p1 processor detected
+Info : [cat1c.cpu.cm0] target has 4 breakpoints, 2 watchpoints
+***************************************
+** Silicon: 0xE5D3, Family: 0x103, Rev.: 0x23 (B2)
+** Detected Device: CYT4BF8CEE
+** Detected Main Flash size, kb: 8384
+** Detected Work Flash size, kb: 256
+** Flash Boot version: 3.1.0.554
+** SFlash version: 0x58d8c
+** Chip Protection: NORMAL
+***************************************
+Info : Enabling the CM7_0 CPU...
+Info : Enabling the CM7_1 CPU...
+Info : [cat1c.cpu.cm0] Examination succeed
+Info : [cat1c.cpu.cm70] Cortex-M7 r1p2 processor detected
+Info : [cat1c.cpu.cm70] target has 8 breakpoints, 4 watchpoints
+Info : [cat1c.cpu.cm70] Examination succeed
+Info : [cat1c.cpu.cm71] Cortex-M7 r1p2 processor detected
+Info : [cat1c.cpu.cm71] target has 8 breakpoints, 4 watchpoints
+Info : [cat1c.cpu.cm71] Examination succeed
+Info : starting gdb server for cat1c.cpu.cm0 on 3333
+Info : Listening on port 3333 for gdb connections
+Info : starting gdb server for cat1c.cpu.cm70 on 3334
+Info : Listening on port 3334 for gdb connections
+Info : starting gdb server for cat1c.cpu.cm71 on 3335
+Info : Listening on port 3335 for gdb connections
+Info : SWD DPIDR 0x6ba02477
+[cat1c.cpu.cm0] halted due to debug-request, current mode: Thread 
+xPSR: 0x61000000 pc: 0x00000114 msp: 0x280ff800
+Info : kitprog3: acquiring device in Test Mode using 'TraveoII/XMC7xxx/XMC5xxx' target and 'xres' reset...
+Info : [cat1c.cpu.cm0] external reset detected
+[cat1c.cpu.cm0] halted due to debug-request, current mode: Thread 
+xPSR: 0x41000000 pc: 0x00000366 msp: 0x280ff800
+** Device acquired successfully
+Info : Enabling the CM7_0 CPU...
+Info : Enabling the CM7_1 CPU...
+** cat1c.cpu.cm70: Ran after reset and before halt...
+[cat1c.cpu.cm70] halted due to debug-request, current mode: Thread 
+xPSR: 0x61000000 pc: 0x000001ec msp: 0x280ff800
+** cat1c.cpu.cm71: Ran after reset and before halt...
+[cat1c.cpu.cm71] halted due to debug-request, current mode: Thread 
+xPSR: 0x61000000 pc: 0x00000206 msp: 0x280ff800
+** Programming Started **
+auto erase enabled
+Info : Flash write discontinued at 0x1000561c, next section at 0x10080000
+Info : Padding image section 0 at 0x1000561c with 484 bytes (bank write end alignment)
+Warn : Adding extra erase range, 0x10005800 .. 0x10007fff
+
+[100%] [################################] [ Erasing     ]
+
+[100%] [################################] [ Programming ]
+Info : Padding image section 1 at 0x100881ac with 84 bytes (bank write end alignment)
+Warn : Adding extra erase range, 0x10088200 .. 0x1008ffff
+
+[100%] [################################] [ Erasing     ]
+
+[100%] [################################] [ Programming ]
+wrote 55808 bytes from file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/build/app_combined.hex in 0.699634s (77.898 KiB/s)
+** Programming Finished **
+** Verify Started **
+verified 55240 bytes in 0.077438s (696.626 KiB/s)
+** Verified OK **
+** Resetting Target **
+Info : SWD DPIDR 0x6ba02477
+shutdown command invoked
+Info : cat1c.dap: powering down debug domain...
+make[1]: Leaving directory '/cygdrive/c/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm0p'
+Merged actuator image: node_b_actuator/build/actuator_app_combined.hex
