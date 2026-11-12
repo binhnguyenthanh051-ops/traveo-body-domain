@@ -13,7 +13,7 @@ finding on the way: a sequence-number race in `log_evt` (F-022).
 
 | Node | Image | Built from | Stack gate (D6) |
 |---|---|---|---|
-| A | `node_a_gateway/app` → `app_stamped.hex`, signed ECDSA P-256 key_id 1 | branch `fix/f021-can-stack` at `b22b611` (firmware differs from `main`: F-021 + D5) | pass: `gate_nodeA_app.json` (ELF sha256 `13631e8ab0e3`) |
+| A | `node_a_gateway/app` → `app_stamped.hex`, signed ECDSA P-256 key_id 1 | branch `fix/f021-can-stack` at the commit that is `94ce2f5` on `main` (firmware differs from `main`: F-021 + D5) | pass: `gate_nodeA_app.json` (ELF sha256 `13631e8ab0e3`) |
 | B | `node_b_actuator` → `app_combined.hex` (CM0+ + CM7) | same | pass: `gate_nodeB_cm7.json` (ELF sha256 `f55ed5eab3fa`) |
 
 Both images went through the new gate in `zz_build_*_app.sh` before flashing. `stack_bound` at
@@ -78,7 +78,7 @@ per tick (ids 1 4 5 6 7). 138 / 100 lines in the transcripts.
 
 The first two `program` runs stopped at the gate with stacks that passed: under the ModusToolbox Cygwin
 shell, Windows Python couldn't open the `/cygdrive` JSON path, then printed `pass\r`. The gate failed
-closed both times; fixed in `b22b611` (cygpath + strip CR). An earlier run also hit CRLF line endings in
+closed both times; fixed in `94ce2f5` (cygpath + strip CR). An earlier run also hit CRLF line endings in
 the scripts, from a Windows-side edit; restored from the index (`.gitattributes` pins `*.sh` to LF).
 
 ## Seen on the way
