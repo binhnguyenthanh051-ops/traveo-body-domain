@@ -1,0 +1,81 @@
+# Change request (CR) form: docs/design/agent-pipeline.md section 4.
+#
+# The field labels below are a contract. GitHub renders each one as a "### <label>"
+# heading in the issue body, and the pipeline reads the body by those headings. The
+# Planner writes its issues with the same headings. Rename a label only together with
+# host_tools/tests/test_pipeline_setup.py.
+name: Change request
+description: One unit of work for the agent pipeline. Starts as draft; only the owner sets ready.
+title: "CR: "
+labels: ["draft", "cr"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A CR is **agent-ready** only when every field is filled and the owner has set `ready`.
+        If a field does not apply, write `none:` and the reason. Do not leave it empty.
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type
+      description: "new = a new feature. change = a change to existing behaviour."
+      options:
+        - new
+        - change
+    validations:
+      required: true
+  - type: textarea
+    id: what-and-why
+    attributes:
+      label: What and why
+      description: What changes, and the reason for it. Two or three sentences.
+    validations:
+      required: true
+  - type: input
+    id: adr-link
+    attributes:
+      label: ADR link
+      description: The approved ADR or design note this CR comes from, with the sub-decision.
+      placeholder: "docs/architecture/decisions/ADR-0021-secoc-protocol.md, D4"
+    validations:
+      required: true
+  - type: input
+    id: requirement-ids
+    attributes:
+      label: Requirement IDs
+      description: "The REQ-* IDs this CR serves, or 'none:' and the reason."
+      placeholder: "REQ-SECOC-012, REQ-SECOC-013"
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      description: >-
+        One testable statement per line. Each one gets at least one test that fails if the
+        statement is not met. For target behaviour, name how it is observed (a contract event
+        in shared/log/events.csv, a bus ID, or the reason it needs another way).
+      placeholder: |
+        - [ ] A frame with a stale freshness value is dropped and LOG_EVT_... is emitted.
+        - [ ] ...
+    validations:
+      required: true
+  - type: dropdown
+    id: test-level
+    attributes:
+      label: Test level
+      description: "on-target and both send the CR through needs-bench before merge."
+      options:
+        - host
+        - on-target
+        - both
+    validations:
+      required: true
+  - type: input
+    id: milestone
+    attributes:
+      label: Milestone
+      description: The GitHub milestone this CR belongs to. Set the same milestone on the issue.
+      placeholder: "M6"
+    validations:
+      required: true
