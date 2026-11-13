@@ -102,6 +102,8 @@ jobs:
         uses: anthropics/claude-code-action@4d75e5f390ee76b2e09c1980ecc99ff3a2e088c8  # v1.0.275
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # The Dispatcher reacts to CI started by the Builder app's push; allow that one bot only.
+          allowed_bots: builder-github-app
           github_token: ${{ github.token }}   # read-only: the agent cannot write to GitHub
           show_full_output: true              # the first run failed with no visible reason
           prompt: ${{ steps.prompt.outputs.text }}
