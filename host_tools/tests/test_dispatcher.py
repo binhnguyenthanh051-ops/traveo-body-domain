@@ -274,3 +274,55 @@ def test_facts_bench_status_only_from_the_bench_context():
 @pytest.mark.parametrize("name", ["schedule", "workflow_dispatch"])
 def test_facts_schedule_and_button_are_ticks(name):
     assert dispatcher.facts(name, {}) == {"kind": "tick"}
+
+
+# --- rows 14-17: the Planner (build step 6) ---------------------------------------------
+
+def test_row14_owner_plan_breakdown_starts_a_breakdown():
+    d = route({"kind": "label", "issue": 50, "label": "plan:breakdown", "actor": OWNER},
+              ["plan:breakdown"])
+    assert labels_after(["plan:breakdown"], d) == {"planning"}
+    assert (d.issue, d.start) == (50, "plan-breakdown")
+
+
+def test_row15_owner_plan_bug_starts_a_bug_report():
+    d = route({"kind": "label", "issue": 51, "label": "plan:bug", "actor": OWNER}, ["plan:bug"])
+    assert labels_after(["plan:bug"], d) == {"planning"}
+    assert d.start == "plan-bug"
+
+
+def test_row16_planner_done_is_planned_and_starts_nothing():
+    d = route({"kind": "planner", "issue": 50, "result": "done"}, ["planning"])
+    assert labels_after(["planning"], d) == {"planned"}
+    assert d.start is None and "gate 1b" in d.line
+
+
+@pytest.mark.parametrize("result", ["blocked", "failed"])
+def test_row17_planner_blocked_waits_for_the_owner(result):
+    d = route({"kind": "planner", "issue": 50, "result": result}, ["planning"])
+    assert labels_after(["planning"], d) == {"waiting-for-me"}
+    assert d.start is None
+
+
+@pytest.mark.parametrize("label", ["plan:breakdown", "plan:bug"])
+def test_a_plan_label_by_someone_else_is_ignored(label):
+    d = route({"kind": "label", "issue": 50, "label": label, "actor": "stranger"}, [label])
+    assert (d.start, d.add, d.remove) == (None, [], [])
+
+
+@pytest.mark.parametrize("busy", ["planning", "planned"])
+def test_a_plan_label_on_an_issue_already_planned_starts_nothing(busy):
+    d = route({"kind": "label", "issue": 50, "label": "plan:breakdown", "actor": OWNER},
+              ["plan:breakdown", busy])
+    assert d.start is None
+
+
+def test_a_plan_label_while_paused_starts_nothing():
+    d = route({"kind": "label", "issue": 50, "label": "plan:bug", "actor": OWNER}, ["plan:bug"],
+              paused=True)
+    assert (d.start, d.add, d.remove) == (None, [], [])
+
+
+def test_planner_result_on_an_issue_not_planning_is_ignored():
+    d = route({"kind": "planner", "issue": 50, "result": "done"}, ["planned"])
+    assert (d.start, d.add, d.remove) == (None, [], [])

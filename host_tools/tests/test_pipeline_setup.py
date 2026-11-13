@@ -86,6 +86,11 @@ def test_level_and_round_labels_are_defined_for_the_dispatcher():
             "round:1", "round:2", "round:3"} <= control
 
 
+def test_planner_labels_are_defined():
+    names = {l["name"] for l in real_config()["labels"]}
+    assert {"plan:breakdown", "plan:bug", "planning", "planned"} <= names
+
+
 def test_every_cr_belongs_to_a_milestone_that_exists():
     titles = [m["title"] for m in real_config()["milestones"]]
     assert titles, "section 4: each CR belongs to one GitHub milestone"
