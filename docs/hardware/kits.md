@@ -48,7 +48,7 @@ LEDs are active LOW (guide).
 PowerShell. It uses a second clone, `<repo>-bench` next to this one, reset to the PR's commit on
 every run (only `libs/` and `mtb_shared/` are kept), and copies `bench.env` and the dev key into
 it. Its GitHub token is the fine-grained `traveo-bench` token (Commit statuses + Pull requests
-write, this repo only), kept in the plain file `%USERPROFILE%\.config	raveo-bench	oken` and
+write, this repo only), kept in the plain file `%USERPROFILE%\.config\traveo-bench\token` and
 handed to each `gh` call as `GH_TOKEN`. The bench never logs `gh` in: the Windows keyring is
 shared by every `gh` login for the same account, so a second login replaced the owner's normal
 one (found 2026-11-14).
