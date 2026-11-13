@@ -152,6 +152,41 @@ def test_a_missing_token_file_is_a_clear_error(tmp_path, monkeypatch):
         bench_run.run_gh(["api", "user"])
 
 
+# --- release mode: the full on-target regression on the release commit (build step 9) -----
+
+def release(tmp_path, gh, bench):
+    return bench_run.run_release(
+        SHA, gh=gh, run=bench.run, capture=bench.capture, wait=lambda s: None,
+        clone=tmp_path / "bench-clone", source=tmp_path / "repo", today="2026-11-14")
+
+
+def release_states(gh):
+    posts = [c for c in gh.calls if "context=bench-release" in c]
+    return [a.split("=", 1)[1] for c in posts for a in c if a.startswith("state=")]
+
+
+def test_release_mode_runs_the_session_and_posts_bench_release(repo):
+    gh, bench = Gh(), Bench()
+    assert release(repo, gh, bench) == 0
+    assert release_states(gh) == ["pending", "success"]
+    assert not any(c[:2] == ["pr", "comment"] for c in gh.calls)
+    assert any("zz_build_actuator_app.sh program" in s for s in bench.steps)
+    assert (repo / "repo" / "docs" / "bench" / "2026-11-14" / f"release-{SHA[:7]}").is_dir()
+
+
+def test_release_mode_refuses_a_commit_that_is_not_on_main(repo):
+    gh, bench = Gh(), Bench(fail="merge-base")
+    assert release(repo, gh, bench) == 2
+    assert not any("zz_build" in s for s in bench.steps)
+    assert release_states(gh) == []
+
+
+def test_release_mode_fails_on_a_failed_check(repo):
+    gh, bench = Gh(), Bench(check_rc=1)
+    assert release(repo, gh, bench) == 1
+    assert release_states(gh) == ["pending", "failure"]
+
+
 def test_never_erase_or_touch_supervisory_flash(repo):
     bench = Bench()
     go(repo, Gh(), bench)
