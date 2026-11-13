@@ -221,7 +221,7 @@ def test_plan_leaves_the_due_date_alone_when_the_config_sets_none():
 
 # Design note section 5 and build step 2: tests, traceability and protected paths.
 REQUIRED_CHECKS = ["host-build-test", "static-analysis", "python-tools",
-                   "traceability", "protected-paths"]
+                   "traceability", "protected-paths", "bench"]
 
 
 def ruleset(checks, name="Protect_main_branch", rid=7):
@@ -246,7 +246,21 @@ def test_every_required_check_is_a_job_in_a_pull_request_workflow():
         text = wf.read_text(encoding="utf-8")
         if "pull_request" in text:
             jobs |= set(re.findall(r"^  ([a-z][a-z0-9-]*):\s*$", text, re.M))
-    assert set(real_config()["ruleset"]["required_checks"]) <= jobs
+    any_source = set(real_config()["ruleset"].get("any_source_checks", []))
+    assert set(real_config()["ruleset"]["required_checks"]) - any_source <= jobs
+
+
+def test_bench_is_a_commit_status_from_any_source():
+    # Step 8: CI posts `bench` (bench_gate.py) and so does the owner's bench run, with its own
+    # token, so the rule must not pin it to the GitHub Actions app.
+    assert real_config()["ruleset"]["any_source_checks"] == ["bench"]
+
+
+def test_an_any_source_check_has_no_integration_id():
+    rules = pipeline_setup.ruleset_rules(ruleset(["a"]), ["a", "bench"], any_source=["bench"])
+    checks = next(r for r in rules if r["type"] == "required_status_checks")["parameters"]
+    assert checks["required_status_checks"] == [
+        {"context": "a", "integration_id": 15368}, {"context": "bench"}]
 
 
 def test_plan_keeps_a_ruleset_with_the_same_checks_in_any_order():
