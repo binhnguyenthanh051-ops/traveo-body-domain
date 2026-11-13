@@ -87,27 +87,59 @@ One agent can appear in more than one state. The diagram in section 6 shows stat
 
 ---
 
-## 3. Triggers
+## 3. The Dispatcher: one router for every trigger
 
-| Step | Trigger |
-|---|---|
-| Challenger, design | I draft or change the ADR or design note for a milestone (the design session) |
-| Planner, breakdown | I approve the ADR (gate 1a) |
-| Planner, bug report | I describe a bug to Claude Code, or a test or agent finds one |
-| Challenger, breakdown check | the Planner finishes a breakdown: each CR traces to the ADR and has testable acceptance criteria |
-| Builder, build | nightly schedule at 01:00 SGT; takes the oldest `ready` CR; one CR per run |
-| Host tests | every push to a pull request (existing CI) |
-| Inspector | host tests are green on the pull request, so it never reviews failing code |
-| Builder, rework | the label changes to `rework` (Inspector findings or a failed test) |
-| On-target tests | label `needs-bench`; I plug the board and start the local bench run |
-| Merge gate | label `awaiting-merge`; I get a notification |
-| Idle | no `ready` CR: the Builder does nothing and waits |
+One workflow, the **Dispatcher** (`.github/workflows/dispatcher.yml`), owns every trigger:
+the nightly schedule (01:00 SGT), the manual button, label changes, CI results, bench results,
+merges and comments. No agent has a trigger of its own. The Dispatcher is deterministic, not
+an agent (`host_tools/dispatcher.py`): it reads labels, events and who acted, never issue or
+comment text. On each event it checks the pause switch, the author rule and the rework round,
+maps the CR's state to the next step (section 6), starts that agent as a job, and writes one
+status line to the "Pipeline status" issue, also when it does nothing. It changes labels and
+starts jobs; it never pushes code.
 
-- On-target tests are not limited to Saturday. The pipeline "books the station" and I plug in
-  on a weeknight. No manual debugging on weeknights.
-- How each agent is started (GitHub Action, cloud scheduled task, or local Claude Code) is for
-  Claude Code to propose in the first build CR. Cloud is preferred. Only the bench run must be local.
+**Routing table**
 
+| # | Event | Condition | Labels | Starts |
+|---|---|---|---|---|
+| 1 | nightly tick or manual button | the oldest open `ready` issue, written by me, with `ready` added by me | `ready` → `building` | Builder (build) |
+| 2 | same | no such issue | none | nothing ("no ready CR") |
+| 3 | host CI finished on `cr/<n>`, success | state `building` or `rework` | → `review` | Inspector |
+| 4 | same, failure | state `building` or `rework` | → `rework`, round +1 | Builder (rework) |
+| 5 | Inspector result: approve | `level:host` | `review` → `awaiting-merge` | nothing; I am notified |
+| 6 | same | `level:on-target` or `level:both` | `review` → `needs-bench` | nothing; the bench is booked |
+| 7 | Inspector result: changes | none | `review` → `rework`, round +1 | Builder (rework) |
+| 8 | bench status posted, pass | state `needs-bench` | → `awaiting-merge` | nothing |
+| 9 | same, fail | state `needs-bench` | → `rework`, round +1 | Builder (rework) |
+| 10 | Builder result: blocked, protected path, or failed | none | → `waiting-for-me` | nothing |
+| 11 | I add `rework` to a `waiting-for-me` CR | my answer is on the CR | → `rework`, round +1 | Builder, one more round |
+| 12 | I add `ready` or `draft` | unblock, or the CR was wrong | as I set them | nothing; row 1 picks it up |
+| 13 | the PR from `cr/<n>` is merged | none | → `done`, round cleared | nothing |
+
+**Negative rows.** Each writes a status line and starts nothing:
+
+- **Paused:** the repository variable `PIPELINE_PAUSED=true`. Only an admin can set it, so no
+  agent can unpause the pipeline.
+- **Fork:** a CI result or merge from a pull request whose head is not this repository.
+- **Someone else's label:** a label added by anyone but me (`ready`, `rework`, `draft`,
+  `protected-change-approved`). The Dispatcher's own label changes start no new run.
+- **Comments:** never route, whoever writes them. Bot comments do not even start a run, so the
+  status line cannot feed back into the Dispatcher.
+- **Rework cap:** rows 4, 7 and 9 at round 2 go to `waiting-for-me` instead. After my answer
+  (row 11) the CR gets round 3; if that fails too, it goes back to `draft`.
+
+**Notes**
+
+- The test level and the rework round are labels (`level:*`, `round:*`), because the
+  Dispatcher reads no text. I set the level together with `ready` at gate 1b; only the
+  Dispatcher sets the round.
+- A missing form field is the Builder's to report: it checks the issue first and reports
+  `blocked`, which row 10 routes to me.
+- The Planner, the Challenger and the Inspector join the table in build steps 5 to 7. Until
+  then, row 3 sets `review` and the status line says the Inspector is not built yet.
+- On-target tests are not limited to Saturday. The pipeline books the station and I plug in on
+  a weeknight. No manual debugging on weeknights.
+- How the agents run is in ADR-0026: GitHub Actions jobs, acting as GitHub Apps.
 ---
 
 ## 4. Handoffs
@@ -140,14 +172,17 @@ One agent can appear in more than one state. The diagram in section 6 shows stat
 | Label / column | Meaning | Who moves it on |
 |---|---|---|
 | `draft` | written by the Planner, waiting for my approval | me (gate 1b) |
-| `ready` | approved, waiting for the Builder | Builder |
-| `building` | Builder is implementing; host tests run on each push | CI |
-| `review` | Inspector is reviewing | Inspector |
-| `rework` | Builder is fixing findings or a failed test | CI |
-| `needs-bench` | waiting for me to plug the board | bench script |
+| `ready` | approved, waiting for the Builder | Dispatcher, on the nightly tick (row 1) |
+| `building` | Builder is implementing; host tests run on each push | Dispatcher, on the CI result (rows 3-4) |
+| `review` | Inspector is reviewing | Dispatcher, on the Inspector's result (rows 5-7) |
+| `rework` | Builder is fixing findings or a failed test | Dispatcher, on the CI result (rows 3-4) |
+| `needs-bench` | waiting for me to plug the board | Dispatcher, on the bench status (rows 8-9) |
 | `awaiting-merge` | all evidence is there, waiting for me | me (gate 2) |
 | `waiting-for-me` | blocked, disputed, cap reached or protected change | me |
 | `done` | merged | - |
+
+Plus two label families the Dispatcher reads: `level:host`, `level:on-target`, `level:both`
+(the test level, set by me with `ready`) and `round:1` to `round:3` (set by the Dispatcher only).
 
 **Other carriers**
 
@@ -261,7 +296,8 @@ stateDiagram-v2
 - "Never merges" is enforced by branch protection on `main` (only I can merge, checks are
   required), not by an instruction to the agent.
 - No agent creates a tag or a release.
-- Pause switch: one label or file that makes every agent stop at its next start.
+- Pause switch: the repository variable `PIPELINE_PAUSED=true`. The Dispatcher routes nothing
+  while it is set (section 3).
 
 **Trust boundary (the repo is public)**
 
@@ -450,6 +486,7 @@ Each boundary is enforced by the platform, not by the prompt.
 |---|---|---|---|
 | Challenger, Planner, Inspector | a fresh cloud environment, destroyed after the run | a fresh checkout (read), comments on issues and pull requests, allowlisted network hosts | push, `main`, workflows, tags, keys, my PC, the board |
 | Builder | a fresh cloud environment, destroyed after the run | a fresh checkout, push to its own branch, open a pull request, allowlisted network hosts | `main`, workflows, tags, keys, my PC, the board |
+| Dispatcher | a fresh GitHub Actions runner, destroyed after the run | events, labels and who acted; change labels; start agent jobs; one status comment per run | issue and comment text, push, `main`, workflows, tags, keys, my PC, the board |
 | Bench run | my PC, started by me | the repo folder, the flashing tool, the board, local test keys | issue text, comments and the web: its only inputs are a commit and a CR number |
 
 - Separation rule: no agent has all three of untrusted input, access to keys or hardware,
@@ -577,4 +614,6 @@ Rejected for now, to verify if the proposal is not enough:
   trust boundary, agent location. Approved by me.
 - 2026-11-12, later: section 13 (security) added, with the security check in the release DoD list.
 - 2026-11-12: the nine `[TODO]` entries filled in by Claude Code (sections 7, 11 and 13).
+- 2026-11-13: the Dispatcher (section 3): one deterministic router owns every trigger; test
+  level and rework round become labels; the pause switch is a repository variable. Approved by me.
 - M5 (SecOC) was closed before this pipeline starts.

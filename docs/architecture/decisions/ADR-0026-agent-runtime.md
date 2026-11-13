@@ -20,8 +20,9 @@ as the owner's account.
 ### D1. Runtime: GitHub Actions with `claude-code-action`, pinned to a commit
 
 `anthropics/claude-code-action@4d75e5f` (v1.0.275), authenticated with the owner's Claude
-subscription (`CLAUDE_CODE_OAUTH_TOKEN`). Triggers are workflow events: a nightly `schedule`
-for the Builder (`builder.yml`), and later events for the other agents.
+subscription (`CLAUDE_CODE_OAUTH_TOKEN`). No agent has a trigger of its own: the Dispatcher
+(`dispatcher.yml`, design note section 3, added 2026-11-13) owns every trigger and calls each
+agent's workflow as a job.
 
 ### D2. Identity: two GitHub Apps owned by the owner
 
@@ -36,10 +37,10 @@ down again per job, and expire within an hour.
 
 ### D3. The agent's job holds no GitHub write token
 
-`builder.yml` has four jobs: `pick` (reads the queue), `build` (the agent; only a read-only
-`GITHUB_TOKEN` and the OAuth token), `publish` (a scripted push and pull request, with the
-Builder App token) and `report` (one status line per run). The agent's commits reach
-`publish` as a git bundle artifact.
+`builder.yml` has two jobs: `build` (the agent; only a read-only `GITHUB_TOKEN` and the OAuth
+token) and `publish` (a scripted push, and the pull request on a first build, with the Builder
+App token). The agent's commits reach `publish` as a git bundle artifact. Picking the CR,
+moving labels and the status line belong to the Dispatcher.
 
 ### D4. Rules GitHub enforces
 
