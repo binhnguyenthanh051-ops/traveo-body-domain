@@ -5,8 +5,9 @@ name: dispatcher
 # labels, events and who acted (host_tools/dispatcher.py), never issue or comment text.
 #
 #   route   decide the next step, change labels       (GITHUB_TOKEN: issues write, nothing else)
-#   builder the Builder, when the route says so       (builder.yml; its own minimal permissions)
-#   settle  route the Builder's result, change labels
+#   builder   the Builder, when the route says build or rework  (builder.yml)
+#   inspector the Inspector, when the route says inspect          (inspector.yml)
+#   settle    route the agent's result, change labels
 #   status  one status line per run, also when nothing was done, on the "Pipeline status" issue
 #
 # The pause switch is the repository variable PIPELINE_PAUSED=true, which only an admin can set.
@@ -81,9 +82,26 @@ jobs:
       CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
       BUILDER_APP_PRIVATE_KEY: ${{ secrets.BUILDER_APP_PRIVATE_KEY }}
 
+  inspector:
+    needs: route
+    if: needs.route.outputs.start == 'inspect'
+    concurrency:
+      group: inspector-${{ needs.route.outputs.issue }}
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    uses: ./.github/workflows/inspector.yml
+    with:
+      issue: ${{ fromJSON(needs.route.outputs.issue) }}
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      REVIEWER_APP_PRIVATE_KEY: ${{ secrets.REVIEWER_APP_PRIVATE_KEY }}
+
   settle:
-    needs: [route, builder]
-    if: always() && needs.builder.result != 'skipped'
+    needs: [route, builder, inspector]
+    if: always() && (needs.builder.result != 'skipped' || needs.inspector.result != 'skipped')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -101,21 +119,22 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
         with:
           python-version: '3.11'
-      - name: Route the Builder's result
+      - name: Route the agent's result
         id: settle
         env:
           GH_TOKEN: ${{ github.token }}
           OWNER: ${{ github.repository_owner }}
           ISSUE: ${{ needs.route.outputs.issue }}
-          RESULT: ${{ needs.builder.outputs.result || 'failed' }}
+          AGENT: ${{ needs.builder.result != 'skipped' && 'builder' || 'inspector' }}
+          RESULT: ${{ needs.builder.result != 'skipped' && (needs.builder.outputs.result || 'failed') || (needs.inspector.outputs.verdict || 'failed') }}
           PAUSED: ${{ vars.PIPELINE_PAUSED == 'true' && '--paused' || '' }}
         run: |
-          python host_tools/dispatcher.py settle --issue "$ISSUE" --builder "$RESULT" \
+          python host_tools/dispatcher.py settle --issue "$ISSUE" "--$AGENT" "$RESULT" \
             --owner "$OWNER" $PAUSED > "$RUNNER_TEMP/decision.json"
           python host_tools/dispatch_apply.py "$RUNNER_TEMP/decision.json" >> "$GITHUB_OUTPUT"
 
   status:
-    needs: [route, builder, settle]
+    needs: [route, builder, inspector, settle]
     if: always() && needs.route.result != 'skipped'
     runs-on: ubuntu-latest
     permissions:
@@ -134,7 +153,6 @@ jobs:
           when=$(date -u +%Y-%m-%dT%H:%MZ)
           run="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
           line="$ROUTE"
-          if [ "$START" = "inspect" ]; then line="$line (Inspector arrives in build step 5)"; fi
           if [ -n "$SETTLE" ]; then line="$line; then $SETTLE"; fi
           echo "$when dispatcher [$GITHUB_EVENT_NAME]: $line ([run]($run))" | tee -a "$GITHUB_STEP_SUMMARY" > "$RUNNER_TEMP/line.md"
           status_issue=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search 'in:title "Pipeline status"' --json number,title --jq '[.[] | select(.title == "Pipeline status")][0].number // empty')

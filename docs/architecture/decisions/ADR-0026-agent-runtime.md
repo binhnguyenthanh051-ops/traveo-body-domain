@@ -29,7 +29,7 @@ agent's workflow as a job.
 | App | Permissions | Used by |
 |---|---|---|
 | Builder | Contents RW, Issues RW, Pull requests RW, Metadata R. **No Workflows** | the `publish` job of `builder.yml` |
-| Reviewer | Issues RW, Pull requests RW, Contents R, Metadata R | Inspector, Planner, Challenger (steps 5–7) |
+| Reviewer | Issues RW, Pull requests RW, Contents R, Metadata R | Inspector, Planner, Challenger (steps 5–7). Posts **comments only, never an approval**: an app approval would satisfy `Owner_approval`, and the Builder app could then merge |
 
 Without the Workflows permission, GitHub refuses any app push that changes
 `.github/workflows/`. Tokens are minted per job by `actions/create-github-app-token`, scoped
