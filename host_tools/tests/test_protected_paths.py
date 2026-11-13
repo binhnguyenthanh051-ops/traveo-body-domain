@@ -44,6 +44,7 @@ PROTECTED = [
     "host_tools/cr_queue.py",
     "host_tools/dispatcher.py",
     "host_tools/dispatch_apply.py",
+    "host_tools/test_first.py",
 ]
 
 NOT_PROTECTED = [

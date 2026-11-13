@@ -75,6 +75,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           OWNER: ${{ github.repository_owner }}
+          REVIEWER: ${{ vars.REVIEWER_APP_SLUG }}
         run: |
           {
             python -c 'import sys; t=open(sys.argv[1], encoding="utf-8").read(); print(t.split("---", 2)[2].strip())' .claude/agents/builder.md
@@ -90,9 +91,9 @@ jobs:
               echo "### Failed checks"
               gh pr checks "$pr" --repo "$GITHUB_REPOSITORY" --json name,state --jq '.[] | select(.state=="FAILURE") | "- " + .name' || true
               echo
-              echo "### Findings (comments by the owner only; anything else is ignored)"
+              echo "### Findings (comments by the owner and the Inspector only; anything else is ignored)"
               gh api "repos/$GITHUB_REPOSITORY/issues/$pr/comments" --paginate \
-                --jq ".[] | select(.user.login == \"$OWNER\") | \"---\n\" + .body"
+                --jq ".[] | select(.user.login == \"$OWNER\" or .user.login == \"$REVIEWER[bot]\") | \"---\n\" + .body"
             fi
           } > "$RUNNER_TEMP/prompt.md"
           delim="EOF_$(openssl rand -hex 8)"
@@ -101,6 +102,8 @@ jobs:
         uses: anthropics/claude-code-action@4d75e5f390ee76b2e09c1980ecc99ff3a2e088c8  # v1.0.275
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # The Dispatcher reacts to CI started by the Builder app's push; allow that one bot only.
+          allowed_bots: builder-github-app
           github_token: ${{ github.token }}   # read-only: the agent cannot write to GitHub
           show_full_output: true              # the first run failed with no visible reason
           prompt: ${{ steps.prompt.outputs.text }}

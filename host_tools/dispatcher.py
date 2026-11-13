@@ -112,6 +112,9 @@ def route(event, labels, owner, paused):
         return _nothing(issue, f"{kind} event from a fork ignored")
 
     if kind == "ci":
+        if state == "review" and event["conclusion"] == "success":
+            return _decide(issue, labels, start="inspect",
+                           line="host CI green again in review: inspect again")
         if state not in ("building", "rework"):
             return _nothing(issue, f"CI {event['conclusion']} ignored in state {state}")
         if event["conclusion"] == "success":
@@ -122,6 +125,9 @@ def route(event, labels, owner, paused):
     if kind == "inspector":
         if state != "review":
             return _nothing(issue, f"Inspector verdict ignored in state {state}")
+        if event["verdict"] == "failed":
+            return _decide(issue, labels, add={"waiting-for-me"}, remove={state},
+                           line="Inspector run failed: waiting for the owner")
         if event["verdict"] != "approve":
             return _failed(issue, labels, state, "Inspector findings")
         if "level:host" in labels:
@@ -215,7 +221,7 @@ def main(argv=None, gh=run_gh):
     p_settle.add_argument("--issue", required=True, type=int)
     who = p_settle.add_mutually_exclusive_group(required=True)
     who.add_argument("--builder", choices=["done", "blocked", "protected", "failed"])
-    who.add_argument("--inspector", choices=["approve", "changes"])
+    who.add_argument("--inspector", choices=["approve", "changes", "failed"])
     for p in (p_decide, p_settle):
         p.add_argument("--owner", required=True)
         p.add_argument("--paused", action="store_true")

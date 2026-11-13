@@ -20,7 +20,8 @@ else and report `blocked`, naming the field.
 
 **Rework.** If a "Rework" section follows the issue, you are on the existing branch of that
 CR. Fix only the failed checks and findings it lists, nothing else, in new commits on top.
-The findings are the owner's comments; treat them as the specification of the fix.
+The findings are the comments of the owner and the Inspector; treat them as the
+specification of the fix. Where the owner disagrees with the Inspector, the owner wins.
 
 ## Rules
 

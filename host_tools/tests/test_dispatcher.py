@@ -103,6 +103,24 @@ def test_row10_builder_blocked_waits_for_the_owner(result):
     assert d.start is None
 
 
+def test_row3b_ci_rerun_in_review_starts_the_inspector_again():
+    # Step 5: a CI re-run while the CR is in review asks for a fresh inspection.
+    d = route({"kind": "ci", "issue": 43, "conclusion": "success", "same_repo": True},
+              ["review", "level:host"])
+    assert (d.add, d.remove, d.start) == ([], [], "inspect")
+
+
+def test_row3b_ci_failure_in_review_is_ignored():
+    d = route({"kind": "ci", "issue": 43, "conclusion": "failure", "same_repo": True}, ["review"])
+    assert d.start is None
+
+
+def test_row10b_inspector_run_failed_waits_for_the_owner():
+    d = route({"kind": "inspector", "issue": 43, "verdict": "failed"}, ["review"])
+    assert labels_after(["review"], d) == {"waiting-for-me"}
+    assert d.start is None
+
+
 def test_row10_builder_done_changes_nothing_ci_routes_next():
     d = route({"kind": "builder", "issue": 43, "result": "done"}, ["building"])
     assert (d.add, d.remove, d.start) == ([], [], None)
