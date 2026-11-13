@@ -21,7 +21,12 @@
     { "name": "level:both",      "kind": "control", "color": "bfdadc", "description": "Test level host and on-target: approval books the bench" },
     { "name": "round:1", "kind": "control", "color": "fef2c0", "description": "Rework round 1 of 2 (set by the Dispatcher only)" },
     { "name": "round:2", "kind": "control", "color": "fef2c0", "description": "Rework round 2 of 2 (set by the Dispatcher only)" },
-    { "name": "round:3", "kind": "control", "color": "fef2c0", "description": "The referee round after the owner's answer; a failure sends the CR to draft" }
+    { "name": "round:3", "kind": "control", "color": "fef2c0", "description": "The referee round after the owner's answer; a failure sends the CR to draft" },
+
+    { "name": "plan:breakdown", "kind": "control", "color": "d4c5f9", "description": "Owner only (gate 1a): the Planner breaks this issue's approved ADR down into draft CRs" },
+    { "name": "plan:bug",       "kind": "control", "color": "d4c5f9", "description": "Owner only: the Planner writes a draft bug report from this issue's description" },
+    { "name": "planning",       "kind": "control", "color": "c2e0c6", "description": "The Planner is writing (set by the Dispatcher only)" },
+    { "name": "planned",        "kind": "control", "color": "0e8a16", "description": "The Planner's drafts are listed on this issue: the owner reviews them (gate 1b)" }
   ],
   "ruleset": {
     "_comment": "The existing ruleset on main (pull request, no force push, linear history). This tool only sets its required checks: tests, traceability and protected paths (design note section 5, build step 2).",
