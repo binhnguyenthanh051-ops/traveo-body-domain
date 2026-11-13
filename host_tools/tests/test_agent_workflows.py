@@ -32,6 +32,7 @@ def test_the_agent_step_allows_only_the_builder_app(name):
 def job_needs(job):
     """The `needs:` of one top-level job in dispatcher.yml, as a list."""
     text = (WORKFLOWS / "dispatcher.yml").read_text(encoding="utf-8").replace("\r\n", "\n")
+    text = text[text.index("\njobs:\n"):]      # `status:` is also a trigger name under `on:`
     block = re.search(r"^  " + re.escape(job) + r":\n(.*?)(?=^  \S|\Z)", text, re.M | re.S)
     assert block, f"no job {job}"
     needs = re.search(r"^    needs: (.+)$", block.group(1), re.M).group(1).strip()
