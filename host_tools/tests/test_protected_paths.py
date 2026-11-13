@@ -41,6 +41,7 @@ PROTECTED = [
     ".github/pipeline/protected-paths.txt",                         # this check itself
     "host_tools/protected_paths.py",
     "host_tools/pipeline_setup.py",
+    "host_tools/cr_queue.py",
 ]
 
 NOT_PROTECTED = [

@@ -21,6 +21,42 @@
     "name": "Protect_main_branch",
     "required_checks": ["host-build-test", "static-analysis", "python-tools", "traceability", "protected-paths"]
   },
+  "managed_rulesets": [
+    {
+      "_comment": "ADR-0026: every change to main needs one approval. Only the owner (repository admin) may skip it, and only through a pull request merge; the checks ruleset above still applies to them.",
+      "name": "Owner_approval",
+      "target": "branch",
+      "enforcement": "active",
+      "conditions": { "ref_name": { "include": ["~DEFAULT_BRANCH"], "exclude": [] } },
+      "rules": [
+        { "type": "pull_request", "parameters": {
+            "required_approving_review_count": 1,
+            "dismiss_stale_reviews_on_push": true,
+            "require_code_owner_review": false,
+            "require_last_push_approval": true,
+            "required_review_thread_resolution": false } }
+      ],
+      "bypass_actors": [
+        { "actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "pull_request" }
+      ]
+    },
+    {
+      "_comment": "ADR-0026: no agent creates, moves or deletes a tag. The owner may, and so may GitHub Actions, because release.yml (started by the owner) creates the release tag. Every agent job keeps GITHUB_TOKEN at contents: read.",
+      "name": "Tags_owner_only",
+      "target": "tag",
+      "enforcement": "active",
+      "conditions": { "ref_name": { "include": ["~ALL"], "exclude": [] } },
+      "rules": [
+        { "type": "creation" },
+        { "type": "update" },
+        { "type": "deletion" }
+      ],
+      "bypass_actors": [
+        { "actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "always" },
+        { "actor_id": 15368, "actor_type": "Integration", "bypass_mode": "always" }
+      ]
+    }
+  ],
   "milestones": [
     { "title": "Pipeline", "due_on": "2026-11-15", "description": "Build steps of the agent pipeline (docs/design/agent-pipeline.md, section 9). A bucket for CRs, not a tagged release." },
     { "title": "M6",       "due_on": null,         "description": "Resilience + capstone (docs/roadmap.md). Scope is set by its ADR at gate 1a." }

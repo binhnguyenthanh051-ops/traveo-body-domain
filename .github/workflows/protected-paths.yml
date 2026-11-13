@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: read
+  issues: read          # the PR's timeline: who added the label
   pull-requests: read
 
 jobs:
@@ -39,14 +40,22 @@ jobs:
 
       - name: Check the protected paths
         env:
-          APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'protected-change-approved') }}
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          OWNER: ${{ github.repository_owner }}
         run: |
-          # Bootstrap only: the PR that adds this check has no checker on its base yet.
-          if [ ! -f host_tools/protected_paths.py ]; then
-            echo "::warning::No checker on the base branch; using the PR's own copy (first run only)"
-            git fetch --quiet --depth=1 origin "${{ github.event.pull_request.head.sha }}"
-            git checkout --quiet FETCH_HEAD -- host_tools/protected_paths.py .github/pipeline/protected-paths.txt
-          fi
+          # Bootstrap only: a PR that adds a checker file has no copy of it on its base yet.
+          for f in host_tools/protected_paths.py host_tools/cr_queue.py; do
+            if [ ! -f "$f" ]; then
+              echo "::warning::No $f on the base branch; using the PR's own copy (first run only)"
+              git fetch --quiet --depth=1 origin "${{ github.event.pull_request.head.sha }}"
+              git checkout --quiet FETCH_HEAD -- "$f" .github/pipeline/protected-paths.txt
+            fi
+          done
+          # ADR-0026: an app token can add labels, so the label counts only when the
+          # owner added it, per the PR's timeline.
           flag=""
-          if [ "$APPROVED" = "true" ]; then flag="--approved"; fi
+          if python host_tools/cr_queue.py label-by-owner --owner "$OWNER" --issue "$PR" --label protected-change-approved; then
+            flag="--approved"
+          fi
           python host_tools/protected_paths.py --changed "$RUNNER_TEMP/changed.txt" $flag

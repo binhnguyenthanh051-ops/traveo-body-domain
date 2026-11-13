@@ -8,3 +8,5 @@ protocol logic and assert responses (wired into CI in **EP.20**).
 - `pipeline_setup.py` — creates or updates the agent pipeline's GitHub labels and milestones
   from `.github/pipeline/setup.json`. Dry run by default, `--apply` to change GitHub; it never
   deletes. See `docs/design/agent-pipeline.md` section 4.
+- `cr_queue.py` — the Builder's queue (`pick`: the oldest agent-ready issue) and
+  `label-by-owner` (a label counts only when the owner added it). ADR-0026.
