@@ -21,6 +21,7 @@ import subprocess
 import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import cr_numbers  # noqa: E402
 import cr_queue  # noqa: E402
 
 STATES = ("draft", "ready", "building", "review", "rework", "needs-bench",
@@ -214,7 +215,8 @@ def facts(event_name, payload):
         if not pr.get("merged") or issue is None:
             return None
         return {"kind": "merged", "issue": issue,
-                "same_repo": (pr["head"].get("repo") or {}).get("full_name") == repo}
+                "same_repo": (pr["head"].get("repo") or {}).get("full_name") == repo,
+                "merged_at": pr.get("merged_at")}
     if event_name == "status":
         if payload.get("context") != "bench" or payload.get("state") not in ("success", "failure", "error"):
             return None
@@ -229,6 +231,16 @@ def facts(event_name, payload):
 def issue_labels(gh, number):
     return {l["name"] for l in json.loads(
         gh(["api", f"repos/{{owner}}/{{repo}}/issues/{number}/labels"]))}
+
+
+def merge_numbers(gh, event, owner):
+    """Row 13 logs the three numbers per CR (section 8). A timeline that cannot be read
+    costs the numbers, never the routing: cr_numbers.py recomputes them later."""
+    try:
+        timeline = cr_queue.timeline(gh, event["issue"])
+        return cr_numbers.line(cr_numbers.numbers(timeline, owner, event.get("merged_at")))
+    except (subprocess.CalledProcessError, ValueError, KeyError):
+        return "numbers: not available (run cr_numbers.py)"
 
 
 def run_gh(args, stdin=None):
@@ -266,6 +278,8 @@ def main(argv=None, gh=run_gh):
                 event["issue"], _ = cr_queue.pick(gh, args.owner, planner=args.planner_login)
             labels = issue_labels(gh, event["issue"]) if event.get("issue") else set()
             decision = route(event, labels, args.owner, args.paused)
+            if event["kind"] == "merged" and "done" in decision.add:
+                decision.line += "; " + merge_numbers(gh, event, args.owner)
     else:
         if args.builder:
             event = {"kind": "builder", "issue": args.issue, "result": args.builder}

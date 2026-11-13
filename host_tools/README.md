@@ -10,3 +10,6 @@ protocol logic and assert responses (wired into CI in **EP.20**).
   deletes. See `docs/design/agent-pipeline.md` section 4.
 - `cr_queue.py` — the Builder's queue (`pick`: the oldest agent-ready issue) and
   `label-by-owner` (a label counts only when the owner added it). ADR-0026.
+- `cr_numbers.py` — the three numbers per CR (rework rounds, ready to merge, referee calls)
+  from the label timeline of every `done` issue, as a table or `--json`. The Dispatcher logs
+  the same numbers at the merge. See `docs/design/agent-pipeline.md` section 8.
