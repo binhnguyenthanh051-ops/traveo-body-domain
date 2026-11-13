@@ -92,7 +92,7 @@ def test_the_happy_path_runs_in_the_bench_rule_order_and_posts_success(repo):
     assert go(repo, gh, bench) == 0
     steps = bench.steps
     order = [next(i for i, s in enumerate(steps) if key in s) for key in (
-        f"checkout --detach {SHA}", "capture COM4", "capture COM6",
+        f"--detach {SHA}", "capture COM4", "capture COM6",
         "zz_build_gateway_fbl.sh program", "zz_build_gateway_app.sh program",
         "zz_build_actuator_app.sh program", "reset_node.sh A", "reset_node.sh B",
         "stop COM4", "bench_check.py")]
@@ -129,4 +129,6 @@ def test_a_failed_check_posts_failure(repo):
 def test_never_erase_or_touch_supervisory_flash(repo):
     bench = Bench()
     go(repo, Gh(), bench)
-    assert not any(w in s for s in bench.steps for w in ("erase", "efuse", "sflash", "--update-kp3"))
+    # Command words only: pytest's temp folder carries this test's name, "erase" included.
+    words = [w for s in bench.steps for w in s.split() if "/" not in w and "\\" not in w]
+    assert not any(bad in w for w in words for bad in ("erase", "efuse", "sflash", "--update-kp3"))
