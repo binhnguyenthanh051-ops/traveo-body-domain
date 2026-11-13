@@ -6,6 +6,7 @@ a label or comment by someone else, and the rework cap.
 
 `route()` is pure. `facts()` turns a GitHub event payload into the event route() takes;
 the tests feed it payload fragments, never a live GitHub."""
+import json
 import pathlib
 import sys
 
@@ -252,9 +253,10 @@ def test_facts_comment_is_a_comment_event_and_carries_no_text():
 
 def test_facts_merged_pr_from_a_cr_branch():
     payload = {"repository": REPO, "pull_request": {
-        "merged": True, "head": {"ref": "cr/43", "repo": REPO}}}
+        "merged": True, "merged_at": "2026-11-13T13:08:37Z",
+        "head": {"ref": "cr/43", "repo": REPO}}}
     assert dispatcher.facts("pull_request", payload) == {
-        "kind": "merged", "issue": 43, "same_repo": True}
+        "kind": "merged", "issue": 43, "same_repo": True, "merged_at": "2026-11-13T13:08:37Z"}
 
 
 def test_facts_closed_unmerged_pr_is_no_event():
@@ -373,6 +375,63 @@ def test_facts_a_label_on_a_pull_request_is_a_label_event():
                "pull_request": {"merged": False, "head": {"ref": "docs/adr", "repo": REPO}}}
     assert dispatcher.facts("pull_request", payload) == {
         "kind": "label", "issue": 60, "label": "challenge", "actor": "x"}
+
+
+# --- build step 10: the three numbers per CR, logged at the merge (row 13) ---------------
+
+MERGED = {"action": "closed", "repository": REPO, "pull_request": {
+    "merged": True, "merged_at": "2026-11-13T13:08:37Z", "head": {"ref": "cr/43", "repo": REPO}}}
+TIMELINE_43 = [
+    {"event": "labeled", "created_at": "2026-11-13T11:08:20Z", "actor": {"login": OWNER},
+     "label": {"name": "ready"}},
+    {"event": "labeled", "created_at": "2026-11-13T12:00:16Z", "actor": {"login": "bot"},
+     "label": {"name": "waiting-for-me"}},
+    {"event": "labeled", "created_at": "2026-11-13T12:10:00Z", "actor": {"login": "bot"},
+     "label": {"name": "round:1"}},
+]
+
+
+class TimelineGh:
+    def __init__(self, fail=False):
+        self.fail, self.calls = fail, []
+
+    def __call__(self, args, stdin=None):
+        self.calls.append(args)
+        if "/timeline" in args[-1]:
+            if self.fail:
+                raise dispatcher.subprocess.CalledProcessError(1, "gh")
+            return json.dumps(TIMELINE_43)
+        return '[{"name": "awaiting-merge"}, {"name": "round:1"}]'
+
+
+def decide_merged(tmp_path, gh, *extra):
+    path = tmp_path / "event.json"
+    path.write_text(json.dumps(MERGED), encoding="utf-8")
+    dispatcher.main(["decide", "--event-name", "pull_request", "--event-path", str(path),
+                     "--owner", OWNER, *extra], gh=gh)
+
+
+def test_main_merge_logs_the_three_numbers_on_the_status_line(tmp_path, capsys):
+    decide_merged(tmp_path, TimelineGh())
+    d = json.loads(capsys.readouterr().out)
+    assert d["add"] == ["done"]
+    assert d["line"].endswith(
+        "merged: done; numbers: rework rounds 1, ready to merge 2h00m, referee calls 1")
+
+
+def test_main_merge_still_routes_when_the_timeline_cannot_be_read(tmp_path, capsys):
+    decide_merged(tmp_path, TimelineGh(fail=True))
+    d = json.loads(capsys.readouterr().out)
+    assert d["add"] == ["done"]
+    assert "numbers: not available" in d["line"]
+
+
+def test_main_merge_while_paused_reads_no_timeline(tmp_path, capsys):
+    gh = TimelineGh()
+    decide_merged(tmp_path, gh, "--paused")
+    d = json.loads(capsys.readouterr().out)
+    assert d["add"] == [] and "numbers" not in d["line"]
+    assert not any("/timeline" in c[-1] for c in gh.calls)
 
 
 def test_main_settle_passes_the_planner_mode(tmp_path, capsys):
