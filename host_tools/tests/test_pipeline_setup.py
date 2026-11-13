@@ -346,6 +346,99 @@ def test_apply_is_idempotent(tmp_path, capsys):
     assert "nothing to do" in capsys.readouterr().out
 
 
+# --- managed rulesets: owner approval and tags (ADR-0026, build step 4) -----------------
+
+ADMIN = {"actor_id": 5, "actor_type": "RepositoryRole"}
+ACTIONS = {"actor_id": 15368, "actor_type": "Integration"}
+
+
+def managed(name):
+    return next(r for r in real_config()["managed_rulesets"] if r["name"] == name)
+
+
+def test_main_needs_one_approval_and_only_the_owner_bypasses_it_through_a_pr():
+    r = managed("Owner_approval")
+    assert r["target"] == "branch"
+    assert r["conditions"]["ref_name"]["include"] == ["~DEFAULT_BRANCH"]
+    (rule,) = r["rules"]
+    assert rule["type"] == "pull_request"
+    assert rule["parameters"]["required_approving_review_count"] == 1
+    assert r["bypass_actors"] == [dict(ADMIN, bypass_mode="pull_request")]
+
+
+def test_only_the_owner_and_the_release_workflow_touch_tags():
+    r = managed("Tags_owner_only")
+    assert r["target"] == "tag"
+    assert r["conditions"]["ref_name"]["include"] == ["~ALL"]
+    assert {rule["type"] for rule in r["rules"]} == {"creation", "update", "deletion"}
+    assert r["bypass_actors"] == [dict(ADMIN, bypass_mode="always"),
+                                  dict(ACTIONS, bypass_mode="always")]
+
+
+def test_both_managed_rulesets_are_active():
+    assert {r["enforcement"] for r in real_config()["managed_rulesets"]} == {"active"}
+
+
+def spec(count=1, bypass=None):
+    return {"name": "Owner_approval", "target": "branch", "enforcement": "active",
+            "conditions": {"ref_name": {"include": ["~DEFAULT_BRANCH"], "exclude": []}},
+            "rules": [{"type": "pull_request",
+                       "parameters": {"required_approving_review_count": count}}],
+            "bypass_actors": [dict(ADMIN, bypass_mode="pull_request")] if bypass is None else bypass}
+
+
+def on_github(s, rid=11):
+    """The spec as GitHub returns it: server-only fields added, rule parameters filled in."""
+    got = json.loads(json.dumps(s))
+    got.update({"id": rid, "source": "o/r", "source_type": "Repository",
+                "node_id": "RRS_x", "_links": {}, "current_user_can_bypass": "always",
+                "created_at": "t", "updated_at": "t"})
+    for rule in got["rules"]:
+        if rule["type"] == "pull_request":
+            rule["parameters"].setdefault("dismiss_stale_reviews_on_push", False)
+    return got
+
+
+def test_plan_creates_a_missing_managed_ruleset():
+    assert ops([pipeline_setup.plan_managed(spec(), None)]) == [("ruleset", "create", "Owner_approval")]
+
+
+def test_plan_keeps_a_managed_ruleset_that_matches_including_github_defaults():
+    action = pipeline_setup.plan_managed(spec(), on_github(spec()))
+    assert (action.op, action.number) == ("keep", 11)
+
+
+@pytest.mark.parametrize("changed", [spec(count=0), spec(bypass=[])])
+def test_plan_updates_a_managed_ruleset_that_differs(changed):
+    action = pipeline_setup.plan_managed(spec(), on_github(changed))
+    assert (action.op, action.number) == ("update", 11)
+
+
+def test_checks_ruleset_with_a_bypass_actor_is_an_error():
+    # Required checks apply to the owner too: the checks ruleset must have no bypass.
+    existing = ruleset(["a"])
+    existing["bypass_actors"] = [dict(ADMIN, bypass_mode="always")]
+    action = pipeline_setup.plan_ruleset({"name": "Protect_main_branch", "required_checks": ["a"]},
+                                         existing)
+    assert action.op == "has-bypass"
+
+
+def test_apply_creates_and_updates_managed_rulesets(tmp_path):
+    config = write_config(tmp_path)
+    data = json.loads(config.read_text(encoding="utf-8"))
+    tags = dict(spec(), name="Tags_owner_only")
+    data["managed_rulesets"] = [spec(), tags]
+    config.write_text(json.dumps(data), encoding="utf-8")
+    gh = FakeGh(rulesets=[ruleset(["a"]), on_github(dict(tags, enforcement="evaluate"), rid=12)])
+    assert pipeline_setup.main(["--config", str(config), "--apply"], gh=gh) == 0
+    posts = [c for c in gh.writes() if "POST" in c and c[-1].endswith("/rulesets")]
+    puts = [c for c in gh.writes() if "PUT" in c and c[-1].endswith("/rulesets/12")]
+    assert len(posts) == 1 and len(puts) == 1
+    body = json.loads(gh.stdin[gh.calls.index(posts[0])])
+    assert body["name"] == "Owner_approval" and body["bypass_actors"][0]["bypass_mode"] == "pull_request"
+    assert "id" not in body
+
+
 def test_an_invalid_config_stops_before_github_is_read(tmp_path, capsys):
     path = tmp_path / "setup.json"
     path.write_text(json.dumps({"labels": [label("draft", color="nope")], "milestones": []}),
