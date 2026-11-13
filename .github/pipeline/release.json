@@ -1,0 +1,5 @@
+{
+  "_comment": "Release check config (host_tools/release_check.py, build step 9). report_only: section 11 items of docs/design/agent-pipeline.md that are not in the DoD (docs/project/plan.md rule 11) yet; they are checked and shown, but block only once the owner adds them to the DoD and removes them here. known_releases: releases made before release.yml created them.",
+  "report_only": ["milestone_done", "bench_release", "release_notes_crs"],
+  "known_releases": ["m5b-secoc"]
+}

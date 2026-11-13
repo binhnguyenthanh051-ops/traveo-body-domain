@@ -49,6 +49,7 @@ PROTECTED = [
     "host_tools/bench_check.py",
     "host_tools/bench_run.py",
     "host_tools/bench_gate.py",
+    "host_tools/release_check.py",
 ]
 
 NOT_PROTECTED = [

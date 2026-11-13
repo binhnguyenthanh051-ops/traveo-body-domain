@@ -6,10 +6,11 @@ name: release
 # Nothing is tagged unless every check passes. The run waits for the owner's approval
 # (the 'release' environment) and pushes the tag with the release deploy key (ADR-0026 D4).
 #
-# Before you click (CI can't check these, DoD rule 11):
-#   - silicon evidence in docs/bench/, the post reviewed, the review record closed
-#   - release notes committed on main as docs/releases/<tag>.md
-# Firmware is not built here: ModusToolbox builds stay manual.
+# Before it tags, host_tools/release_check.py checks the Definition of Done (build step 9) and
+# prints a table to the run summary. Run it yourself first to see what is missing:
+#   python host_tools/release_check.py --tag <tag> --milestone <M> --sha <commit> --area <REQ-X>
+# Two items only you can judge are ticked in this form: the post reviewed, no architecture drift.
+# Firmware is not built here: ModusToolbox builds stay manual (the bench release run covers them).
 on:
   workflow_dispatch:
     inputs:
@@ -25,6 +26,15 @@ on:
         description: "Requirement area that must be gap-free, e.g. REQ-SECOC"
         required: true
         type: string
+      milestone:
+        description: "GitHub milestone of this release, e.g. M6"
+        required: true
+        type: string
+      manual_confirmed:
+        description: "I reviewed the post draft (DoD 8) and checked the architecture doc for drift"
+        required: true
+        type: boolean
+        default: false
 
 jobs:
   ci:
@@ -38,6 +48,8 @@ jobs:
     environment: release
     permissions:
       contents: write   # create the Release (the tag goes over SSH with the deploy key)
+      issues: read      # release_check: the milestone's issues
+      statuses: read    # release_check: the bench-release status on this commit
     env:
       TAG: ${{ inputs.tag }}
       TITLE: ${{ inputs.title }}
@@ -74,8 +86,14 @@ jobs:
             echo "::error::Area $GATE isn't in the traceability report summary"; exit 1
           fi
 
-      - name: Traceability gate (DoD check 6)
-        run: python host_tools/trace_report.py --check --gate "$GATE"
+      - name: Release check against the Definition of Done (build step 9)
+        env:
+          GH_REPO: ${{ github.repository }}
+          MILESTONE: ${{ inputs.milestone }}
+          MANUAL: ${{ inputs.manual_confirmed && '--manual-confirmed' || '' }}
+        run: |
+          python host_tools/release_check.py --tag "$TAG" --milestone "$MILESTONE" \
+            --sha "$GITHUB_SHA" --area "$GATE" $MANUAL | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Create the tag (pushed with the release deploy key; the tag rule allows only it and the owner)
         env:

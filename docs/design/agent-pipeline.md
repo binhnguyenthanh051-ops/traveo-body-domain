@@ -432,6 +432,16 @@ stateDiagram-v2
   - Release notes are generated from the merged CRs.
   - The security check passes: no open finding against the threat model (section 13).
 
+**The release check (build step 9).** `host_tools/release_check.py`, run by `release.yml` before
+it tags (and by me at any time), checks this list against GitHub and the repo and prints a
+table. DoD rule 11 items block: traceability, release notes, the review record with three
+verdicts, my two manual ticks in the release form (post reviewed, no architecture drift), and no
+GitHub release that `release.yml` did not make. The items above that are not in the DoD yet
+(every CR done, the on-target regression on the release commit via
+`bench_run.py --release <sha>`, release notes naming every CR) are checked but report-only, in
+`.github/pipeline/release.json`, until I add them to the DoD. The security check arrives with
+build step 12.
+
 **Test level at release**
 
 - Today the release checks run module-level tests, the same level as the CR loop.
