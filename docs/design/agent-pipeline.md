@@ -152,6 +152,12 @@ starts jobs; it never pushes code.
   acceptance criteria: the list I approve at gate 1b, by adding `ready` and a `level:*` label
   to each draft I accept. The picker also takes issues the Planner app wrote, but only when I
   added `ready`.
+- The bench (step 8) is a script, not an agent: `python host_tools/bench_run.py --cr <n>`, run
+  by me (or started for me by the `bench-test` skill) once the CR is `needs-bench` and the kits
+  are plugged in. Its verdict is `bench_check.py`'s exit code: always-checks per node, plus the
+  contract events in the PR's `bench/expect.json`. It posts the `bench` commit status that rows
+  8 and 9 route. `bench` is a required check on `main`; CI posts it as success for non-CRs and
+  host-only CRs, and as pending for on-target CRs until the bench run posts the real result.
 - The Challenger (step 7) gives advice only: one comment as a coach (questions, alternatives,
   risks, untestable requirements, one thing to learn), or, after a breakdown, a check that
   every draft traces to the ADR and has testable acceptance criteria. It never approves and

@@ -220,8 +220,9 @@ def _checks_rule(rules):
     return next((rule for rule in rules if rule["type"] == "required_status_checks"), {})
 
 
-def ruleset_rules(existing, checks):
-    """The ruleset's rules with only the list of required checks replaced."""
+def ruleset_rules(existing, checks, any_source=()):
+    """The ruleset's rules with only the list of required checks replaced. A check in
+    `any_source` is a commit status any token may post (no integration id)."""
     rules = copy.deepcopy(existing["rules"])
     rule = _checks_rule(rules)
     if not rule:
@@ -231,7 +232,8 @@ def ruleset_rules(existing, checks):
     old = rule["parameters"].get("required_status_checks", [])
     app = old[0].get("integration_id", GITHUB_ACTIONS_APP) if old else GITHUB_ACTIONS_APP
     rule["parameters"]["required_status_checks"] = [
-        {"context": check, "integration_id": app} for check in checks]
+        {"context": check} if check in any_source else {"context": check, "integration_id": app}
+        for check in checks]
     return rules
 
 
@@ -284,7 +286,8 @@ def apply(actions, config, gh, ruleset=None, env_branches=None, owner=None):
                 gh(["api", "--method", "PUT", "--input", "-", f"{RULESETS_API}/{action.number}"],
                    stdin=body)
         elif action.kind == "ruleset":
-            rules = ruleset_rules(ruleset, config["ruleset"]["required_checks"])
+            rules = ruleset_rules(ruleset, config["ruleset"]["required_checks"],
+                                  config["ruleset"].get("any_source_checks", []))
             # GitHub refuses "parameters": null, which its own GET returns for simple rules.
             rules = [{k: v for k, v in rule.items() if v is not None} for rule in rules]
             gh(["api", "--method", "PUT", "--input", "-", f"{RULESETS_API}/{action.number}"],

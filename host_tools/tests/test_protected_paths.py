@@ -46,6 +46,9 @@ PROTECTED = [
     "host_tools/dispatch_apply.py",
     "host_tools/test_first.py",
     "host_tools/planner_publish.py",
+    "host_tools/bench_check.py",
+    "host_tools/bench_run.py",
+    "host_tools/bench_gate.py",
 ]
 
 NOT_PROTECTED = [

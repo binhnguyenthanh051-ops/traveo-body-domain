@@ -32,7 +32,8 @@
   "ruleset": {
     "_comment": "The existing ruleset on main (pull request, no force push, linear history). This tool only sets its required checks: tests, traceability and protected paths (design note section 5, build step 2).",
     "name": "Protect_main_branch",
-    "required_checks": ["host-build-test", "static-analysis", "python-tools", "traceability", "protected-paths"]
+    "required_checks": ["host-build-test", "static-analysis", "python-tools", "traceability", "protected-paths", "bench"],
+    "any_source_checks": ["bench"]
   },
   "managed_rulesets": [
     {

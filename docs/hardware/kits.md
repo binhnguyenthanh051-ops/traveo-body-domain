@@ -44,6 +44,14 @@ LEDs are active LOW (guide).
 
 ## The bench
 
+**Agent pipeline bench runs (build step 8):** `python host_tools/bench_run.py --cr <n>` from
+PowerShell. It uses a second clone, `<repo>-bench` next to this one, reset to the PR's commit on
+every run (only `libs/` and `mtb_shared/` are kept), and copies `bench.env` and the dev key into
+it. Its GitHub token is the fine-grained `traveo-bench` token (Commit statuses + Pull requests
+write, this repo only), logged in to `gh` in its own folder `%USERPROFILE%\.config\gh-bench`
+with `--insecure-storage` (a plain file): the Windows keyring is shared by every `gh` folder for
+the same account, so a keyring login there replaces the owner's normal login (found 2026-11-14).
+
 | Fact | Value | Source |
 |---|---|---|
 | Log ports (KitProg3 UART bridge) | **COM4 = Node A**, **COM6 = Node B**. Windows can renumber them if the USB socket changes: check the banner (`fbl`/`app` vs `actuator`) | user, 2026-10-03 |
