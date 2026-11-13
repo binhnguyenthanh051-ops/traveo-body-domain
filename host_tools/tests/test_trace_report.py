@@ -339,3 +339,15 @@ def test_report_shows_observed_and_lists_unclaimed_contract_events(tmp_path):
     assert "| Observed by |" in report and "`LOG_EVT_DEMO_OK`" in report
     section = report.split("## Contract events not named by a requirement", 1)[1]
     assert "`LOG_EVT_DEMO_SPARE`" in section and "LOG_EVT_DEMO_OK" not in section
+
+
+# --- the real repo -------------------------------------------------------------------------
+
+def test_no_tag_in_the_repo_names_an_undefined_requirement_or_decision():
+    """Issue #37: a tag naming a REQ (or ADR, or ADR sub-decision) that does not exist
+    is a broken trace in every area, tagged or not, so it fails here and not only in
+    the report."""
+    root = pathlib.Path(__file__).resolve().parents[2]
+    dangling = [(g.id, g.where) for g in trace_report.build_model(root).gaps
+                if g.kind == "dangling"]
+    assert dangling == []
