@@ -3,7 +3,8 @@ name: release
 # The "Release" button: Actions -> release -> Run workflow (on main).
 # Re-runs the full host CI, gates traceability for the milestone's area, then
 # creates the annotated tag and the GitHub Release with the report attached.
-# Nothing is tagged unless every check passes.
+# Nothing is tagged unless every check passes. The run waits for the owner's approval
+# (the 'release' environment) and pushes the tag with the release deploy key (ADR-0026 D4).
 #
 # Before you click (CI can't check these, DoD rule 11):
 #   - silicon evidence in docs/bench/, the post reviewed, the review record closed
@@ -32,8 +33,11 @@ jobs:
   release:
     needs: ci
     runs-on: ubuntu-latest
+    # ADR-0026 D4: the 'release' environment needs the owner's approval for each run and
+    # holds the one deploy key the tag rule lets through. No agent run reaches it.
+    environment: release
     permissions:
-      contents: write   # push the tag, create the Release
+      contents: write   # create the Release (the tag goes over SSH with the deploy key)
     env:
       TAG: ${{ inputs.tag }}
       TITLE: ${{ inputs.title }}
@@ -73,12 +77,21 @@ jobs:
       - name: Traceability gate (DoD check 6)
         run: python host_tools/trace_report.py --check --gate "$GATE"
 
-      - name: Create the tag
+      - name: Create the tag (pushed with the release deploy key; the tag rule allows only it and the owner)
+        env:
+          DEPLOY_KEY: ${{ secrets.RELEASE_DEPLOY_KEY }}
         run: |
           git config user.name "${GITHUB_ACTOR}"
           git config user.email "${GITHUB_ACTOR_ID}+${GITHUB_ACTOR}@users.noreply.github.com"
           git tag -a "$TAG" -m "$TITLE"
-          git push origin "refs/tags/$TAG"
+          umask 077
+          key="$RUNNER_TEMP/release_key"
+          printf '%s\n' "$DEPLOY_KEY" > "$key"
+          # GitHub's published host keys, read over HTTPS, so the SSH host is checked.
+          gh api meta --jq '.ssh_keys[] | "github.com " + .' > "$RUNNER_TEMP/known_hosts"
+          GIT_SSH_COMMAND="ssh -i $key -o IdentitiesOnly=yes -o UserKnownHostsFile=$RUNNER_TEMP/known_hosts -o StrictHostKeyChecking=yes" \
+            git push "git@github.com:${GITHUB_REPOSITORY}.git" "refs/tags/$TAG"
+          rm -f "$key"
 
       - name: Create the GitHub Release
         run: |

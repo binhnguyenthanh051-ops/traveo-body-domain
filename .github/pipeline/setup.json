@@ -41,7 +41,7 @@
       ]
     },
     {
-      "_comment": "ADR-0026: no agent creates, moves or deletes a tag. The owner may, and so may GitHub Actions, because release.yml (started by the owner) creates the release tag. Every agent job keeps GITHUB_TOKEN at contents: read.",
+      "_comment": "ADR-0026: no agent creates, moves or deletes a tag. The owner may, and so may a deploy key: release.yml pushes the release tag with the one deploy key, which only the owner-approved 'release' environment holds. GitHub refuses the GitHub Actions app as a bypass actor on a personal-account repo.",
       "name": "Tags_owner_only",
       "target": "tag",
       "enforcement": "active",
@@ -53,9 +53,12 @@
       ],
       "bypass_actors": [
         { "actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "always" },
-        { "actor_id": 15368, "actor_type": "Integration", "bypass_mode": "always" }
+        { "actor_id": null, "actor_type": "DeployKey", "bypass_mode": "always" }
       ]
     }
+  ],
+  "environments": [
+    { "name": "release", "reviewers": ["{owner}"], "branches": ["main"] }
   ],
   "milestones": [
     { "title": "Pipeline", "due_on": "2026-11-15", "description": "Build steps of the agent pipeline (docs/design/agent-pipeline.md, section 9). A bucket for CRs, not a tagged release." },
