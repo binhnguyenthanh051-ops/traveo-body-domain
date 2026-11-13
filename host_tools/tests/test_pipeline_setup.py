@@ -486,6 +486,16 @@ def test_plan_updates_a_managed_ruleset_that_differs(changed):
     assert (action.op, action.number) == ("update", 11)
 
 
+def test_plan_keeps_the_real_tag_ruleset_as_github_returns_it():
+    # GitHub returns the DeployKey actor with actor_id null next to the admin's 5; comparing
+    # them crashed the second --apply run on 2026-11-13.
+    tags = managed("Tags_owner_only")
+    on = on_github(tags, rid=13)
+    on["bypass_actors"] = list(reversed(on["bypass_actors"]))   # GitHub's order differs
+    action = pipeline_setup.plan_managed(tags, on)
+    assert (action.op, action.number) == ("keep", 13)
+
+
 def test_checks_ruleset_with_a_bypass_actor_is_an_error():
     # Required checks apply to the owner too: the checks ruleset must have no bypass.
     existing = ruleset(["a"])
