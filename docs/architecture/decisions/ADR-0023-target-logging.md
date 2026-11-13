@@ -8,7 +8,7 @@
 > hardware BVT bench (`docs/briefs/BVT-bench-brief.md`, ADR-0022 pending). One ring per image
 > in image-private RAM — the security core does not log (D4, revised). MISRA per ADR-0003.
 >
-> The requirements it must satisfy are `REQ-LOG-001..014` in `docs/requirements/logging.md`;
+> The requirements it must satisfy are `REQ-LOG-001..016` in `docs/requirements/logging.md`;
 > `@impl`/`@test` tags link code and tests back to the `Dn` here. `REQ-LOG-009` is the
 > observable form of the per-reason drop counters already required by `REQ-SECOC-001`.
 
@@ -396,6 +396,34 @@ SecOC event exists for that.
 removed), and the FBL's verify path would get nothing. Rejected. **Cost:** `shared/crypto` now
 depends on `tb_log.h`, so every host suite that links `crypto_service.c` binds the fake log
 port. All three target images already link `log.c`.
+
+### D13. A **bounded flush** at a hand-off is the one exception to cyclic output (2026-11-13, #37)
+
+D10 makes output cyclic: `log_evt()` enqueues and a task drains later. At a hand-off there is
+no later. The FBL jumps and the app re-initialises SCB0, which resets the TX FIFO; or the FBL
+stops draining in programming mode. The last events, `LOG_EVT_APP_JUMP` and
+`LOG_EVT_APP_REJECT`, are the secure-boot BVT's positive evidence (REQ-LOG-009), and they are
+exactly the ones still queued. This lost every FBL record on real hardware.
+
+**Decision.** `log_flush(timeout_ms)` empties the rings, then waits for the sink's
+transmit-complete status, because an empty ring is not an empty UART (about 160 µs per record
+at 1 Mbps). It has two independent bounds: the timeout, and `LOG_FLUSH_MAX_STALL` iterations
+without progress, because the FBL's `deinit_for_jump()` stops SysTick and a timeout alone would
+then spin forever. Callers ignore the result (D7: logging never changes behaviour). Order at the
+jump: emit → flush → deinit → jump. (REQ-LOG-015.)
+
+**Alternatives.**
+- A fixed delay before the jump: not tied to the sink, wastes boot time when the sink is idle,
+  and is still wrong when it is slow. Rejected.
+- A `log_panic()`-style blocking write of only the last event: loses everything queued before
+  it, and is unbounded on a dead sink. Rejected.
+- Waiting in every `log_evt()` (immediate output): rejected by D7 and D10 for the whole system,
+  to fix one moment.
+- Extending D10 with a hand-off paragraph instead of a new decision: less churn, but D10 is about
+  latency, and the flush is about termination with a stopped clock.
+
+**Consequences.** (+) The evidence survives the hand-off. (−) The one place a caller waits on the
+sink: up to `FBL_LOG_FLUSH_MS` (20 ms) more on the boot path when the sink is dead.
 
 ## Consequences
 

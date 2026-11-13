@@ -1,4 +1,4 @@
-# Logging requirements — `REQ-LOG-001..014`
+# Logging requirements — `REQ-LOG-001..016`
 
 Normative requirements for the target logging channel. Each traces **up** to an ADR-0023
 sub-decision (the *why*) and **down** to the `@impl`/`@test` tags that prove it
@@ -35,6 +35,7 @@ drift apart.
 | REQ-LOG-012 | One generated event registry; stale generated files fail CI | D9 | `checks/` + `test_log_events` |
 | REQ-LOG-013 | C encoder and host decoder round-trip identically | D8 | `test_log_decode` |
 | REQ-LOG-014 | Drain latency is bounded and published, so absence-assertions can settle | D10 | `test_log`, `test_bvt_harness` |
+| REQ-LOG-015 | Before a hand-off (jump, programming mode), flush the rings **and** the sink, bounded by time and by a no-progress count; the result never blocks the hand-off | D13 | `test_log` |
 | REQ-LOG-016 | Each app image reports every task's stack high-water (task id, free words) right after each `APP_ALIVE`, as `LOG_EVT_TASK_STACK`, so the bench can check it against the static bound | ADR-0025 D5 | `test_bench_summary`, bench 2026-11-11 |
 
 ## Requirements
@@ -148,6 +149,17 @@ to the record leaving the sink, under a defined worst-case queue depth. A consum
 **absence** of an event shall wait at least this long before concluding absence. The drain task
 shall run at a period no greater than this bound and shall be schedulable at low priority
 without violating it. *(D10.)*
+
+### REQ-LOG-015 — bounded flush at a hand-off
+Before a hand-off that ends cyclic draining (the FBL's jump to the app, or its switch to
+programming mode), the image shall call `log_flush(timeout_ms)`. It shall return `true` only when
+the rings are empty **and** the sink reports every accepted byte on the wire
+(`log_port_sink_idle()`), not merely queued. It shall terminate even when the time base is
+stopped: it returns `false` after `timeout_ms`, or after `LOG_FLUSH_MAX_STALL` consecutive
+iterations without progress, whichever comes first. `timeout_ms == 0` means one look, not an
+immediate failure. A `false` result shall not block or change the hand-off. Observed on the bench
+as `LOG_EVT_APP_JUMP` or `LOG_EVT_APP_REJECT` in the Node A capture, before the app banner.
+*(D13.)*
 
 ### REQ-LOG-016 — per-task stack high-water
 Each app image shall emit, right after every `LOG_EVT_APP_ALIVE`, one `LOG_EVT_TASK_STACK(task_id,
