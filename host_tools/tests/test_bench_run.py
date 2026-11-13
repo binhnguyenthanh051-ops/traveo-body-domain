@@ -126,6 +126,32 @@ def test_a_failed_check_posts_failure(repo):
     assert gh.status() == ["pending", "failure"]
 
 
+def test_the_bench_token_comes_from_its_own_file_as_gh_token(tmp_path, monkeypatch):
+    # A second `gh` login shares the Windows keyring with the owner's (found 2026-11-14), so the
+    # bench never logs in: it hands its token to each gh call as GH_TOKEN.
+    token = tmp_path / "token"
+    token.write_text("github_pat_x \n", encoding="utf-8")
+    monkeypatch.setenv("BENCH_TOKEN_FILE", str(token))
+    seen = {}
+
+    def fake_run(cmd, **kw):
+        seen.update(kw["env"])
+
+        class R:
+            stdout = ""
+        return R()
+    monkeypatch.setattr(bench_run.subprocess, "run", fake_run)
+    bench_run.run_gh(["api", "user"])
+    assert seen["GH_TOKEN"] == "github_pat_x"
+    assert "GH_CONFIG_DIR" not in seen or seen["GH_CONFIG_DIR"] != str(tmp_path)
+
+
+def test_a_missing_token_file_is_a_clear_error(tmp_path, monkeypatch):
+    monkeypatch.setenv("BENCH_TOKEN_FILE", str(tmp_path / "none"))
+    with pytest.raises(SystemExit, match="bench token"):
+        bench_run.run_gh(["api", "user"])
+
+
 def test_never_erase_or_touch_supervisory_flash(repo):
     bench = Bench()
     go(repo, Gh(), bench)
