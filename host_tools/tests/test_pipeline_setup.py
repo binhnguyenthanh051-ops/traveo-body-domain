@@ -91,6 +91,10 @@ def test_planner_labels_are_defined():
     assert {"plan:breakdown", "plan:bug", "planning", "planned"} <= names
 
 
+def test_challenger_label_is_defined():
+    assert "challenge" in {l["name"] for l in real_config()["labels"]}
+
+
 def test_every_cr_belongs_to_a_milestone_that_exists():
     titles = [m["title"] for m in real_config()["milestones"]]
     assert titles, "section 4: each CR belongs to one GitHub milestone"

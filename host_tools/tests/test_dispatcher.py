@@ -326,3 +326,60 @@ def test_a_plan_label_while_paused_starts_nothing():
 def test_planner_result_on_an_issue_not_planning_is_ignored():
     d = route({"kind": "planner", "issue": 50, "result": "done"}, ["planned"])
     assert (d.start, d.add, d.remove) == (None, [], [])
+
+
+# --- rows 18-19: the Challenger (build step 7) ------------------------------------------
+
+def test_row18_owner_challenge_starts_the_design_challenge_and_clears_the_label():
+    d = route({"kind": "label", "issue": 60, "label": "challenge", "actor": OWNER}, ["challenge"])
+    assert labels_after(["challenge"], d) == set()
+    assert (d.issue, d.start) == (60, "challenge-design")
+
+
+def test_row18_challenge_by_someone_else_is_ignored():
+    d = route({"kind": "label", "issue": 60, "label": "challenge", "actor": "stranger"},
+              ["challenge"])
+    assert (d.start, d.add, d.remove) == (None, [], [])
+
+
+def test_row18_challenge_while_paused_starts_nothing():
+    d = route({"kind": "label", "issue": 60, "label": "challenge", "actor": OWNER}, ["challenge"],
+              paused=True)
+    assert d.start is None
+
+
+def test_row19_a_finished_breakdown_starts_the_breakdown_check():
+    d = route({"kind": "planner", "issue": 50, "result": "done", "mode": "plan-breakdown"},
+              ["planning"])
+    assert labels_after(["planning"], d) == {"planned"}
+    assert d.start == "challenge-breakdown"
+
+
+def test_row19_a_bug_report_gets_no_breakdown_check():
+    d = route({"kind": "planner", "issue": 51, "result": "done", "mode": "plan-bug"},
+              ["planning"])
+    assert d.start is None
+
+
+def test_row19_a_failed_breakdown_gets_no_check():
+    d = route({"kind": "planner", "issue": 50, "result": "failed", "mode": "plan-breakdown"},
+              ["planning"])
+    assert d.start is None
+
+
+def test_facts_a_label_on_a_pull_request_is_a_label_event():
+    payload = {"action": "labeled", "number": 60, "label": {"name": "challenge"},
+               "sender": {"login": "x"}, "repository": REPO,
+               "pull_request": {"merged": False, "head": {"ref": "docs/adr", "repo": REPO}}}
+    assert dispatcher.facts("pull_request", payload) == {
+        "kind": "label", "issue": 60, "label": "challenge", "actor": "x"}
+
+
+def test_main_settle_passes_the_planner_mode(tmp_path, capsys):
+    class Gh:
+        def __call__(self, args, stdin=None):
+            return '[{"name": "planning"}]'
+    rc = dispatcher.main(["settle", "--issue", "50", "--planner", "done", "--mode",
+                          "plan-breakdown", "--owner", OWNER], gh=Gh())
+    assert rc == 0
+    assert '"start": "challenge-breakdown"' in capsys.readouterr().out
