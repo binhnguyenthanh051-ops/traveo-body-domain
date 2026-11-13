@@ -1,0 +1,151 @@
+name: challenger
+
+# The Challenger (docs/design/agent-pipeline.md sections 2-3, rows 18-20; ADR-0026). No trigger
+# of its own: the Dispatcher calls it when the owner adds `challenge` (design), or when the
+# Planner finishes a breakdown (breakdown check). Advice only: one comment, never an approval.
+#
+#   challenge  the agent: reads the diff or the drafts, writes one report (OAuth token only;
+#              read-only GitHub token; no Bash, no push)
+#   post       posts the report as a comment with the Reviewer App token
+on:
+  workflow_call:
+    inputs:
+      issue:
+        description: "The PR or issue labelled challenge, or the issue the Planner broke down"
+        required: true
+        type: number
+      mode:
+        description: "challenge-design or challenge-breakdown"
+        required: true
+        type: string
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN:
+        required: true
+      REVIEWER_APP_PRIVATE_KEY:
+        required: true
+    outputs:
+      result:
+        description: "done | failed"
+        value: ${{ jobs.post.outputs.result }}
+
+permissions: {}
+
+jobs:
+  challenge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    env:
+      NUMBER: ${{ inputs.issue }}
+      MODE: ${{ inputs.mode }}
+    steps:
+      - uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a  # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Write the prompt (the agent definition, the mode, then the material as data)
+        id: prompt
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REVIEWER: ${{ vars.REVIEWER_APP_SLUG }}
+        run: |
+          {
+            python -c 'import sys; t=open(sys.argv[1], encoding="utf-8").read(); print(t.split("---", 2)[2].strip())' .claude/agents/challenger.md
+            echo
+            echo "## Mode: ${MODE#challenge-}"
+            echo
+            if [ "$MODE" = "challenge-design" ] && gh pr view "$NUMBER" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+              echo "## Pull request #$NUMBER"
+              gh pr view "$NUMBER" --repo "$GITHUB_REPOSITORY" --json title,body --jq '"Title: " + .title + "\n\n" + .body'
+              echo
+              echo "## The diff"
+              gh pr diff "$NUMBER" --repo "$GITHUB_REPOSITORY" | head -c 60000
+            else
+              echo "## Issue #$NUMBER"
+              gh issue view "$NUMBER" --repo "$GITHUB_REPOSITORY" --json title,body --jq '"Title: " + .title + "\n\n" + .body'
+            fi
+            if [ "$MODE" = "challenge-breakdown" ]; then
+              summary=$(gh api "repos/$GITHUB_REPOSITORY/issues/$NUMBER/comments" --paginate \
+                --jq "[.[] | select(.user.login == \"$REVIEWER[bot]\") | .body] | last")
+              echo
+              echo "## The Planner's summary"
+              echo "$summary"
+              for n in $(printf '%s\n' "$summary" | grep -o -E '^### #[0-9]+' | grep -o -E '[0-9]+'); do
+                echo
+                echo "## Draft #$n"
+                gh issue view "$n" --repo "$GITHUB_REPOSITORY" --json title,body --jq '"Title: " + .title + "\n\n" + .body'
+              done
+            fi
+          } > "$RUNNER_TEMP/prompt.md"
+          delim="EOF_$(openssl rand -hex 8)"
+          { echo "text<<$delim"; cat "$RUNNER_TEMP/prompt.md"; echo "$delim"; } >> "$GITHUB_OUTPUT"
+      - name: Challenger agent
+        uses: anthropics/claude-code-action@4d75e5f390ee76b2e09c1980ecc99ff3a2e088c8  # v1.0.275
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # The Dispatcher reacts to CI started by the Builder app's push; allow that one bot only.
+          allowed_bots: builder-github-app
+          github_token: ${{ github.token }}   # read-only
+          show_full_output: true
+          prompt: ${{ steps.prompt.outputs.text }}
+          claude_args: |
+            --max-turns 40
+            --disallowedTools "WebFetch,WebSearch,Edit,NotebookEdit,Bash"
+            --allowedTools "Read,Glob,Grep,Write"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        if: always()
+        with:
+          name: challenger-report-${{ inputs.issue }}-${{ github.run_attempt }}
+          path: .pipeline/challenge.md
+          if-no-files-found: ignore
+          retention-days: 7
+
+  post:
+    needs: challenge
+    if: always()
+    runs-on: ubuntu-latest
+    permissions: {}
+    outputs:
+      result: ${{ steps.post.outputs.result }}
+    steps:
+      - uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a  # v2.22.4
+        with:
+          egress-policy: audit
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+        continue-on-error: true
+        with:
+          name: challenger-report-${{ inputs.issue }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/out
+      - name: "Reviewer App token (issues and pull requests: write; contents: read)"
+        id: token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510  # v3.3.0
+        with:
+          app-id: ${{ vars.REVIEWER_APP_ID }}
+          private-key: ${{ secrets.REVIEWER_APP_PRIVATE_KEY }}
+          permission-contents: read
+          permission-issues: write
+          permission-pull-requests: write
+      - name: Post the report as a comment
+        id: post
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          RESULT: ${{ needs.challenge.result }}
+          MODE: ${{ inputs.mode }}
+        run: |
+          f="$RUNNER_TEMP/out/challenge.md"
+          if [ "$RESULT" != "success" ] || [ ! -s "$f" ]; then
+            echo "result=failed" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          { echo "## Challenger (${MODE#challenge-}): advice, not approval"; echo
+            echo "Independent agent ([run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)). The decisions stay with the owner."
+            echo; cat "$f"; } > "$RUNNER_TEMP/comment.md"
+          gh issue comment "${{ inputs.issue }}" --repo "$GITHUB_REPOSITORY" --body-file "$RUNNER_TEMP/comment.md"
+          echo "result=done" >> "$GITHUB_OUTPUT"

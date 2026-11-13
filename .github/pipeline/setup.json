@@ -26,7 +26,8 @@
     { "name": "plan:breakdown", "kind": "control", "color": "d4c5f9", "description": "Owner only (gate 1a): the Planner breaks this issue's approved ADR down into draft CRs" },
     { "name": "plan:bug",       "kind": "control", "color": "d4c5f9", "description": "Owner only: the Planner writes a draft bug report from this issue's description" },
     { "name": "planning",       "kind": "control", "color": "c2e0c6", "description": "The Planner is writing (set by the Dispatcher only)" },
-    { "name": "planned",        "kind": "control", "color": "0e8a16", "description": "The Planner's drafts are listed on this issue: the owner reviews them (gate 1b)" }
+    { "name": "planned",        "kind": "control", "color": "0e8a16", "description": "The Planner's drafts are listed on this issue: the owner reviews them (gate 1b)" },
+    { "name": "challenge",      "kind": "control", "color": "f9d0c4", "description": "Owner only: the Challenger reviews this PR's or issue's ADR or design note (advice only)" }
   ],
   "ruleset": {
     "_comment": "The existing ruleset on main (pull request, no force push, linear history). This tool only sets its required checks: tests, traceability and protected paths (design note section 5, build step 2).",

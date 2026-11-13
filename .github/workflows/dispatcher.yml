@@ -8,6 +8,7 @@ name: dispatcher
 #   builder   the Builder, when the route says build or rework  (builder.yml)
 #   inspector the Inspector, when the route says inspect          (inspector.yml)
 #   planner   the Planner, when the route says plan-*             (planner.yml)
+#   challenger the Challenger, on `challenge` or after a breakdown (challenger.yml), advice only
 #   settle    route the agent's result, change labels
 #   status  one status line per run, also when nothing was done, on the "Pipeline status" issue
 #
@@ -25,7 +26,7 @@ on:
     workflows: [host-ci]
     types: [completed]
   pull_request:
-    types: [closed]
+    types: [closed, labeled]
   status:
 
 permissions: {}
@@ -127,6 +128,7 @@ jobs:
       issues: write
     outputs:
       line: ${{ steps.settle.outputs.line }}
+      start: ${{ steps.settle.outputs.start }}
     steps:
       - uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a  # v2.22.4
         with:
@@ -149,11 +151,30 @@ jobs:
           PAUSED: ${{ vars.PIPELINE_PAUSED == 'true' && '--paused' || '' }}
         run: |
           python host_tools/dispatcher.py settle --issue "$ISSUE" "--$AGENT" "$RESULT" \
-            --owner "$OWNER" $PAUSED > "$RUNNER_TEMP/decision.json"
+            --mode "${{ needs.route.outputs.start }}" --owner "$OWNER" $PAUSED > "$RUNNER_TEMP/decision.json"
           python host_tools/dispatch_apply.py "$RUNNER_TEMP/decision.json" >> "$GITHUB_OUTPUT"
 
+  challenger:
+    # Row 18 (the owner's challenge label) or row 19 (a finished breakdown). Advice only.
+    needs: [route, settle]
+    if: always() && (needs.route.outputs.start == 'challenge-design' || needs.settle.outputs.start == 'challenge-breakdown')
+    concurrency:
+      group: challenger-${{ needs.route.outputs.issue }}
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    uses: ./.github/workflows/challenger.yml
+    with:
+      issue: ${{ fromJSON(needs.route.outputs.issue) }}
+      mode: ${{ needs.route.outputs.start == 'challenge-design' && 'challenge-design' || 'challenge-breakdown' }}
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      REVIEWER_APP_PRIVATE_KEY: ${{ secrets.REVIEWER_APP_PRIVATE_KEY }}
+
   status:
-    needs: [route, builder, inspector, planner, settle]
+    needs: [route, builder, inspector, planner, settle, challenger]
     if: always() && needs.route.result != 'skipped'
     runs-on: ubuntu-latest
     permissions:
@@ -167,12 +188,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           ROUTE: ${{ needs.route.outputs.line || format('route job {0}', needs.route.result) }}
           SETTLE: ${{ needs.settle.outputs.line }}
-          START: ${{ needs.route.outputs.start }}
+          CHALLENGER: ${{ needs.challenger.result != 'skipped' && (needs.challenger.outputs.result || 'failed') || '' }}
         run: |
           when=$(date -u +%Y-%m-%dT%H:%MZ)
           run="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
           line="$ROUTE"
           if [ -n "$SETTLE" ]; then line="$line; then $SETTLE"; fi
+          # Row 20: the Challenger's result changes no label; it is only reported.
+          if [ -n "$CHALLENGER" ]; then line="$line; Challenger $CHALLENGER"; fi
           echo "$when dispatcher [$GITHUB_EVENT_NAME]: $line ([run]($run))" | tee -a "$GITHUB_STEP_SUMMARY" > "$RUNNER_TEMP/line.md"
           status_issue=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search 'in:title "Pipeline status"' --json number,title --jq '[.[] | select(.title == "Pipeline status")][0].number // empty')
           if [ -z "$status_issue" ]; then

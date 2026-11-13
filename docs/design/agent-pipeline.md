@@ -121,6 +121,9 @@ starts jobs; it never pushes code.
 | 15 | I add `plan:bug` to an issue describing a bug in my words | not planned yet | → `planning` | Planner (bug report) |
 | 16 | Planner result: done | `planning` | → `planned` | nothing; I review the list on the issue (gate 1b) |
 | 17 | Planner result: blocked or failed | `planning` | → `waiting-for-me` | nothing |
+| 18 | I add `challenge` to a PR or issue that changes or links an ADR or design note | added by me | my `challenge` removed | Challenger (design) |
+| 19 | Planner result: done, in breakdown mode | `planning` | → `planned` (as row 16) | Challenger (breakdown check), before gate 1b |
+| 20 | Challenger result: done or failed | none | none | nothing; reported in the status line |
 
 **Negative rows.** Each writes a status line and starts nothing:
 
@@ -148,7 +151,11 @@ starts jobs; it never pushes code.
   issue-form contract, then posts one comment on the source issue listing each draft with its
   acceptance criteria: the list I approve at gate 1b, by adding `ready` and a `level:*` label
   to each draft I accept. The picker also takes issues the Planner app wrote, but only when I
-  added `ready`. The Challenger joins the table in build step 7.
+  added `ready`.
+- The Challenger (step 7) gives advice only: one comment as a coach (questions, alternatives,
+  risks, untestable requirements, one thing to learn), or, after a breakdown, a check that
+  every draft traces to the ADR and has testable acceptance criteria. It never approves and
+  changes no label. A bug report from the Planner gets no check.
 - On-target tests are not limited to Saturday. The pipeline books the station and I plug in on
   a weeknight. No manual debugging on weeknights.
 - How the agents run is in ADR-0026: GitHub Actions jobs, acting as GitHub Apps.
@@ -196,6 +203,7 @@ starts jobs; it never pushes code.
 Plus two label families the Dispatcher reads: `level:host`, `level:on-target`, `level:both`
 (the test level, set by me with `ready`) and `round:1` to `round:3` (set by the Dispatcher only).
 For the Planner: `plan:breakdown` and `plan:bug` (mine), `planning` and `planned` (the Dispatcher's).
+For the Challenger: `challenge` (mine).
 
 **Other carriers**
 
