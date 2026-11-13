@@ -124,10 +124,53 @@ def plan_ruleset(wanted, existing):
     ruleset's other rules are the owner's to set."""
     if existing is None:
         return Action("ruleset", "missing", wanted["name"])
+    if existing.get("bypass_actors"):
+        # Required checks apply to the owner too (ADR-0026): nobody bypasses this ruleset.
+        return Action("ruleset", "has-bypass", wanted["name"], existing["id"])
     have = {check["context"] for check in _checks_rule(existing["rules"])
             .get("parameters", {}).get("required_status_checks", [])}
     op = "keep" if have == set(wanted["required_checks"]) else "update"
     return Action("ruleset", op, wanted["name"], existing["id"])
+
+
+MANAGED_KEYS = ("name", "target", "enforcement", "conditions", "rules", "bypass_actors")
+
+
+def managed_body(spec):
+    """The request body for a managed ruleset: the spec without comments."""
+    return {k: spec[k] for k in MANAGED_KEYS if k in spec}
+
+
+def _same_managed(spec, existing):
+    """True when GitHub's ruleset matches the spec. Only what the spec states is compared,
+    because GitHub fills in rule parameters the spec leaves at their defaults."""
+    for key in ("name", "target", "enforcement"):
+        if spec[key] != existing.get(key):
+            return False
+    want_ref = spec["conditions"]["ref_name"]
+    have_ref = existing.get("conditions", {}).get("ref_name", {})
+    for key in ("include", "exclude"):
+        if sorted(want_ref.get(key, [])) != sorted(have_ref.get(key, [])):
+            return False
+    have_rules = {rule["type"]: rule.get("parameters") or {} for rule in existing.get("rules", [])}
+    if set(have_rules) != {rule["type"] for rule in spec["rules"]}:
+        return False
+    for rule in spec["rules"]:
+        for key, value in (rule.get("parameters") or {}).items():
+            if have_rules[rule["type"]].get(key) != value:
+                return False
+
+    def actors(items):
+        return sorted((a.get("actor_id"), a["actor_type"], a["bypass_mode"]) for a in items)
+    return actors(spec["bypass_actors"]) == actors(existing.get("bypass_actors", []))
+
+
+def plan_managed(spec, existing):
+    """A ruleset this tool owns completely: create it, update it, or keep it."""
+    if existing is None:
+        return Action("ruleset", "create", spec["name"])
+    op = "keep" if _same_managed(spec, existing) else "update"
+    return Action("ruleset", op, spec["name"], existing["id"])
 
 
 def _checks_rule(rules):
@@ -169,10 +212,18 @@ def apply(actions, config, gh, ruleset=None):
     """Make every create and update of the plan."""
     labels = {label["name"]: label for label in config["labels"]}
     milestones = {milestone["title"]: milestone for milestone in config["milestones"]}
+    managed = {spec["name"]: spec for spec in config.get("managed_rulesets", [])}
     for action in actions:
         if action.op == "keep":
             continue
-        if action.kind == "ruleset":
+        if action.kind == "ruleset" and action.name in managed:
+            body = json.dumps(managed_body(managed[action.name]))
+            if action.op == "create":
+                gh(["api", "--method", "POST", "--input", "-", RULESETS_API], stdin=body)
+            else:
+                gh(["api", "--method", "PUT", "--input", "-", f"{RULESETS_API}/{action.number}"],
+                   stdin=body)
+        elif action.kind == "ruleset":
             rules = ruleset_rules(ruleset, config["ruleset"]["required_checks"])
             # GitHub refuses "parameters": null, which its own GET returns for simple rules.
             rules = [{k: v for k, v in rule.items() if v is not None} for rule in rules]
@@ -227,11 +278,17 @@ def main(argv=None, gh=run_gh):
         if "ruleset" in config:
             ruleset = read_ruleset(gh, config["ruleset"]["name"])
             actions.append(plan_ruleset(config["ruleset"], ruleset))
+        for spec in config.get("managed_rulesets", []):
+            actions.append(plan_managed(spec, read_ruleset(gh, spec["name"])))
         for action in actions:
             print(f"{action.kind:<10} {action.op:<7} {action.name}")
         if any(action.op == "missing" for action in actions):
             print(f"error: no ruleset named '{config['ruleset']['name']}' on GitHub. "
                   "This tool only sets its required checks; create it in the repo settings.")
+            return 1
+        if any(action.op == "has-bypass" for action in actions):
+            print(f"error: '{config['ruleset']['name']}' has bypass actors. Required checks "
+                  "apply to the owner too; remove the bypass in the repo settings.")
             return 1
         pending = [action for action in actions if action.op != "keep"]
         if not pending:

@@ -79,3 +79,6 @@ capture*.bin
 
 # ── Claude Code: personal settings stay local (project settings.json IS committed) ──
 .claude/settings.local.json
+
+# ── Agent pipeline: the Builder's report to its workflow, never committed (ADR-0026) ──
+.pipeline/
