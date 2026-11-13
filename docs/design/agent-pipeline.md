@@ -116,7 +116,7 @@ starts jobs; it never pushes code.
 | 10b | Inspector run failed (no verdict) | state `review` | → `waiting-for-me` | nothing |
 | 11 | I add `rework` to a `waiting-for-me` CR | my answer is on the CR | → `rework`, round +1 | Builder, one more round |
 | 12 | I add `ready` or `draft` | unblock, or the CR was wrong | as I set them | nothing; row 1 picks it up |
-| 13 | the PR from `cr/<n>` is merged | none | → `done`, round cleared | nothing |
+| 13 | the PR from `cr/<n>` is merged | none | → `done`, round cleared | nothing; the three numbers (section 8) go on the status line |
 | 14 | I add `plan:breakdown` to an issue that links the milestone's approved ADR (gate 1a) | not planned yet | → `planning` | Planner (breakdown) |
 | 15 | I add `plan:bug` to an issue describing a bug in my words | not planned yet | → `planning` | Planner (bug report) |
 | 16 | Planner result: done | `planning` | → `planned` | nothing; I review the list on the issue (gate 1b) |
@@ -325,6 +325,13 @@ stateDiagram-v2
 - No agent creates a tag or a release.
 - Pause switch: the repository variable `PIPELINE_PAUSED=true`. The Dispatcher routes nothing
   while it is set (section 3).
+  - Pause: `gh variable set PIPELINE_PAUSED --body true`. Resume:
+    `gh variable delete PIPELINE_PAUSED`.
+  - A job that is already running finishes (the Builder may still open its pull request), but
+    its result changes no label: both the route and the settle step read the switch.
+  - Events while paused are not queued. After resuming, a CR can sit in a state whose next
+    event already passed (for example `building` with CI already green): re-run that event
+    (re-run host CI on `cr/<n>`) or set the labels by hand.
 
 **Trust boundary (the repo is public)**
 
@@ -352,6 +359,19 @@ After two weeks of running (by 2026-11-29) the pipeline works if:
 - No CR used more than 2 rework rounds without stopping for me.
 - Three numbers are logged per CR: rework rounds, time from `ready` to merge, and referee calls.
   No number goes into a blog before it is measured.
+
+**How the three numbers are measured** (build step 10). All three come from the label events
+in the issue timeline, never from text, so they can be recomputed at any time with
+`python host_tools/cr_numbers.py --owner <login> [--milestone <title>]`.
+
+| Number | Measured as |
+|---|---|
+| Rework rounds | the highest `round:N` the CR ever had, or how many times `rework` was added if that is higher (a CR walked through by hand has no round label) |
+| Ready to merge | from my **first** `ready` to the merge of the pull request, so time spent waiting for me as referee counts |
+| Referee calls | how many times `waiting-for-me` was added, whatever the cause (blocked, cap, failed run) |
+
+The Dispatcher writes them on the status line when it routes the merge (row 13). If the
+timeline cannot be read, the merge still routes and the line says "numbers: not available".
 
 Later check, not in the two weeks: the first milestone built this way is released through
 gate 3 with the Definition of Done met.
@@ -655,4 +675,6 @@ Rejected for now, to verify if the proposal is not enough:
 - 2026-11-12: the nine `[TODO]` entries filled in by Claude Code (sections 7, 11 and 13).
 - 2026-11-13: the Dispatcher (section 3): one deterministic router owns every trigger; test
   level and rework round become labels; the pause switch is a repository variable. Approved by me.
+- 2026-11-14: build step 10: how the three numbers per CR are measured (section 8; clock
+  starts at my first `ready`, my choice), logged by row 13; pause switch behaviour (section 7).
 - M5 (SecOC) was closed before this pipeline starts.
