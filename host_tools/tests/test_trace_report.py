@@ -264,7 +264,7 @@ def test_main_fails_on_gaps_and_gate_scopes_them(tmp_path, capsys):
 def test_report_is_deterministic(tmp_path):
     root = good_repo(tmp_path)
     assert trace_report.render(trace_report.build_model(root)) == \
-        trace_report.render(trace_report.build_model(root))
+        trace_report.render(trace_report.build_model(root))
 
 
 # ---- "Observed by": how a requirement is seen on the bench (bench-testable rule) ----
