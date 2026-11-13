@@ -124,3 +124,4 @@ opportunistically (`docs/traceability-convention.md` §6).
 | ADR-0023 | Target logging channel — structured events over UART, assertable by the BVT | proposed | 3 | 1 |  |
 | ADR-0024 | Persistent freshness store — a two-slot record in work flash (M5B) | proposed | 6 | 10 |  |
 | ADR-0025 | Static stack analysis with stack_bound (W46) | proposed | 0 | 0 |  |
+| ADR-0026 | Agent runtime — GitHub Actions, two GitHub Apps, rules the platform enforces | proposed | 0 | 0 |  |
