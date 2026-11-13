@@ -66,3 +66,24 @@ jobs:
       # has been tagged must stay gap-free. Add a --gate per area as it is tagged.
       - name: Verify traceability report is current (tagged areas gap-free)
         run: python host_tools/trace_report.py --check --gate REQ-SECOC
+
+  # Build step 8: `bench` is a required check, so every pull request gets it here: success for
+  # non-CRs and host-only CRs, pending for on-target CRs until the owner's bench run posts the
+  # real result (host_tools/bench_run.py). Labels only; skipped when release.yml calls this file.
+  bench-gate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read
+      statuses: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Post the bench status
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: python host_tools/bench_gate.py --branch "${{ github.head_ref }}" --sha "${{ github.event.pull_request.head.sha }}"
