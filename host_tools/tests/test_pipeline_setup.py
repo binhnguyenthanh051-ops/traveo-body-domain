@@ -79,6 +79,13 @@ def test_protected_change_label_is_defined():
     assert "protected-change-approved" in names
 
 
+def test_level_and_round_labels_are_defined_for_the_dispatcher():
+    # The Dispatcher reads labels only: the test level and the rework round are labels.
+    control = {l["name"] for l in real_config()["labels"] if l["kind"] == "control"}
+    assert {"level:host", "level:on-target", "level:both",
+            "round:1", "round:2", "round:3"} <= control
+
+
 def test_every_cr_belongs_to_a_milestone_that_exists():
     titles = [m["title"] for m in real_config()["milestones"]]
     assert titles, "section 4: each CR belongs to one GitHub milestone"

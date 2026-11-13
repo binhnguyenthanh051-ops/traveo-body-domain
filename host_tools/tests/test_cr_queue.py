@@ -110,29 +110,13 @@ class FakeGh:
         return [c for c in self.calls if "--method" in c]
 
 
-# --- the fields -----------------------------------------------------------------------
+# --- no text is read ---------------------------------------------------------------
 
-def test_a_complete_cr_has_no_missing_field():
-    assert cr_queue.missing_fields(CR_BODY, "cr") == []
-
-
-def test_a_complete_bug_report_has_no_missing_field_and_free_text_after_is_fine():
-    assert cr_queue.missing_fields(BUG_BODY, "bug") == []
-
-
-@pytest.mark.parametrize("empty", ["", "_No response_", "   "])
-def test_an_empty_field_is_missing(empty):
-    body = CR_BODY.replace("- [ ] it does the other thing", empty)
-    assert cr_queue.missing_fields(body, "cr") == ["Acceptance criteria"]
-
-
-def test_a_field_that_is_not_there_at_all_is_missing():
-    body = CR_BODY.replace("### Requirement IDs\n\nREQ-LOG-015\n\n", "")
-    assert cr_queue.missing_fields(body, "cr") == ["Requirement IDs"]
-
-
-def test_crlf_bodies_parse_the_same():
-    assert cr_queue.missing_fields(CR_BODY.replace("\n", "\r\n"), "cr") == []
+def test_pick_reads_no_issue_text():
+    # The Dispatcher reads labels, events and who acted, never text (design note section 3).
+    # An empty form field is the Builder's to report, as `blocked`.
+    chosen, skipped = pick([issue(1, body="")])
+    assert chosen == 1 and skipped == []
 
 
 # --- who set the label ----------------------------------------------------------------
@@ -185,7 +169,6 @@ def test_pull_requests_in_the_list_are_ignored():
 @pytest.mark.parametrize("bad, reason", [
     (issue(1, author="stranger"), "not written by the owner"),
     (issue(1, labels=("ready",)), "neither cr nor bug"),
-    (issue(1, body=CR_BODY.replace("host", "")), "empty field: Test level"),
 ])
 def test_a_cr_that_is_not_agent_ready_is_skipped_with_a_reason(bad, reason):
     chosen, skipped = pick([bad, issue(8)])
