@@ -21,7 +21,7 @@ def action_steps(name):
         r"uses: " + re.escape(ACTION) + r"[0-9a-f]{40}.*?(?=\n      - |\Z)", text, re.S)]
 
 
-@pytest.mark.parametrize("name", ["builder.yml", "inspector.yml"])
+@pytest.mark.parametrize("name", ["builder.yml", "inspector.yml", "planner.yml"])
 def test_the_agent_step_allows_only_the_builder_app(name):
     (step,) = action_steps(name)
     allowed = re.search(r"allowed_bots:\s*['\"]?([^'\"\n]+)", step)
@@ -29,6 +29,6 @@ def test_the_agent_step_allows_only_the_builder_app(name):
     assert allowed.group(1).strip() == "builder-github-app"
 
 
-@pytest.mark.parametrize("name", ["builder.yml", "inspector.yml"])
+@pytest.mark.parametrize("name", ["builder.yml", "inspector.yml", "planner.yml"])
 def test_the_action_is_pinned_to_a_commit(name):
     assert action_steps(name), f"{name}: claude-code-action not pinned to a 40-hex commit"

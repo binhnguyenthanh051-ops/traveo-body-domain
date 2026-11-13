@@ -117,6 +117,10 @@ starts jobs; it never pushes code.
 | 11 | I add `rework` to a `waiting-for-me` CR | my answer is on the CR | → `rework`, round +1 | Builder, one more round |
 | 12 | I add `ready` or `draft` | unblock, or the CR was wrong | as I set them | nothing; row 1 picks it up |
 | 13 | the PR from `cr/<n>` is merged | none | → `done`, round cleared | nothing |
+| 14 | I add `plan:breakdown` to an issue that links the milestone's approved ADR (gate 1a) | not planned yet | → `planning` | Planner (breakdown) |
+| 15 | I add `plan:bug` to an issue describing a bug in my words | not planned yet | → `planning` | Planner (bug report) |
+| 16 | Planner result: done | `planning` | → `planned` | nothing; I review the list on the issue (gate 1b) |
+| 17 | Planner result: blocked or failed | `planning` | → `waiting-for-me` | nothing |
 
 **Negative rows.** Each writes a status line and starts nothing:
 
@@ -140,7 +144,11 @@ starts jobs; it never pushes code.
 - The Inspector (step 5) posts its review on the pull request as a **comment, never a GitHub
   approval**: an app approval would satisfy the one-approval rule on `main`, and the Builder app
   could then merge. Its verdict reaches the Dispatcher as the job's output, not as text.
-- The Planner and the Challenger join the table in build steps 6 and 7.
+- The Planner (step 6) writes draft issues through a script that checks them against the
+  issue-form contract, then posts one comment on the source issue listing each draft with its
+  acceptance criteria: the list I approve at gate 1b, by adding `ready` and a `level:*` label
+  to each draft I accept. The picker also takes issues the Planner app wrote, but only when I
+  added `ready`. The Challenger joins the table in build step 7.
 - On-target tests are not limited to Saturday. The pipeline books the station and I plug in on
   a weeknight. No manual debugging on weeknights.
 - How the agents run is in ADR-0026: GitHub Actions jobs, acting as GitHub Apps.
@@ -187,6 +195,7 @@ starts jobs; it never pushes code.
 
 Plus two label families the Dispatcher reads: `level:host`, `level:on-target`, `level:both`
 (the test level, set by me with `ready`) and `round:1` to `round:3` (set by the Dispatcher only).
+For the Planner: `plan:breakdown` and `plan:bug` (mine), `planning` and `planned` (the Dispatcher's).
 
 **Other carriers**
 

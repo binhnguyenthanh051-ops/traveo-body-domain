@@ -6,7 +6,7 @@
 
 `pick` prints JSON for the workflow: {"issue": <number or null>, "skipped": [[n, reason]]}.
 It takes the oldest open issue labelled `ready` that is agent-ready by its metadata
-(docs/design/agent-pipeline.md section 3): written by the owner, typed `cr` or `bug`, and
+(docs/design/agent-pipeline.md section 3): written by the owner or the Planner app, typed `cr` or `bug`, and
 `ready` added by the owner. It reads labels, authors and timelines, never issue text: an empty
 form field is the Builder's to report, as `blocked`. It only reads GitHub.
 
@@ -40,7 +40,7 @@ def timeline(gh, number):
     return json.loads(gh(["api", "--paginate", f"{ISSUES_API}/{number}/timeline?per_page=100"]))
 
 
-def pick(gh, owner):
+def pick(gh, owner, planner=None):
     """Return (issue number or None, [(number, reason) for each ready issue skipped])."""
     listed = json.loads(gh(["api", f"{ISSUES_API}?state=open&labels=ready"
                                    "&sort=created&direction=asc&per_page=100"]))
@@ -51,8 +51,8 @@ def pick(gh, owner):
         number = item["number"]
         names = {label["name"] for label in item["labels"]}
         kinds = [k for k in ("cr", "bug") if k in names]
-        if item["user"]["login"] != owner:
-            skipped.append((number, "not written by the owner"))
+        if item["user"]["login"] not in {owner, planner} - {None}:
+            skipped.append((number, "not written by the owner or the Planner"))
         elif len(kinds) != 1:
             skipped.append((number, "neither cr nor bug" if not kinds else "both cr and bug"))
         elif (who := last_labeler(timeline(gh, number), "ready")) != owner:
@@ -72,6 +72,7 @@ def main(argv=None, gh=run_gh):
     sub = parser.add_subparsers(dest="command", required=True)
     p_pick = sub.add_parser("pick", help="print the CR the Builder takes next, as JSON")
     p_pick.add_argument("--owner", required=True, help="the owner's GitHub login")
+    p_pick.add_argument("--planner", default=None, help="the Planner app's login (<slug>[bot])")
     p_label = sub.add_parser("label-by-owner", help="exit 0 if the owner added the label")
     p_label.add_argument("--owner", required=True)
     p_label.add_argument("--issue", required=True, type=int)
@@ -79,7 +80,7 @@ def main(argv=None, gh=run_gh):
     args = parser.parse_args(argv)
 
     if args.command == "pick":
-        number, skipped = pick(gh, args.owner)
+        number, skipped = pick(gh, args.owner, planner=args.planner)
         print(json.dumps({"issue": number, "skipped": [list(s) for s in skipped]}))
         return 0
 

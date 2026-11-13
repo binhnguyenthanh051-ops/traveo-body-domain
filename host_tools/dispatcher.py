@@ -25,7 +25,9 @@ import cr_queue  # noqa: E402
 
 STATES = ("draft", "ready", "building", "review", "rework", "needs-bench",
           "awaiting-merge", "waiting-for-me", "done")
-GATE_LABELS = {"ready", "rework", "draft", "protected-change-approved"}
+GATE_LABELS = {"ready", "rework", "draft", "protected-change-approved",
+               "plan:breakdown", "plan:bug"}
+PLAN_LABELS = {"plan:breakdown": "plan-breakdown", "plan:bug": "plan-bug"}
 CAP = 2                 # rework rounds before the owner referees
 REFEREE_ROUND = CAP + 1  # the one extra round after the owner's answer
 CR_BRANCH = re.compile(r"cr/(\d+)")
@@ -92,6 +94,11 @@ def route(event, labels, owner, paused):
         if actor != owner:
             return _nothing(issue, f"label '{label}' added by {actor} ignored: "
                                    "only the owner's labels route")
+        if label in PLAN_LABELS:
+            if "planning" in labels or "planned" in labels:
+                return _nothing(issue, f"'{label}' ignored: the issue is already planned")
+            return _decide(issue, labels, add={"planning"}, remove={label},
+                           start=PLAN_LABELS[label], line=f"{label}: planning")
         if label == "rework" and "waiting-for-me" in labels:
             r = _round(labels)
             rounds = {l for l in labels if l.startswith("round:")}
@@ -152,6 +159,15 @@ def route(event, labels, owner, paused):
             return _nothing(issue, "Builder published; host CI routes next")
         return _decide(issue, labels, add={"waiting-for-me"}, remove={state} if state else (),
                        line=f"Builder {event['result']}: waiting for the owner")
+
+    if kind == "planner":
+        if "planning" not in labels:
+            return _nothing(issue, "Planner result ignored: the issue is not planning")
+        if event["result"] == "done":
+            return _decide(issue, labels, add={"planned"}, remove={"planning"},
+                           line="planned: review the list on the issue (gate 1b)")
+        return _decide(issue, labels, add={"waiting-for-me"}, remove={"planning"},
+                       line=f"Planner {event['result']}: waiting for the owner")
 
     if kind == "merged":
         clear = {s for s in STATES if s in labels} | {l for l in labels if l.startswith("round:")}
@@ -222,6 +238,9 @@ def main(argv=None, gh=run_gh):
     who = p_settle.add_mutually_exclusive_group(required=True)
     who.add_argument("--builder", choices=["done", "blocked", "protected", "failed"])
     who.add_argument("--inspector", choices=["approve", "changes", "failed"])
+    who.add_argument("--planner", choices=["done", "blocked", "failed"])
+    p_decide.add_argument("--planner-login", default=None,
+                          help="the Planner app's login; its issues count as authored")
     for p in (p_decide, p_settle):
         p.add_argument("--owner", required=True)
         p.add_argument("--paused", action="store_true")
@@ -234,13 +253,16 @@ def main(argv=None, gh=run_gh):
             decision = _nothing(None, f"{args.event_name} event: not a pipeline event")
         else:
             if event["kind"] == "tick" and not args.paused:
-                event["issue"], _ = cr_queue.pick(gh, args.owner)
+                event["issue"], _ = cr_queue.pick(gh, args.owner, planner=args.planner_login)
             labels = issue_labels(gh, event["issue"]) if event.get("issue") else set()
             decision = route(event, labels, args.owner, args.paused)
     else:
-        event = ({"kind": "builder", "issue": args.issue, "result": args.builder}
-                 if args.builder else
-                 {"kind": "inspector", "issue": args.issue, "verdict": args.inspector})
+        if args.builder:
+            event = {"kind": "builder", "issue": args.issue, "result": args.builder}
+        elif args.inspector:
+            event = {"kind": "inspector", "issue": args.issue, "verdict": args.inspector}
+        else:
+            event = {"kind": "planner", "issue": args.issue, "result": args.planner}
         decision = route(event, issue_labels(gh, args.issue), args.owner, args.paused)
     print(json.dumps(decision.as_dict()))
     return 0
