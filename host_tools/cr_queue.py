@@ -5,9 +5,10 @@
     python host_tools/cr_queue.py label-by-owner --owner <login> --issue <n> --label <name>
 
 `pick` prints JSON for the workflow: {"issue": <number or null>, "skipped": [[n, reason]]}.
-It takes the oldest open issue labelled `ready` that is agent-ready
-(docs/design/agent-pipeline.md section 4): written by the owner, typed `cr` or `bug`, every
-form field filled, and `ready` added by the owner. It only reads GitHub.
+It takes the oldest open issue labelled `ready` that is agent-ready by its metadata
+(docs/design/agent-pipeline.md section 3): written by the owner, typed `cr` or `bug`, and
+`ready` added by the owner. It reads labels, authors and timelines, never issue text: an empty
+form field is the Builder's to report, as `blocked`. It only reads GitHub.
 
 `label-by-owner` exits 0 when the label is on the issue (or pull request) and the owner
 added it last, 1 otherwise. An app token can add labels, so the presence of a label is not
@@ -17,41 +18,10 @@ Both talk to GitHub through the `gh` CLI, in the repository of the current direc
 """
 import argparse
 import json
-import re
 import subprocess
 import sys
 
 ISSUES_API = "repos/{owner}/{repo}/issues"
-
-# The "### <label>" headings the issue forms render (.github/ISSUE_TEMPLATE/).
-FIELDS = {
-    "cr": ["Type", "What and why", "ADR link", "Requirement IDs", "Acceptance criteria",
-           "Test level", "Milestone"],
-    "bug": ["Observed", "Expected", "How to reproduce", "Affected requirement",
-            "Test level", "Milestone"],
-}
-EMPTY = {"", "_No response_"}
-
-
-def sections(body):
-    """Heading -> text under it, for every "### " heading in an issue body."""
-    out = {}
-    current = None
-    for line in body.replace("\r\n", "\n").split("\n"):
-        if line.startswith("### "):
-            current = line[4:].strip()
-            out[current] = []
-        elif line.strip() == "---":
-            current = None      # free text after the fields belongs to no field
-        elif current is not None:
-            out[current].append(line)
-    return {k: "\n".join(v).strip() for k, v in out.items()}
-
-
-def missing_fields(body, kind):
-    found = sections(body or "")
-    return [f for f in FIELDS[kind] if found.get(f, "").strip() in EMPTY]
-
 
 def last_labeler(events, label):
     """Who added the label last, or None when it was removed after its last add."""
@@ -85,8 +55,6 @@ def pick(gh, owner):
             skipped.append((number, "not written by the owner"))
         elif len(kinds) != 1:
             skipped.append((number, "neither cr nor bug" if not kinds else "both cr and bug"))
-        elif missing := missing_fields(item["body"], kinds[0]):
-            skipped.append((number, "empty field: " + ", ".join(missing)))
         elif (who := last_labeler(timeline(gh, number), "ready")) != owner:
             skipped.append((number, f"ready was set by {who}, not the owner"))
         else:

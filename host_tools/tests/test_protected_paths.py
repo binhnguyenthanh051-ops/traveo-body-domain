@@ -42,6 +42,8 @@ PROTECTED = [
     "host_tools/protected_paths.py",
     "host_tools/pipeline_setup.py",
     "host_tools/cr_queue.py",
+    "host_tools/dispatcher.py",
+    "host_tools/dispatch_apply.py",
 ]
 
 NOT_PROTECTED = [

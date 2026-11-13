@@ -14,7 +14,14 @@
     { "name": "cr",  "kind": "type", "color": "1d76db", "description": "Change request: one unit of work for the agent pipeline" },
     { "name": "bug", "kind": "type", "color": "d73a4a", "description": "Something isn't working" },
 
-    { "name": "protected-change-approved", "kind": "control", "color": "e99695", "description": "Owner only: this pull request may touch a protected path" }
+    { "name": "protected-change-approved", "kind": "control", "color": "e99695", "description": "Owner only: this pull request may touch a protected path" },
+
+    { "name": "level:host",      "kind": "control", "color": "bfdadc", "description": "Test level host: set by the owner with ready (the Dispatcher reads labels, not text)" },
+    { "name": "level:on-target", "kind": "control", "color": "bfdadc", "description": "Test level on-target: approval books the bench" },
+    { "name": "level:both",      "kind": "control", "color": "bfdadc", "description": "Test level host and on-target: approval books the bench" },
+    { "name": "round:1", "kind": "control", "color": "fef2c0", "description": "Rework round 1 of 2 (set by the Dispatcher only)" },
+    { "name": "round:2", "kind": "control", "color": "fef2c0", "description": "Rework round 2 of 2 (set by the Dispatcher only)" },
+    { "name": "round:3", "kind": "control", "color": "fef2c0", "description": "The referee round after the owner's answer; a failure sends the CR to draft" }
   ],
   "ruleset": {
     "_comment": "The existing ruleset on main (pull request, no force push, linear history). This tool only sets its required checks: tests, traceability and protected paths (design note section 5, build step 2).",
