@@ -167,13 +167,33 @@ def test_pull_requests_in_the_list_are_ignored():
 
 
 @pytest.mark.parametrize("bad, reason", [
-    (issue(1, author="stranger"), "not written by the owner"),
+    (issue(1, author="stranger"), "not written by the owner or the Planner"),
     (issue(1, labels=("ready",)), "neither cr nor bug"),
 ])
 def test_a_cr_that_is_not_agent_ready_is_skipped_with_a_reason(bad, reason):
     chosen, skipped = pick([bad, issue(8)])
     assert chosen == 8
     assert skipped == [(1, reason)]
+
+
+PLANNER = "reviewer-github-app[bot]"
+
+
+def test_a_cr_written_by_the_planner_is_picked_when_the_owner_set_ready():
+    chosen, skipped = cr_queue.pick(FakeGh([issue(1, author=PLANNER)]), OWNER, planner=PLANNER)
+    assert chosen == 1 and skipped == []
+
+
+def test_a_cr_written_by_the_planner_with_ready_by_the_planner_is_skipped():
+    gh = FakeGh([issue(1, author=PLANNER)], {1: [labeled("ready", PLANNER)]})
+    chosen, skipped = cr_queue.pick(gh, OWNER, planner=PLANNER)
+    assert chosen is None
+    assert skipped == [(1, f"ready was set by {PLANNER}, not the owner")]
+
+
+def test_without_a_planner_login_only_the_owner_counts_as_author():
+    chosen, skipped = cr_queue.pick(FakeGh([issue(1, author=PLANNER)]), OWNER)
+    assert chosen is None and skipped == [(1, "not written by the owner or the Planner")]
 
 
 def test_ready_set_by_an_app_is_skipped():
@@ -194,7 +214,7 @@ def test_main_pick_prints_json_for_the_workflow(capsys):
     gh = FakeGh([issue(1, author="stranger"), issue(8)])
     assert cr_queue.main(["pick", "--owner", OWNER], gh=gh) == 0
     out = json.loads(capsys.readouterr().out)
-    assert out == {"issue": 8, "skipped": [[1, "not written by the owner"]]}
+    assert out == {"issue": 8, "skipped": [[1, "not written by the owner or the Planner"]]}
 
 
 def test_main_pick_with_nothing_ready_prints_null(capsys):
