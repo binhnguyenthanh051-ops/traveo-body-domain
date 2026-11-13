@@ -105,6 +105,7 @@ starts jobs; it never pushes code.
 | 1 | nightly tick or manual button | the oldest open `ready` issue, written by me, with `ready` added by me | `ready` → `building` | Builder (build) |
 | 2 | same | no such issue | none | nothing ("no ready CR") |
 | 3 | host CI finished on `cr/<n>`, success | state `building` or `rework` | → `review` | Inspector |
+| 3b | same, success | state `review` (a CI re-run) | none | Inspector again |
 | 4 | same, failure | state `building` or `rework` | → `rework`, round +1 | Builder (rework) |
 | 5 | Inspector result: approve | `level:host` | `review` → `awaiting-merge` | nothing; I am notified |
 | 6 | same | `level:on-target` or `level:both` | `review` → `needs-bench` | nothing; the bench is booked |
@@ -112,6 +113,7 @@ starts jobs; it never pushes code.
 | 8 | bench status posted, pass | state `needs-bench` | → `awaiting-merge` | nothing |
 | 9 | same, fail | state `needs-bench` | → `rework`, round +1 | Builder (rework) |
 | 10 | Builder result: blocked, protected path, or failed | none | → `waiting-for-me` | nothing |
+| 10b | Inspector run failed (no verdict) | state `review` | → `waiting-for-me` | nothing |
 | 11 | I add `rework` to a `waiting-for-me` CR | my answer is on the CR | → `rework`, round +1 | Builder, one more round |
 | 12 | I add `ready` or `draft` | unblock, or the CR was wrong | as I set them | nothing; row 1 picks it up |
 | 13 | the PR from `cr/<n>` is merged | none | → `done`, round cleared | nothing |
@@ -135,8 +137,10 @@ starts jobs; it never pushes code.
   Dispatcher sets the round.
 - A missing form field is the Builder's to report: it checks the issue first and reports
   `blocked`, which row 10 routes to me.
-- The Planner, the Challenger and the Inspector join the table in build steps 5 to 7. Until
-  then, row 3 sets `review` and the status line says the Inspector is not built yet.
+- The Inspector (step 5) posts its review on the pull request as a **comment, never a GitHub
+  approval**: an app approval would satisfy the one-approval rule on `main`, and the Builder app
+  could then merge. Its verdict reaches the Dispatcher as the job's output, not as text.
+- The Planner and the Challenger join the table in build steps 6 and 7.
 - On-target tests are not limited to Saturday. The pipeline books the station and I plug in on
   a weeknight. No manual debugging on weeknights.
 - How the agents run is in ADR-0026: GitHub Actions jobs, acting as GitHub Apps.
@@ -340,6 +344,8 @@ Target: all steps this week, by 2026-11-15. Each step is its own CR and pull req
 3. One tiny CR walked through by hand: I start every stage manually. This proves the handoffs.
 4. Builder on its nightly trigger, with the status line for every run.
 5. Inspector on its trigger. Retire the old noon reviewer routine, so there is one reviewer.
+   (2026-11-13: no noon reviewer routine exists, in claude.ai routines, local scheduled tasks or
+   workflows, so nothing was retired.)
 6. Planner: breakdown from an approved ADR, and bug reports on request.
 7. Challenger: design session support and the breakdown check.
 8. Bench run wired to `needs-bench`, result posted as a check.
