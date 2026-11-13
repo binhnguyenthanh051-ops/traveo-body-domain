@@ -161,7 +161,8 @@ def _same_managed(spec, existing):
                 return False
 
     def actors(items):
-        return sorted((a.get("actor_id"), a["actor_type"], a["bypass_mode"]) for a in items)
+        # A DeployKey actor has actor_id null, so compare as text: None and 5 don't sort.
+        return sorted((str(a.get("actor_id")), a["actor_type"], a["bypass_mode"]) for a in items)
     return actors(spec["bypass_actors"]) == actors(existing.get("bypass_actors", []))
 
 
