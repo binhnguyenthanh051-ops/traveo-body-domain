@@ -11,8 +11,8 @@ A script, not an agent: its only inputs are a CR number and the PR's head commit
      and stops the captures, following the bench rule in docs/workflow.md (no erase, no SFlash,
      eFuse or lifecycle writes, and a failed flash stops the session);
   4. judges with host_tools/bench_check.py: the verdict is its exit code;
-  5. posts the `bench` commit status and a PR comment, with the bench's own token (a separate gh
-     login in GH_CONFIG_DIR, see docs/hardware/kits.md), and leaves the captures in
+  5. posts the `bench` commit status and a PR comment, with the bench's own token (a file handed
+     to gh as GH_TOKEN, see docs/hardware/kits.md), and leaves the captures in
      docs/bench/<date>/cr-<n>/ of this checkout.
 The Dispatcher routes the status (rows 8-9). Exit code: 0 pass, 1 fail, 2 refused or unusable.
 """
@@ -123,9 +123,20 @@ class _Capture:
             self.proc.wait(timeout=10)
 
 
+TOKEN_FILE = pathlib.Path.home() / ".config" / "traveo-bench" / "token"
+
+
 def run_gh(args, stdin=None):
-    env = dict(os.environ, GH_CONFIG_DIR=os.environ.get(
-        "BENCH_GH_CONFIG_DIR", str(pathlib.Path.home() / ".config" / "gh-bench")))
+    """Run gh with the bench's own token as GH_TOKEN. The bench never logs in: a second gh
+    login shares the Windows keyring with the owner's and replaces it (found 2026-11-14)."""
+    path = pathlib.Path(os.environ.get("BENCH_TOKEN_FILE", TOKEN_FILE))
+    try:
+        token = path.read_text(encoding="utf-8").strip()
+    except OSError:
+        token = ""
+    if not token:
+        raise SystemExit(f"no bench token in {path}: see docs/hardware/kits.md, 'The bench'")
+    env = dict(os.environ, GH_TOKEN=token)
     return subprocess.run(["gh", *args], check=True, capture_output=True, text=True,
                           encoding="utf-8", input=stdin, env=env, cwd=REPO).stdout
 
