@@ -165,6 +165,48 @@ def _same_managed(spec, existing):
     return actors(spec["bypass_actors"]) == actors(existing.get("bypass_actors", []))
 
 
+ENVIRONMENTS_API = "repos/{owner}/{repo}/environments"
+
+
+def repo_owner(gh):
+    return json.loads(gh(["api", "repos/{owner}/{repo}"]))["owner"]["login"]
+
+
+def read_environment(gh, name):
+    """Return (environment or None, its custom deployment branch names)."""
+    try:
+        env = json.loads(gh(["api", f"{ENVIRONMENTS_API}/{name}"]))
+    except subprocess.CalledProcessError:
+        return None, []
+    if not (env.get("deployment_branch_policy") or {}).get("custom_branch_policies"):
+        return env, []
+    policies = json.loads(gh(["api", f"{ENVIRONMENTS_API}/{name}/deployment-branch-policies"]))
+    return env, [p["name"] for p in policies.get("branch_policies", [])]
+
+
+def _reviewers(spec, owner):
+    return sorted(owner if r == "{owner}" else r for r in spec["reviewers"])
+
+
+def plan_environment(spec, existing, branches, owner):
+    """An environment whose runs need the reviewers' approval and start only from the
+    listed branches (ADR-0026: only an owner-approved release run gets the deploy key)."""
+    if existing is None:
+        return Action("environment", "create", spec["name"])
+    rule = next((r for r in existing.get("protection_rules", [])
+                 if r["type"] == "required_reviewers"), {})
+    have = sorted(r["reviewer"]["login"] for r in rule.get("reviewers", []))
+    custom = (existing.get("deployment_branch_policy") or {}).get("custom_branch_policies")
+    same = (have == _reviewers(spec, owner) and custom
+            and not rule.get("prevent_self_review", False)
+            and sorted(branches) == sorted(spec["branches"]))
+    return Action("environment", "keep" if same else "update", spec["name"])
+
+
+def write_deploy_keys(gh):
+    return [k for k in json.loads(gh(["api", "repos/{owner}/{repo}/keys"])) if not k["read_only"]]
+
+
 def plan_managed(spec, existing):
     """A ruleset this tool owns completely: create it, update it, or keep it."""
     if existing is None:
@@ -208,15 +250,32 @@ def read_github(gh):
     return labels, milestones
 
 
-def apply(actions, config, gh, ruleset=None):
+def apply(actions, config, gh, ruleset=None, env_branches=None, owner=None):
     """Make every create and update of the plan."""
     labels = {label["name"]: label for label in config["labels"]}
     milestones = {milestone["title"]: milestone for milestone in config["milestones"]}
     managed = {spec["name"]: spec for spec in config.get("managed_rulesets", [])}
+    environments = {spec["name"]: spec for spec in config.get("environments", [])}
     for action in actions:
         if action.op == "keep":
             continue
-        if action.kind == "ruleset" and action.name in managed:
+        if action.kind == "environment":
+            spec = environments[action.name]
+            ids = [json.loads(gh(["api", f"users/{login}"]))["id"]
+                   for login in _reviewers(spec, owner)]
+            body = {"reviewers": [{"type": "User", "id": i} for i in ids],
+                    "prevent_self_review": False,
+                    "deployment_branch_policy": {"protected_branches": False,
+                                                 "custom_branch_policies": True}}
+            gh(["api", "--method", "PUT", "--input", "-", f"{ENVIRONMENTS_API}/{action.name}"],
+               stdin=json.dumps(body))
+            have = set((env_branches or {}).get(action.name, []))
+            for branch in spec["branches"]:
+                if branch not in have:
+                    gh(["api", "--method", "POST", "--input", "-",
+                        f"{ENVIRONMENTS_API}/{action.name}/deployment-branch-policies"],
+                       stdin=json.dumps({"name": branch, "type": "branch"}))
+        elif action.kind == "ruleset" and action.name in managed:
             body = json.dumps(managed_body(managed[action.name]))
             if action.op == "create":
                 gh(["api", "--method", "POST", "--input", "-", RULESETS_API], stdin=body)
@@ -280,6 +339,18 @@ def main(argv=None, gh=run_gh):
             actions.append(plan_ruleset(config["ruleset"], ruleset))
         for spec in config.get("managed_rulesets", []):
             actions.append(plan_managed(spec, read_ruleset(gh, spec["name"])))
+        owner, env_branches = None, {}
+        if config.get("environments"):
+            owner = repo_owner(gh)
+            for spec in config["environments"]:
+                env, env_branches[spec["name"]] = read_environment(gh, spec["name"])
+                actions.append(plan_environment(spec, env, env_branches[spec["name"]], owner))
+        # The tag rule's DeployKey bypass covers every deploy key with write access.
+        keys = write_deploy_keys(gh)
+        if len(keys) > 1:
+            print(f"error: {len(keys)} deploy keys can write ({', '.join(k['title'] for k in keys)}). "
+                  "The tag rule lets every one of them tag; keep only the release key.")
+            return 1
         for action in actions:
             print(f"{action.kind:<10} {action.op:<7} {action.name}")
         if any(action.op == "missing" for action in actions):
@@ -294,7 +365,7 @@ def main(argv=None, gh=run_gh):
         if not pending:
             print("GitHub matches the config: nothing to do.")
         elif args.apply:
-            apply(pending, config, gh, ruleset)
+            apply(pending, config, gh, ruleset, env_branches, owner)
             print(f"{len(pending)} change(s) applied.")
         else:
             print(f"{len(pending)} change(s) pending. Dry run: nothing was changed. "

@@ -47,11 +47,19 @@ Builder App token) and `report` (one status line per run). The agent's commits r
 |---|---|---|
 | `Protect_main_branch` (existing) | PR required, 5 required checks, no force push, no deletion, linear history | **nobody**: the checks apply to the owner too |
 | `Owner_approval` | 1 approving review, stale approvals dismissed, last push approved | owner (admin role), **only through a PR merge** |
-| `Tags_owner_only` | create, update and delete of any tag | owner, and GitHub Actions for `release.yml` |
+| `Tags_owner_only` | create, update and delete of any tag | owner, and deploy keys |
 
 Rulesets stack, so the owner's bypass of `Owner_approval` never skips `Protect_main_branch`.
-Every agent job keeps `GITHUB_TOKEN` at `contents: read`, so the GitHub Actions bypass on tags
-serves `release.yml` only. Applied by `host_tools/pipeline_setup.py --apply`.
+Applied by `host_tools/pipeline_setup.py --apply`.
+
+**Release tags (revised 2026-11-13).** The first plan let GitHub Actions bypass the tag rule
+for `release.yml`. GitHub refused it: the GitHub Actions app can be a bypass actor only on an
+organization repo (HTTP 422). So `release.yml` pushes the tag over SSH with a **deploy key**,
+stored only in a `release` environment that needs the owner's approval for each run and starts
+only from `main`. No agent job names that environment, so none gets the key. The DeployKey
+bypass covers every deploy key with write access, so `pipeline_setup.py` fails when more than
+one exists. Alternative: the owner pushes the tag by hand and `release.yml` only creates the
+Release. It is simpler, but then the tag exists before the checks pass.
 
 ### D5. A label counts only when the owner added it
 
@@ -93,6 +101,7 @@ Agent jobs on pull request events (from step 5) start only when
 | Builder App token | `publish` only, ≤ 1 h | push branches, open PRs, edit issues and labels; no tags, no workflows, no merge to `main` |
 | Reviewer App token | reviewer jobs only, ≤ 1 h | comments and labels |
 | App private keys | the token-minting step only | minting new tokens: the crown jewel |
+| `RELEASE_DEPLOY_KEY` | the `release` environment only, after the owner approves the run | pushing any tag or branch the rulesets allow a deploy key: every tag, but not `main` |
 | `GITHUB_TOKEN` | every job | at most `issues: write` in `pick` and `report`; read-only elsewhere |
 
 What remains open: a release on an **existing** tag cannot be blocked by permissions
@@ -117,12 +126,14 @@ What remains open: a release on an **existing** tag cannot be blocked by permiss
 - (−) The owner approves each agent pull request (one click) before merging.
 - (−) Setup the owner must do, since it creates identities and secrets: create the two apps,
   set `BUILDER_APP_ID` (variable), `BUILDER_APP_PRIVATE_KEY` and `CLAUDE_CODE_OAUTH_TOKEN`
-  (secrets).
+  (secrets); create one deploy key with write access and store its private half as the
+  `release` environment secret `RELEASE_DEPLOY_KEY`.
 - (−) GitHub disables scheduled workflows after 60 days without repository activity.
 
 ## 6. Not verified yet
 
 - The first `builder.yml` run: `claude-code-action` with a read-only `github_token` in
   automation mode, and the bundle hand-over between jobs.
-- The ruleset actor IDs (admin role `5`, GitHub Actions `15368`) after `--apply`, read back
-  from the API.
+- `Owner_approval` was applied and read back on 2026-11-13 (admin role `5`, PR-only bypass).
+  `Tags_owner_only` with the DeployKey bypass is not applied yet, and the deploy-key tag push in
+  `release.yml` has not run.
