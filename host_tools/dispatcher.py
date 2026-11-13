@@ -26,7 +26,7 @@ import cr_queue  # noqa: E402
 STATES = ("draft", "ready", "building", "review", "rework", "needs-bench",
           "awaiting-merge", "waiting-for-me", "done")
 GATE_LABELS = {"ready", "rework", "draft", "protected-change-approved",
-               "plan:breakdown", "plan:bug"}
+               "plan:breakdown", "plan:bug", "challenge"}
 PLAN_LABELS = {"plan:breakdown": "plan-breakdown", "plan:bug": "plan-bug"}
 CAP = 2                 # rework rounds before the owner referees
 REFEREE_ROUND = CAP + 1  # the one extra round after the owner's answer
@@ -94,6 +94,9 @@ def route(event, labels, owner, paused):
         if actor != owner:
             return _nothing(issue, f"label '{label}' added by {actor} ignored: "
                                    "only the owner's labels route")
+        if label == "challenge":
+            return _decide(issue, labels, remove={"challenge"}, start="challenge-design",
+                           line="challenge: the Challenger reviews the design")
         if label in PLAN_LABELS:
             if "planning" in labels or "planned" in labels:
                 return _nothing(issue, f"'{label}' ignored: the issue is already planned")
@@ -164,8 +167,11 @@ def route(event, labels, owner, paused):
         if "planning" not in labels:
             return _nothing(issue, "Planner result ignored: the issue is not planning")
         if event["result"] == "done":
+            check = event.get("mode") == "plan-breakdown"
             return _decide(issue, labels, add={"planned"}, remove={"planning"},
-                           line="planned: review the list on the issue (gate 1b)")
+                           start="challenge-breakdown" if check else None,
+                           line="planned: review the list on the issue (gate 1b)"
+                                + ("; the Challenger checks the breakdown first" if check else ""))
         return _decide(issue, labels, add={"waiting-for-me"}, remove={"planning"},
                        line=f"Planner {event['result']}: waiting for the owner")
 
@@ -199,6 +205,9 @@ def facts(event_name, payload):
             return None
         return {"kind": "ci", "issue": issue, "conclusion": run["conclusion"],
                 "same_repo": (run.get("head_repository") or {}).get("full_name") == repo}
+    if event_name == "pull_request" and payload.get("action") == "labeled":
+        return {"kind": "label", "issue": payload["number"],
+                "label": payload["label"]["name"], "actor": payload["sender"]["login"]}
     if event_name == "pull_request":
         pr = payload["pull_request"]
         issue = _cr_number(pr["head"]["ref"])
@@ -239,6 +248,7 @@ def main(argv=None, gh=run_gh):
     who.add_argument("--builder", choices=["done", "blocked", "protected", "failed"])
     who.add_argument("--inspector", choices=["approve", "changes", "failed"])
     who.add_argument("--planner", choices=["done", "blocked", "failed"])
+    p_settle.add_argument("--mode", default=None, help="the Planner's mode (plan-breakdown, plan-bug)")
     p_decide.add_argument("--planner-login", default=None,
                           help="the Planner app's login; its issues count as authored")
     for p in (p_decide, p_settle):
@@ -262,7 +272,8 @@ def main(argv=None, gh=run_gh):
         elif args.inspector:
             event = {"kind": "inspector", "issue": args.issue, "verdict": args.inspector}
         else:
-            event = {"kind": "planner", "issue": args.issue, "result": args.planner}
+            event = {"kind": "planner", "issue": args.issue, "result": args.planner,
+                     "mode": args.mode}
         decision = route(event, issue_labels(gh, args.issue), args.owner, args.paused)
     print(json.dumps(decision.as_dict()))
     return 0
