@@ -343,11 +343,12 @@ def test_report_shows_observed_and_lists_unclaimed_contract_events(tmp_path):
 
 # --- the real repo -------------------------------------------------------------------------
 
-def test_no_tag_in_the_repo_names_an_undefined_requirement_or_decision():
-    """Issue #37: a tag naming a REQ (or ADR, or ADR sub-decision) that does not exist
-    is a broken trace in every area, tagged or not, so it fails here and not only in
+def test_no_broken_trace_anywhere_in_the_repo():
+    """Issue #37: every tag names a defined requirement (no "dangling" gap), and every
+    requirement traces to an ADR sub-decision that exists (no "bad-trace" gap). Both
+    are broken traces in every area, tagged or not, so they fail here and not only in
     the report."""
     root = pathlib.Path(__file__).resolve().parents[2]
-    dangling = [(g.id, g.where) for g in trace_report.build_model(root).gaps
-                if g.kind == "dangling"]
-    assert dangling == []
+    broken = [(g.kind, g.id, g.where) for g in trace_report.build_model(root).gaps
+              if g.kind in ("dangling", "bad-trace")]
+    assert broken == []
