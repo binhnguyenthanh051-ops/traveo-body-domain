@@ -54,6 +54,18 @@ def test_status_waits_for_both_challenger_jobs():
     assert "challenger-design" in needs and "challenger-breakdown" in needs
 
 
+def test_every_dispatcher_call_reads_the_pause_switch():
+    # Build step 10: PIPELINE_PAUSED stops routing in both route and settle, so a job that
+    # was already running when the owner paused changes no label when it finishes.
+    text = (WORKFLOWS / "dispatcher.yml").read_text(encoding="utf-8").replace("\r\n", "\n")
+    joined = text.replace("\\\n", " ")       # one shell command per line
+    calls = re.findall(r"python host_tools/dispatcher\.py (?:decide|settle)[^\n]*", joined)
+    assert len(calls) == 2
+    for call in calls:
+        assert "$PAUSED" in call
+    assert text.count("PAUSED: ${{ vars.PIPELINE_PAUSED == 'true' && '--paused' || '' }}") == 2
+
+
 @pytest.mark.parametrize("name", ["builder.yml", "inspector.yml", "planner.yml", "challenger.yml"])
 def test_the_action_is_pinned_to_a_commit(name):
     assert action_steps(name), f"{name}: claude-code-action not pinned to a 40-hex commit"
