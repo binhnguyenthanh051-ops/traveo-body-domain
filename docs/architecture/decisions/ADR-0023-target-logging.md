@@ -397,7 +397,7 @@ removed), and the FBL's verify path would get nothing. Rejected. **Cost:** `shar
 depends on `tb_log.h`, so every host suite that links `crypto_service.c` binds the fake log
 port. All three target images already link `log.c`.
 
-### D13. A **bounded flush** at a hand-off is the one exception to cyclic output (2026-11-13, #37)
+### D13. A **bounded flush** at a hand-off is the second exception to cyclic output, after `log_panic()`
 
 D10 makes output cyclic: `log_evt()` enqueues and a task drains later. At a hand-off there is
 no later. The FBL jumps and the app re-initialises SCB0, which resets the TX FIFO; or the FBL
@@ -405,25 +405,25 @@ stops draining in programming mode. The last events, `LOG_EVT_APP_JUMP` and
 `LOG_EVT_APP_REJECT`, are the secure-boot BVT's positive evidence (REQ-LOG-009), and they are
 exactly the ones still queued. This lost every FBL record on real hardware.
 
-**Decision.** `log_flush(timeout_ms)` empties the rings, then waits for the sink's
+**Decision.** `log_flush(timeout_ms)` empties the ring, then waits for the sink's
 transmit-complete status, because an empty ring is not an empty UART (about 160 µs per record
 at 1 Mbps). It has two independent bounds: the timeout, and `LOG_FLUSH_MAX_STALL` iterations
-without progress, because the FBL's `deinit_for_jump()` stops SysTick and a timeout alone would
-then spin forever. Callers ignore the result (D7: logging never changes behaviour). Order at the
-jump: emit → flush → deinit → jump. (REQ-LOG-015.)
+without progress. A flush called after the FBL's `deinit_for_jump()`, which stops SysTick, would
+see a frozen clock, and a timeout alone would then spin forever. Today's callers flush before the
+deinit, so the stall cap guards against a wrong call order, not against today's. Callers ignore
+the result (D7: logging never changes behaviour). Order at the jump: emit → flush → deinit → jump.
 
 **Alternatives.**
 - A fixed delay before the jump: not tied to the sink, wastes boot time when the sink is idle,
-  and is still wrong when it is slow. Rejected.
-- A `log_panic()`-style blocking write of only the last event: loses everything queued before
-  it, and is unbounded on a dead sink. Rejected.
-- Waiting in every `log_evt()` (immediate output): rejected by D7 and D10 for the whole system,
-  to fix one moment.
-- Extending D10 with a hand-off paragraph instead of a new decision: less churn, but D10 is about
-  latency, and the flush is about termination with a stopped clock.
+  and is still wrong when it is slow.
+- `log_panic()`-style blocking write of only the last event: loses everything queued before it,
+  and is unbounded on a dead sink.
+- Wait in every `log_evt()` (immediate output): rejected by D7 and D10 for the whole system, to
+  fix one moment.
 
-**Consequences.** (+) The evidence survives the hand-off. (−) The one place a caller waits on the
-sink: up to `FBL_LOG_FLUSH_MS` (20 ms) more on the boot path when the sink is dead.
+**Consequences.** (+) The evidence survives the hand-off. (−) Besides `log_panic()` (D7), the one
+place a caller waits on the sink: up to `FBL_LOG_FLUSH_MS` (20 ms) more on the boot path when the
+sink is dead.
 
 ## Consequences
 
