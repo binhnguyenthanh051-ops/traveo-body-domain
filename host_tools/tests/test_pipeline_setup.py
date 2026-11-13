@@ -11,6 +11,7 @@ pass a fake that records the calls."""
 import json
 import pathlib
 import re
+import subprocess
 import sys
 
 import pytest
@@ -265,9 +266,12 @@ def test_new_rules_change_only_the_required_checks():
 class FakeGh:
     """Stands in for the `gh` CLI: answers the reads, records every call and its stdin."""
 
-    def __init__(self, labels=(), milestones=(), rulesets=()):
+    def __init__(self, labels=(), milestones=(), rulesets=(), paths=None):
         self.labels, self.milestones, self.calls = list(labels), list(milestones), []
         self.rulesets = {r["id"]: r for r in rulesets}
+        self.paths = {"repos/{owner}/{repo}": {"owner": {"login": "owner"}},
+                      "users/owner": {"id": 42}, "repos/{owner}/{repo}/keys": []}
+        self.paths.update(paths or {})
         self.stdin = []
 
     def __call__(self, args, stdin=None):
@@ -277,6 +281,12 @@ class FakeGh:
             return json.dumps(self.labels)
         if args[0] == "api" and "--method" not in args:
             path = args[1]
+            if path in self.paths:
+                if self.paths[path] is None:      # GitHub answers 404
+                    raise subprocess.CalledProcessError(1, "gh", stderr="Not Found (HTTP 404)")
+                return json.dumps(self.paths[path])
+            if "/environments/" in path:
+                raise subprocess.CalledProcessError(1, "gh", stderr="Not Found (HTTP 404)")
             if "/rulesets/" in path:
                 return json.dumps(self.rulesets[int(path.rsplit("/", 1)[1])])
             if "/rulesets" in path:
@@ -371,8 +381,70 @@ def test_only_the_owner_and_the_release_workflow_touch_tags():
     assert r["target"] == "tag"
     assert r["conditions"]["ref_name"]["include"] == ["~ALL"]
     assert {rule["type"] for rule in r["rules"]} == {"creation", "update", "deletion"}
+    # GitHub refuses the GitHub Actions app as a bypass actor on a personal-account repo
+    # (HTTP 422, 2026-11-13). release.yml pushes the tag with a deploy key instead.
     assert r["bypass_actors"] == [dict(ADMIN, bypass_mode="always"),
-                                  dict(ACTIONS, bypass_mode="always")]
+                                  {"actor_id": None, "actor_type": "DeployKey",
+                                   "bypass_mode": "always"}]
+
+
+# --- the release environment: only owner-approved runs get the deploy key ---------------
+
+def test_release_environment_needs_the_owner_and_runs_only_from_main():
+    (env,) = real_config()["environments"]
+    assert env == {"name": "release", "reviewers": ["{owner}"], "branches": ["main"]}
+
+
+ENV = {"name": "release", "reviewers": ["{owner}"], "branches": ["main"]}
+
+
+def env_on_github(reviewer="owner", custom=True):
+    return {"name": "release",
+            "protection_rules": [
+                {"type": "required_reviewers", "prevent_self_review": False,
+                 "reviewers": [{"type": "User", "reviewer": {"login": reviewer, "id": 42}}]},
+                {"type": "branch_policy"}],
+            "deployment_branch_policy": {"protected_branches": not custom,
+                                         "custom_branch_policies": custom}}
+
+
+@pytest.mark.parametrize("existing, branches, op", [
+    (None, None, "create"),
+    (env_on_github(), ["main"], "keep"),
+    (env_on_github(reviewer="someone"), ["main"], "update"),
+    (env_on_github(), ["dev"], "update"),
+    (env_on_github(custom=False), [], "update"),
+])
+def test_plan_environment(existing, branches, op):
+    action = pipeline_setup.plan_environment(ENV, existing, branches, "owner")
+    assert (action.kind, action.op, action.name) == ("environment", op, "release")
+
+
+def test_apply_puts_the_environment_with_the_owner_as_reviewer(tmp_path):
+    config = write_config(tmp_path)
+    data = json.loads(config.read_text(encoding="utf-8"))
+    data["environments"] = [ENV]
+    config.write_text(json.dumps(data), encoding="utf-8")
+    gh = FakeGh(rulesets=[ruleset(["a"])])
+    assert pipeline_setup.main(["--config", str(config), "--apply"], gh=gh) == 0
+    (put,) = [c for c in gh.writes() if "PUT" in c and "environments/release" in c[-1]]
+    body = json.loads(gh.stdin[gh.calls.index(put)])
+    assert body["reviewers"] == [{"type": "User", "id": 42}]
+    assert body["prevent_self_review"] is False          # the owner approves their own run
+    assert body["deployment_branch_policy"] == {"protected_branches": False,
+                                                "custom_branch_policies": True}
+    (post,) = [c for c in gh.writes() if "deployment-branch-policies" in c[-1]]
+    assert json.loads(gh.stdin[gh.calls.index(post)]) == {"name": "main", "type": "branch"}
+
+
+def test_more_than_one_write_deploy_key_is_an_error(tmp_path, capsys):
+    # The DeployKey bypass covers every deploy key with write access, so only one may exist.
+    keys = [{"id": 1, "title": "release", "read_only": False},
+            {"id": 2, "title": "other", "read_only": False}]
+    gh = FakeGh(rulesets=[ruleset(["a"])], paths={"repos/{owner}/{repo}/keys": keys})
+    assert pipeline_setup.main(["--config", str(write_config(tmp_path)), "--apply"], gh=gh) == 1
+    assert gh.writes() == []
+    assert "deploy key" in capsys.readouterr().out
 
 
 def test_both_managed_rulesets_are_active():
