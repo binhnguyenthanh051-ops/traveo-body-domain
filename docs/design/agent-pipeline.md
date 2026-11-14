@@ -543,25 +543,32 @@ Each boundary is enforced by the platform, not by the prompt.
 
 | Agent | Runs in | Can reach | Cannot reach |
 |---|---|---|---|
-| Challenger, Planner, Inspector | a fresh cloud environment, destroyed after the run | a fresh checkout (read), comments on issues and pull requests, allowlisted network hosts | push, `main`, workflows, tags, keys, my PC, the board |
-| Builder | a fresh cloud environment, destroyed after the run | a fresh checkout, push to its own branch, open a pull request, allowlisted network hosts | `main`, workflows, tags, keys, my PC, the board |
+| Challenger, Planner, Inspector | a fresh GitHub-hosted Actions runner per job, destroyed after the job (ADR-0026) | in the agent job: a checkout (read), the issue or PR as data, the **open network** (egress audited, not blocked yet) and the OAuth token. Their comment or draft issues are posted by a separate scripted job with the Reviewer App token | a GitHub write token in the agent job, push, `main`, workflows, tags, keys, my PC, the board |
+| Builder | a fresh GitHub-hosted Actions runner per job, destroyed after the job (ADR-0026) | in the agent job: a checkout, local commits only, the **open network** (audited, not blocked yet) and the OAuth token. A separate scripted `publish` job checks its bundle and protected paths, then pushes its own branch and opens the PR with the Builder App token | a GitHub write token in the agent job, `main`, workflows (the app has no Workflows permission), tags, keys, my PC, the board |
 | Dispatcher | a fresh GitHub Actions runner, destroyed after the run | events, labels and who acted; change labels; start agent jobs; one status comment per run | issue and comment text, push, `main`, workflows, tags, keys, my PC, the board |
 | Bench run | my PC, started by me | the repo folder, the flashing tool, the board, local test keys | issue text, comments and the web: its only inputs are a commit and a CR number |
 
 - Separation rule: no agent has all three of untrusted input, access to keys or hardware,
   and a way to send data out. The cloud agents see untrusted input but hold no keys and no
   hardware. The bench run holds keys and hardware but takes no untrusted input.
+- **Open today (2026-11-14):** the cloud agents hold untrusted input **and** the OAuth token, and
+  their egress is audited, not blocked, so a prompt injection could send that token out. The token
+  reaches the model only (no repository keys, no board), but this leg stays open until egress is
+  blocked with a measured allowlist (ADR-0026 D7).
 - A prompt is not a sandbox. The boundaries are token scopes, branch protection, the network
-  allowlist and the lifetime of the environment.
+  allowlist (once egress is blocked) and the lifetime of the environment.
 - The sandbox is tested with negative tests, at setup and at every release as part of the
   security check:
   - the Builder's credentials try to push to `main`: must fail
-  - a cloud run tries to reach a host that is not on the allowlist: must fail
+  - a cloud run tries to reach a host that is not on the allowlist: must fail (cannot pass
+    until egress is blocked)
   - a cloud run looks for key material: finds none
 - The sandbox limits the damage of a bad run. It does not stop a bad change from being
   proposed. The gates do that.
 
-**What exists today** (checked by Claude Code on 2026-11-12, against the Claude Code docs)
+**What existed before ADR-0026** (checked by Claude Code on 2026-11-12, against the Claude Code
+docs). This analysis led to running the agents as GitHub Actions jobs instead of Claude Code
+cloud sessions; the table above is how they run now. Kept for the reasoning.
 
 | | Cloud runs (Claude Code cloud sessions and cloud scheduled tasks) | Local runs on my PC (native Windows) |
 |---|---|---|
