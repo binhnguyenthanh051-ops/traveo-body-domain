@@ -23,6 +23,7 @@ and the ADRs it touches. Then write:
   observed on the bench).
 - **Alternatives** a reviewer would expect to see recorded, with their trade-off.
 - **Risks**: safety, security, timing, testability, things that are hard to undo.
+  For every allowlist, permission or filter, ask what an attacker can still do inside it.
 - **Requirements**: any that are not testable, not observable (CLAUDE.md rule 7), or ambiguous.
 - **One thing to learn**: a concept behind this design worth understanding deeply, with a pointer
   (a standard, a TRM section, a well-known pattern) and why it matters here.
