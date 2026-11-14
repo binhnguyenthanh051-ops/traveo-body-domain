@@ -36,6 +36,53 @@ def last_labeler(events, label):
     return who
 
 
+EDITS_QUERY = """
+query($owner: String!, $repo: String!, $number: Int!) {
+  repository(owner: $owner, name: $repo) {
+    issue(number: $number) { userContentEdits(first: 100) { nodes { editedAt editor { login } } } }
+  }
+}"""
+
+
+def ready_time(events, owner):
+    """When the owner last added `ready`, or None when `ready` isn't the owner's now."""
+    when = None
+    for event in events:
+        if event.get("label", {}).get("name") != "ready":
+            continue
+        if event.get("event") == "labeled":
+            when = event.get("created_at") if event["actor"]["login"] == owner else None
+        elif event.get("event") == "unlabeled":
+            when = None
+    return when
+
+
+def edited_after_ready(events, edits, owner):
+    """[(who, "text" | "title")] for every edit by someone other than the owner after the
+    owner's last `ready`. Reads who edited and when, never the text (Challenger finding on
+    the agent-runtime design, 2026-11-13: an app could change a CR after it was approved)."""
+    since = ready_time(events, owner)
+    if since is None:
+        return []
+    found = []
+    for edit in edits:
+        who = (edit.get("editor") or {}).get("login") or "(deleted user)"
+        if edit["editedAt"] > since and who != owner:
+            found.append((who, "text"))
+    for event in events:
+        who = (event.get("actor") or {}).get("login") or "(deleted user)"
+        if event.get("event") == "renamed" and event.get("created_at", "") > since and who != owner:
+            found.append((who, "title"))
+    return found
+
+
+def content_edits(gh, number):
+    """The issue's body edits: who and when (GitHub keeps them; REST does not show them)."""
+    data = json.loads(gh(["api", "graphql", "-f", f"query={EDITS_QUERY}",
+                          "-F", "owner={owner}", "-F", "repo={repo}", "-F", f"number={number}"]))
+    return data["data"]["repository"]["issue"]["userContentEdits"]["nodes"]
+
+
 def timeline(gh, number):
     return json.loads(gh(["api", "--paginate", f"{ISSUES_API}/{number}/timeline?per_page=100"]))
 
@@ -55,8 +102,10 @@ def pick(gh, owner, planner=None):
             skipped.append((number, "not written by the owner or the Planner"))
         elif len(kinds) != 1:
             skipped.append((number, "neither cr nor bug" if not kinds else "both cr and bug"))
-        elif (who := last_labeler(timeline(gh, number), "ready")) != owner:
+        elif (who := last_labeler(events := timeline(gh, number), "ready")) != owner:
             skipped.append((number, f"ready was set by {who}, not the owner"))
+        elif edits := edited_after_ready(events, content_edits(gh, number), owner):
+            skipped.append((number, f"text edited by {edits[0][0]} after ready"))
         else:
             return number, skipped
     return None, skipped
@@ -77,12 +126,26 @@ def main(argv=None, gh=run_gh):
     p_label.add_argument("--owner", required=True)
     p_label.add_argument("--issue", required=True, type=int)
     p_label.add_argument("--label", required=True)
+    p_text = sub.add_parser("text-unchanged",
+                            help="exit 0 if no one but the owner edited the issue since ready")
+    p_text.add_argument("--owner", required=True)
+    p_text.add_argument("--issue", required=True, type=int)
     args = parser.parse_args(argv)
 
     if args.command == "pick":
         number, skipped = pick(gh, args.owner, planner=args.planner)
         print(json.dumps({"issue": number, "skipped": [list(s) for s in skipped]}))
         return 0
+
+    if args.command == "text-unchanged":
+        edits = edited_after_ready(timeline(gh, args.issue), content_edits(gh, args.issue),
+                                   args.owner)
+        if not edits:
+            print(f"OK: #{args.issue} is unchanged since the owner's ready.")
+            return 0
+        print(f"FAIL: #{args.issue} was edited after the owner's ready: " +
+              ", ".join(f"{what} by {who}" for who, what in edits))
+        return 1
 
     who = last_labeler(timeline(gh, args.issue), args.label)
     if who == args.owner:

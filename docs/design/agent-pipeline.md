@@ -102,7 +102,7 @@ starts jobs; it never pushes code.
 
 | # | Event | Condition | Labels | Starts |
 |---|---|---|---|---|
-| 1 | nightly tick or manual button | the oldest open `ready` issue, written by me, with `ready` added by me | `ready` → `building` | Builder (build) |
+| 1 | nightly tick or manual button | the oldest open `ready` issue, written by me, with `ready` added by me, and **not edited by anyone else since** (title or text; the Builder checks again before it reads the issue) | `ready` → `building` | Builder (build) |
 | 2 | same | no such issue | none | nothing ("no ready CR") |
 | 3 | host CI finished on `cr/<n>`, success | state `building` or `rework` | → `review` | Inspector |
 | 3b | same, success | state `review` (a CI re-run) | none | Inspector again |

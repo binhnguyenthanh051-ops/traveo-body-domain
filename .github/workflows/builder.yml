@@ -70,7 +70,24 @@ jobs:
             git switch -c "cr/$ISSUE"
             git rev-parse origin/main > "$RUNNER_TEMP/base.txt"
           fi
+      - name: The issue is what the owner approved (no edit by anyone else since ready)
+        id: pinned
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          # Challenger finding (2026-11-13): an app can edit a CR after the owner set `ready`.
+          # The picker skips such a CR; this re-checks right before the agent reads the text.
+          if python host_tools/cr_queue.py text-unchanged --owner "$OWNER" --issue "$ISSUE" > "$RUNNER_TEMP/pinned.txt"; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            mkdir -p .pipeline
+            { echo "STATUS: blocked"; echo; cat "$RUNNER_TEMP/pinned.txt"
+              echo "Set ready again if the new text is right."; } > .pipeline/result.md
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Write the prompt (the agent definition, then the issue and findings as data)
+        if: steps.pinned.outputs.ok == 'true'
         id: prompt
         env:
           GH_TOKEN: ${{ github.token }}
@@ -99,6 +116,7 @@ jobs:
           delim="EOF_$(openssl rand -hex 8)"
           { echo "text<<$delim"; cat "$RUNNER_TEMP/prompt.md"; echo "$delim"; } >> "$GITHUB_OUTPUT"
       - name: Builder agent
+        if: steps.pinned.outputs.ok == 'true'
         uses: anthropics/claude-code-action@4d75e5f390ee76b2e09c1980ecc99ff3a2e088c8  # v1.0.275
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
