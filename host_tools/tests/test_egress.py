@@ -92,10 +92,14 @@ def test_no_job_allows_telemetry(egress):
 
 @pytest.mark.parametrize("key", sorted(k for k, t in runner_jobs().items()
                                        if "anthropics/claude-code-action@" in t))
-def test_every_agent_step_turns_off_nonessential_traffic(key):
-    # Claude Code sends telemetry (Datadog was measured); off, rather than allowed.
-    (agent,) = [s for s in steps(runner_jobs()[key]) if "anthropics/claude-code-action@" in s]
-    assert TELEMETRY_OFF in agent
+def test_every_agent_job_turns_off_nonessential_traffic_and_scrubs_subprocesses(key):
+    # Job-level env: the action reads these through the `env` context and its docs say a
+    # composite step's own env block can shadow a step-level value (owner's review of #52, 2).
+    # - telemetry: Claude Code sends it (Datadog was measured); off, rather than allowed.
+    # - scrub: without it, `make test` and any code the Builder writes can read the OAuth token.
+    job_env = runner_jobs()[key].split("    steps:", 1)[0]
+    assert TELEMETRY_OFF in job_env
+    assert 'CLAUDE_CODE_SUBPROCESS_ENV_SCRUB: "1"' in job_env
 
 
 # --- sudo and containers (ADR-0026 D7) -----------------------------------------------------
