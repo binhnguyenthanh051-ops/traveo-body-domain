@@ -54,6 +54,35 @@ def test_status_waits_for_both_challenger_jobs():
     assert "challenger-design" in needs and "challenger-breakdown" in needs
 
 
+def dispatcher_concurrency():
+    """The workflow-level `concurrency:` block of dispatcher.yml (before `jobs:`)."""
+    text = (WORKFLOWS / "dispatcher.yml").read_text(encoding="utf-8").replace("\r\n", "\n")
+    head = text[:text.index("\njobs:\n")]
+    block = re.search(r"^concurrency:\n((?:  .*\n)+)", head, re.M)
+    assert block, "no workflow-level concurrency in dispatcher.yml"
+    return block.group(1)
+
+
+def test_ticks_run_one_at_a_time_so_two_cannot_pick_the_same_cr():
+    # Challenger finding on #52: a nightly tick and a button press at the same moment could
+    # both see the same `ready` CR. Only ticks pick, so only ticks share one group.
+    block = dispatcher_concurrency()
+    group = re.search(r"group: (.+)", block).group(1)
+    assert "github.event_name == 'schedule'" in group
+    assert "github.event_name == 'workflow_dispatch'" in group
+    assert "'dispatcher-tick'" in group
+
+
+def test_every_other_event_gets_its_own_group_so_none_is_dropped():
+    # GitHub keeps one pending run per group: a shared group would drop label and CI events.
+    group = re.search(r"group: (.+)", dispatcher_concurrency()).group(1)
+    assert "github.run_id" in group
+
+
+def test_a_waiting_tick_never_cancels_the_running_one():
+    assert re.search(r"cancel-in-progress: false", dispatcher_concurrency())
+
+
 def test_every_dispatcher_call_reads_the_pause_switch():
     # Build step 10: PIPELINE_PAUSED stops routing in both route and settle, so a job that
     # was already running when the owner paused changes no label when it finishes.
