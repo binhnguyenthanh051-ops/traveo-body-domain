@@ -1,0 +1,156 @@
+name: security-check
+
+# The negative tests of docs/security/agent-pipeline-runbook.md section 5 (owner's review of
+# #52, point 4). Run by hand from main: Actions -> security-check -> Run workflow, or
+#   gh workflow run security-check.yml --ref main
+# Each "refused" check passes only when GitHub refuses the action; next to each is a positive
+# control, so a refusal for another reason (a bad token, no network) cannot pass as a result.
+# The deploy-key job waits for the owner's approval (the release environment): its tag push is
+# the one that must succeed, and it deletes the tag again. Record each run in docs/bench/<date>/.
+# A fork pull request (ADR-0026 D8) needs a second GitHub account and is not in this workflow.
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+env:
+  HELPERS: |
+    fail=0
+    { echo "| Check | Expected | Result |"; echo "|---|---|---|"; } >> "$GITHUB_STEP_SUMMARY"
+    refused() {
+      what=$1; shift
+      if "$@" > "$RUNNER_TEMP/out.txt" 2>&1; then
+        echo "::error::$what: ALLOWED, must be refused"; fail=1
+        echo "| $what | refused | **allowed: FAIL** |" >> "$GITHUB_STEP_SUMMARY"
+      else
+        echo "$what: refused (pass)"; tail -n 3 "$RUNNER_TEMP/out.txt"
+        echo "| $what | refused | refused: pass |" >> "$GITHUB_STEP_SUMMARY"
+      fi
+    }
+    allowed() {
+      what=$1; shift
+      if "$@" > "$RUNNER_TEMP/out.txt" 2>&1; then
+        echo "$what: allowed (pass)"
+        echo "| $what | allowed | allowed: pass |" >> "$GITHUB_STEP_SUMMARY"
+      else
+        echo "::error::$what: REFUSED, must be allowed"; tail -n 3 "$RUNNER_TEMP/out.txt"; fail=1
+        echo "| $what | allowed | **refused: FAIL** |" >> "$GITHUB_STEP_SUMMARY"
+      fi
+    }
+
+jobs:
+  app-refused:
+    # The Builder app is the strongest agent identity (contents, issues, pull requests: write).
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a  # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+          disable-sudo-and-containers: true
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Builder App token (the same permissions as the publish job)
+        id: token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510  # v3.3.0
+        with:
+          app-id: ${{ vars.BUILDER_APP_ID }}
+          private-key: ${{ secrets.BUILDER_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
+      - name: The Builder app tries main, a tag and a workflow change
+        env:
+          TOKEN: ${{ steps.token.outputs.token }}
+        run: |
+          eval "$HELPERS"
+          remote="https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git config user.name security-check
+          git config user.email security-check@users.noreply.github.com
+          git commit --quiet --allow-empty -m "security-check: this push must be refused"
+          control="refs/heads/security-check/control-${GITHUB_RUN_ID}"
+          allowed "Builder app pushes an ordinary branch (control)" git push "$remote" "HEAD:$control"
+          git push --quiet "$remote" --delete "$control" || true
+          refused "Builder app pushes to main" git push "$remote" HEAD:refs/heads/main
+          tag="refs/tags/security-check-${GITHUB_RUN_ID}"
+          refused "Builder app creates a tag" git push "$remote" "HEAD:$tag"
+          echo "# security-check ${GITHUB_RUN_ID}" >> .github/workflows/security-check.yml
+          git commit --quiet -am "security-check: this workflow change must be refused"
+          branch="refs/heads/security-check/workflow-${GITHUB_RUN_ID}"
+          refused "Builder app pushes a workflow change" git push "$remote" "HEAD:$branch"
+          if [ "$fail" != 0 ]; then
+            # Clean up what got through; a commit on main must be reverted by the owner.
+            git push --quiet "$remote" --delete "$tag" "$branch" 2>/dev/null || true
+          fi
+          exit $fail
+
+  egress-refused:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a  # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+          disable-sudo-and-containers: true
+      - name: A job under block reaches only its listed hosts
+        run: |
+          eval "$HELPERS"
+          allowed "a host on the allowlist (github.com, control)" curl -sS -o /dev/null --max-time 20 https://github.com
+          refused "a host not on the allowlist (example.com)" curl -sS -o /dev/null --max-time 20 https://example.com
+          exit $fail
+
+  deploy-key-tag:
+    # The release deploy key: the one identity besides the owner that may tag (Tags_owner_only),
+    # and still not main (Protect_main_branch has no bypass). Waits for the owner's approval.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
+    steps:
+      - uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a  # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            github.com:22
+          disable-sudo-and-containers: true
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          persist-credentials: false
+      - name: The deploy key creates and deletes a tag, and is refused main
+        env:
+          DEPLOY_KEY: ${{ secrets.RELEASE_DEPLOY_KEY }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          eval "$HELPERS"
+          if [ -z "$DEPLOY_KEY" ]; then
+            echo "::error::RELEASE_DEPLOY_KEY is not set: create it first (runbook section 1)"
+            exit 1
+          fi
+          umask 077
+          key="$RUNNER_TEMP/release_key"
+          printf '%s\n' "$DEPLOY_KEY" > "$key"
+          # GitHub's published host keys, read over HTTPS, so the SSH host is checked.
+          gh api meta --jq '.ssh_keys[] | "github.com " + .' > "$RUNNER_TEMP/known_hosts"
+          export GIT_SSH_COMMAND="ssh -i $key -o IdentitiesOnly=yes -o UserKnownHostsFile=$RUNNER_TEMP/known_hosts -o StrictHostKeyChecking=yes"
+          remote="git@github.com:${GITHUB_REPOSITORY}.git"
+          tag="refs/tags/security-check-deploykey-${GITHUB_RUN_ID}"
+          allowed "deploy key creates a tag" git push "$remote" "HEAD:$tag"
+          allowed "deploy key deletes that tag" git push "$remote" --delete "$tag"
+          git config user.name security-check
+          git config user.email security-check@users.noreply.github.com
+          git commit --quiet --allow-empty -m "security-check: this push must be refused"
+          refused "deploy key pushes to main" git push "$remote" HEAD:refs/heads/main
+          rm -f "$key"
+          exit $fail

@@ -70,12 +70,13 @@ ADR-0026 says merges, tags, workflow changes and labels are "impossible, not onl
 
 | Guarantee | Enforced by | Observed by |
 |---|---|---|
-| Only I merge | ruleset `Protect_main_branch` (PR + 6 checks, no bypass) and `Owner_approval` (1 approval) | `python host_tools/pipeline_setup.py` (dry run) reports any drift from `.github/pipeline/setup.json`; negative test: the Builder app pushes to `main` → refused (not run yet) |
-| Only I (and the release key) tag | ruleset `Tags_owner_only` | same dry run; negative test: an app creates a tag → refused (not run yet) |
-| No agent changes a workflow | the Builder app has no Workflows permission; the `protected-paths` check | the app's permission page; `test_protected_paths.py`; `publish` refuses protected paths (`bundle_check.py`, tests) |
+| Only I merge | ruleset `Protect_main_branch` (PR + 6 checks, no bypass) and `Owner_approval` (1 approval) | `python host_tools/pipeline_setup.py` (dry run) reports any drift from `.github/pipeline/setup.json`; negative test: `security-check.yml`, the Builder app pushes to `main` → refused |
+| Only I (and the release key) tag | ruleset `Tags_owner_only` | same dry run; negative test: `security-check.yml`, the Builder app creates a tag → refused; the deploy key creates and deletes one → allowed |
+| No agent changes a workflow | the Builder app has no Workflows permission; the `protected-paths` check | the app's permission page; `test_protected_paths.py`; `publish` refuses protected paths (`bundle_check.py`, tests); negative test: `security-check.yml`, the Builder app pushes a workflow change → refused |
 | Only my labels route | the Dispatcher reads who acted; `cr_queue.py` reads who set `ready` last | `test_dispatcher.py` (someone else's label), `test_cr_queue.py`; live: the status line names the actor it ignored |
-| No egress except the list | harden-runner `block`, `.github/pipeline/egress.json` | `test_egress.py`; each run's StepSecurity insights ("Blocked"); live 2026-11-14: `motd.ubuntu.com` refused in the Builder job |
+| No egress except the list | harden-runner `block`, `.github/pipeline/egress.json` | `test_egress.py`; each run's StepSecurity insights ("Blocked"); live 2026-11-14: `motd.ubuntu.com` refused in the Builder job; negative test: `security-check.yml`, example.com → refused |
 | Fork PRs start no agent (D8) | `same_repo` check in `dispatcher.py` | `test_dispatcher.py`; live: needs a PR from a second account's fork (not run yet) |
 
-The negative tests marked "not run yet" belong to the security check at setup and at every
-release (design note section 13); record each run in `docs/bench/<date>/`.
+Run the negative tests with `gh workflow run security-check.yml --ref main` (approve the
+`release` environment for the deploy-key job) at setup and at every release (design note
+section 13); record each run in `docs/bench/<date>/`. The fork test needs a second account.
