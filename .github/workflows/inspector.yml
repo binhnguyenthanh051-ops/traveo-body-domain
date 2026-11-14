@@ -39,6 +39,12 @@ jobs:
       pull-requests: read
     env:
       ISSUE: ${{ inputs.issue }}
+      # Owner's review of #52: without the scrub, make test and any code the agent runs
+      # could read the OAuth token (host_tools/tests/test_agent_env.py observes it). Job
+      # level, as the action reads both through the env context.
+      CLAUDE_CODE_SUBPROCESS_ENV_SCRUB: "1"
+      # Egress is blocked (.github/pipeline/egress.json): no telemetry.
+      CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1"
     outputs:
       pr: ${{ steps.prompt.outputs.pr }}
     steps:
@@ -100,9 +106,6 @@ jobs:
           git switch --quiet --detach "origin/cr/$ISSUE"   # the agent reads the PR's code
       - name: Inspector agent
         uses: anthropics/claude-code-action@4d75e5f390ee76b2e09c1980ecc99ff3a2e088c8  # v1.0.275
-        env:
-          # Egress is blocked (.github/pipeline/egress.json): no telemetry.
-          CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1"
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           # The Dispatcher reacts to CI started by the Builder app's push; allow that one bot only.
