@@ -159,10 +159,13 @@ the input: the agents act only on text the owner wrote or approved, pinned at th
 - ~~The first `builder.yml` run~~: verified on #43 (2026-11-13) and #50 (2026-11-14, under
   egress `block`): `claude-code-action` with a read-only `github_token`, and the bundle
   hand-over between jobs.
-- The negative tests of runbook section 5 (app pushes to `main`, app creates a tag, a fork
-  PR) have not run.
+- ~~The negative tests of runbook section 5~~: passed 2026-11-14, 8 of 8
+  (`security-check.yml`, run 43572295509, `docs/bench/2026-11-14/security-check.md`): the
+  Builder app is refused `main`, a tag and a workflow change; egress `block` refuses an
+  unlisted host; the release deploy key creates and deletes a tag and is refused `main`.
 - `Owner_approval` was applied and read back on 2026-11-13 (admin role `5`, PR-only bypass).
   `Tags_owner_only` (create, update, delete of every tag; bypass: DeployKey and admin) was read
-  back active on 2026-11-14. No deploy key exists yet, so the deploy-key tag push has not run.
+  back active on 2026-11-14, and the deploy-key tag push ran once in the same check.
+- Still open: a pull request from a fork (D8), which needs a second GitHub account (future).
 - The owner accepts this ADR after the negative tests and one deploy-key tag push have run
-  (owner's review of #52, 2026-11-14).
+  (owner's review of #52, 2026-11-14). Both have now run.

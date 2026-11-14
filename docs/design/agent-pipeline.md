@@ -571,7 +571,8 @@ Each boundary is enforced by the platform, not by the prompt.
 - The sandbox is tested with negative tests, at setup and at every release as part of the
   security check:
   - the Builder's credentials try to push to `main`: must fail
-  - a cloud run tries to reach a host that is not on the allowlist: must fail (not run yet)
+  - a cloud run tries to reach a host that is not on the allowlist: must fail (passed
+    2026-11-14, `security-check.yml`, `docs/bench/2026-11-14/security-check.md`)
   - a cloud run looks for key material: finds none
 - The sandbox limits the damage of a bad run. It does not stop a bad change from being
   proposed. The gates do that.
