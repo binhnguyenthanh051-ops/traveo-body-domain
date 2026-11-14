@@ -308,7 +308,7 @@ void log_banner(void)
 
 /* @impl REQ-LOG-014 : bounded latency; caller runs it at a period no greater
  *                     than LOG_DRAIN_LATENCY_MS.
- * @impl REQ-LOG-004 : walks EVERY core's ring, not just the caller's. */
+ * @impl REQ-LOG-004 : drains this image's one ring (ADR-0023 D4, D13). */
 log_drain_t log_drain(size_t max_bytes)
 {
     volatile uint32_t const * const head_cell = log_port_head();
@@ -368,8 +368,8 @@ log_drain_t log_drain(size_t max_bytes)
 
 /* @impl REQ-LOG-015 : bounded flush at a hand-off (jump / reset).
  *
- * Deliberately the ONE place a caller may wait on the sink, and only because
- * cyclic draining has no next opportunity once the core stops or the UART
+ * Deliberately one of only two places that may wait on the sink (log_panic is
+ * the other), and only because cyclic draining has no next opportunity once the core stops or the UART
  * changes owner. The bound comes from log_port_now_ms(), so a dead sink costs
  * timeout_ms once rather than hanging the hand-off. */
 bool log_flush(uint32_t timeout_ms)
@@ -381,7 +381,7 @@ bool log_flush(uint32_t timeout_ms)
     for (;;) {
         bool progress = false;
 
-        /* PHASE 1: empty the rings. */
+        /* PHASE 1: empty the ring. */
         if (!drained) {
             const log_drain_t st = log_drain(0U);
 
@@ -429,8 +429,8 @@ uint32_t log_dropped(void)
     return s_dropped;
 }
 
-/* @impl REQ-LOG-010 : ring bypass + blocking write. The ONE place logging may
- *                     spin, because no drain task will run from a fault. */
+/* @impl REQ-LOG-010 : ring bypass + blocking write. One of two places logging may
+ *                     spin (log_flush is the other), because no drain task will run from a fault. */
 void log_panic(uint16_t evt, uint32_t arg0, uint16_t arg1)
 {
     uint8_t rec[LOG_REC_SIZE];
