@@ -134,15 +134,25 @@ What remains open: a release on an **existing** tag cannot be blocked by permiss
   changes and labels.
 - (−) The owner approves each agent pull request (one click) before merging.
 - (−) Setup the owner must do, since it creates identities and secrets: create the two apps,
-  set `BUILDER_APP_ID` (variable), `BUILDER_APP_PRIVATE_KEY` and `CLAUDE_CODE_OAUTH_TOKEN`
+  set `BUILDER_APP_ID`, `REVIEWER_APP_ID` and `REVIEWER_APP_SLUG` (variables),
+  `BUILDER_APP_PRIVATE_KEY`, `REVIEWER_APP_PRIVATE_KEY` and `CLAUDE_CODE_OAUTH_TOKEN`
   (secrets); create one deploy key with write access and store its private half as the
-  `release` environment secret `RELEASE_DEPLOY_KEY`.
-- (−) GitHub disables scheduled workflows after 60 days without repository activity.
+  `release` environment secret `RELEASE_DEPLOY_KEY`. Rotation and revocation of each, and the
+  incident steps: `docs/security/agent-pipeline-runbook.md`.
+- (−) GitHub disables scheduled workflows after 60 days without repository activity. The
+  missing nightly line on #42 is the signal; the runbook (section 3) has the check and the fix.
+- (−) The agents share the owner's subscription limit with the owner's own sessions. A hit
+  limit fails the agent job and routes it to `waiting-for-me`; runbook section 4.
+- How each "impossible" claim is observed (merge, tag, workflow change, label, egress, fork):
+  runbook section 5.
 
 ## 6. Not verified yet
 
-- The first `builder.yml` run: `claude-code-action` with a read-only `github_token` in
-  automation mode, and the bundle hand-over between jobs.
+- ~~The first `builder.yml` run~~: verified on #43 (2026-11-13) and #50 (2026-11-14, under
+  egress `block`): `claude-code-action` with a read-only `github_token`, and the bundle
+  hand-over between jobs.
+- The negative tests of runbook section 5 (app pushes to `main`, app creates a tag, a fork
+  PR) have not run.
 - `Owner_approval` was applied and read back on 2026-11-13 (admin role `5`, PR-only bypass).
   `Tags_owner_only` with the DeployKey bypass is not applied yet, and the deploy-key tag push in
   `release.yml` has not run.
