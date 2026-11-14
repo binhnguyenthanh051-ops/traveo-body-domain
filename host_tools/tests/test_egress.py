@@ -96,3 +96,33 @@ def test_every_agent_step_turns_off_nonessential_traffic(key):
     # Claude Code sends telemetry (Datadog was measured); off, rather than allowed.
     (agent,) = [s for s in steps(runner_jobs()[key]) if "anthropics/claude-code-action@" in s]
     assert TELEMETRY_OFF in agent
+
+
+# --- sudo and containers (ADR-0026 D7) -----------------------------------------------------
+# With sudo or Docker, code run in the job (a test the Builder writes, then runs with
+# `make test`) could flush harden-runner's firewall rules, so the block would hold only on paper.
+
+NEEDS_SUDO = {"builder.yml build"}   # apt-get install cppcheck; drops sudo itself afterwards
+
+
+@pytest.mark.parametrize("key", sorted(set(runner_jobs()) - NEEDS_SUDO))
+def test_every_other_job_disables_sudo_and_containers(key):
+    first = steps(runner_jobs()[key])[0]
+    assert re.search(r"disable-sudo-and-containers: ['\"]?true", first), key
+
+
+def test_the_builder_drops_sudo_and_docker_right_after_its_tools():
+    names = [re.match(r"(?:name: )?(.*)", s).group(1).splitlines()[0] for s in
+             steps(runner_jobs()["builder.yml build"])]
+    tools = next(i for i, n in enumerate(names) if n.startswith("Tools"))
+    drop = steps(runner_jobs()["builder.yml build"])[tools + 1]
+    assert "sudo truncate -s 0 /etc/sudoers.d/runner" in drop
+    assert "/var/run/docker.sock" in drop and "/run/containerd/containerd.sock" in drop
+    # and it proves it: the step fails if sudo or Docker still work afterwards
+    assert "sudo -n true" in drop and "docker info" in drop
+
+
+def test_no_step_after_the_drop_uses_sudo():
+    s = steps(runner_jobs()["builder.yml build"])
+    drop = next(i for i, step in enumerate(s) if "/etc/sudoers.d/runner" in step)
+    assert not any(re.search(r"\bsudo\b(?! -n true)", step) for step in s[drop + 1:])
