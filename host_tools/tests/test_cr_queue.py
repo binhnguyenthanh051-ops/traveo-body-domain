@@ -86,20 +86,36 @@ def issue(number, body=CR_BODY, labels=("cr", "ready"), author=OWNER, pr=False):
     return item
 
 
-def labeled(label, actor, event="labeled"):
-    return {"event": event, "label": {"name": label}, "actor": {"login": actor}}
+READY_AT = "2026-11-13T10:00:00Z"
+
+
+def labeled(label, actor, event="labeled", at=READY_AT):
+    return {"event": event, "label": {"name": label}, "actor": {"login": actor}, "created_at": at}
+
+
+def renamed(actor, at):
+    return {"event": "renamed", "actor": {"login": actor}, "created_at": at}
+
+
+def edit(editor, at):
+    return {"editedAt": at, "editor": {"login": editor} if editor else None}
 
 
 class FakeGh:
     """Answers the issue list and each issue's timeline."""
 
-    def __init__(self, issues, timelines=None):
+    def __init__(self, issues, timelines=None, edits=None):
         self.issues = issues
         self.timelines = timelines or {}
+        self.edits = edits or {}
         self.calls = []
 
     def __call__(self, args, stdin=None):
         self.calls.append(args)
+        if args[:2] == ["api", "graphql"]:
+            number = int(next(a for a in args if a.startswith("number=")).split("=")[1])
+            return json.dumps({"data": {"repository": {"issue": {"userContentEdits": {
+                "nodes": self.edits.get(number, [])}}}}})
         path = next(a for a in args if a.startswith("repos/"))
         if "/timeline" in path:
             number = int(path.split("/issues/")[1].split("/")[0])
@@ -232,3 +248,39 @@ def test_main_label_check_passes_only_when_the_owner_added_the_label(timeline, e
     rc = cr_queue.main(["label-by-owner", "--owner", OWNER, "--issue", "38",
                         "--label", "protected-change-approved"], gh=gh)
     assert rc == expected
+
+
+# --- the issue text is pinned at `ready` (Challenger finding on #52) -------------------------
+# An app can edit an issue after the owner approved it. The check reads who edited and when,
+# never the text itself.
+
+LATER, EARLIER = "2026-11-13T11:00:00Z", "2026-11-13T09:00:00Z"
+
+
+@pytest.mark.parametrize("events, edits, expected", [
+    ([labeled("ready", OWNER)], [], []),
+    ([labeled("ready", OWNER)], [edit(BOT, LATER)], [(BOT, "text")]),
+    ([labeled("ready", OWNER)], [edit(BOT, EARLIER)], []),
+    ([labeled("ready", OWNER)], [edit(OWNER, LATER)], []),
+    ([labeled("ready", OWNER)], [edit(None, LATER)], [("(deleted user)", "text")]),
+    ([labeled("ready", OWNER), renamed(BOT, LATER)], [], [(BOT, "title")]),
+    ([renamed(BOT, EARLIER), labeled("ready", OWNER)], [], []),
+    # Re-approving after the edit pins the new text: only edits after the last `ready` count.
+    ([labeled("ready", OWNER, at=EARLIER), labeled("ready", OWNER, "unlabeled", at=LATER),
+      labeled("ready", OWNER, at="2026-11-13T12:00:00Z")], [edit(BOT, LATER)], []),
+])
+def test_edits_after_ready(events, edits, expected):
+    assert cr_queue.edited_after_ready(events, edits, OWNER) == expected
+
+
+def test_pick_skips_a_cr_whose_text_an_app_edited_after_ready():
+    gh = FakeGh([issue(1), issue(8)], edits={1: [edit(BOT, LATER)]})
+    chosen, skipped = cr_queue.pick(gh, OWNER)
+    assert chosen == 8
+    assert skipped == [(1, f"text edited by {BOT} after ready")]
+
+
+@pytest.mark.parametrize("edits, expected", [([], 0), ([edit(BOT, LATER)], 1)])
+def test_main_text_unchanged_check(edits, expected, capsys):
+    gh = FakeGh([], {43: [labeled("ready", OWNER)]}, edits={43: edits})
+    assert cr_queue.main(["text-unchanged", "--owner", OWNER, "--issue", "43"], gh=gh) == expected
