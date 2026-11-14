@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="734" viewBox="0 0 1400 734">
+  <defs>
+    <pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse">
+      <path d="M 28 0 L 0 0 0 28" fill="none" stroke="#18292f" stroke-width="1"/>
+    </pattern>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3fb6a8"/>
+    </marker>
+    <marker id="arrGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3fbf7f"/>
+    </marker>
+    <marker id="arrRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e2574c"/>
+    </marker>
+  </defs>
+
+  <rect width="1400" height="734" fill="#0f1a1f"/>
+  <rect width="1400" height="734" fill="url(#grid)"/>
+
+  <!-- left: text block -->
+  <text x="90" y="175" font-family="Consolas, 'Courier New', monospace" font-size="17" letter-spacing="4" fill="#d4a24c">TRAVEO T2G · STACKS 2/2</text>
+  <text x="88" y="270" font-family="Georgia, 'Times New Roman', serif" font-size="68" font-weight="bold" fill="#f3f1ea">Stack analysis</text>
+  <text x="88" y="350" font-family="Georgia, 'Times New Roman', serif" font-size="68" font-weight="bold" fill="#f3f1ea">without silicon.</text>
+  <rect x="90" y="385" width="96" height="4" fill="#d4a24c"/>
+  <text x="90" y="440" font-family="Georgia, serif" font-size="23" font-style="italic" fill="#9fb3bb">Every task, every path, every function pointer —</text>
+  <text x="90" y="472" font-family="Georgia, serif" font-size="23" font-style="italic" fill="#9fb3bb">from the build output alone, before anything is flashed.</text>
+
+  <g font-family="Consolas, 'Courier New', monospace">
+    <!-- inputs -->
+    <text x="760" y="104" font-size="13" letter-spacing="2" fill="#3fb6a8">FROM THE BUILD</text>
+    <rect x="760" y="118" width="180" height="58" fill="none" stroke="#4a90d9" stroke-width="1.5"/>
+    <text x="850" y="143" font-size="14" fill="#a9cdf2" text-anchor="middle">app.elf</text>
+    <text x="850" y="163" font-size="12" fill="#86aed6" text-anchor="middle">symbols · DWARF</text>
+
+    <rect x="960" y="118" width="180" height="58" fill="none" stroke="#4a90d9" stroke-width="1.5"/>
+    <text x="1050" y="143" font-size="14" fill="#a9cdf2" text-anchor="middle">.su · .ci</text>
+    <text x="1050" y="163" font-size="12" fill="#86aed6" text-anchor="middle">GCC frames · calls</text>
+
+    <rect x="1160" y="118" width="180" height="58" fill="none" stroke="#d4a24c" stroke-width="1.5"/>
+    <text x="1250" y="143" font-size="14" fill="#e8d7b0" text-anchor="middle">stack_bound.toml</text>
+    <text x="1250" y="163" font-size="12" fill="#b9a780" text-anchor="middle">tasks · pointer bindings</text>
+
+    <line x1="850" y1="176" x2="930" y2="236" stroke="#3fb6a8" stroke-width="2" marker-end="url(#arr)"/>
+    <line x1="1050" y1="176" x2="1050" y2="236" stroke="#3fb6a8" stroke-width="2" marker-end="url(#arr)"/>
+    <line x1="1250" y1="176" x2="1170" y2="236" stroke="#3fb6a8" stroke-width="2" marker-end="url(#arr)"/>
+
+    <!-- the tool -->
+    <rect x="860" y="240" width="380" height="164" rx="4" fill="#14303a" stroke="#3fb6a8" stroke-width="2.5"/>
+    <text x="1050" y="274" font-size="22" font-weight="bold" fill="#bfe9e2" text-anchor="middle">stack_bound</text>
+    <text x="890" y="306" font-size="14" fill="#bfe9e2">→  walk every call path</text>
+    <text x="890" y="330" font-size="14" fill="#bfe9e2">⇢  bind every blx, or refuse</text>
+    <text x="890" y="354" font-size="14" fill="#bfe9e2">+  context-switch frame</text>
+    <text x="890" y="378" font-size="14" fill="#bfe9e2">?  worst case ≤ 80% of the stack</text>
+
+    <line x1="1050" y1="404" x2="1050" y2="440" stroke="#3fb6a8" stroke-width="2" marker-end="url(#arr)"/>
+
+    <!-- the report (Node B, bench day) -->
+    <rect x="760" y="444" width="580" height="104" fill="#121f24" stroke="#5d7a82" stroke-width="1.5"/>
+    <g font-size="13" fill="#8fa5ad" letter-spacing="1">
+      <text x="790" y="472">TASK</text>
+      <text x="1080" y="472">USED</text>
+      <text x="1200" y="472">STATUS</text>
+    </g>
+    <g font-size="14" fill="#bfe9e2">
+      <text x="790" y="496">can_task</text>
+      <text x="1080" y="496">72%</text>
+      <text x="1200" y="496" fill="#3fbf7f">ok</text>
+      <text x="790" y="518">heartbeat_task</text>
+      <text x="1080" y="518">78%</text>
+      <text x="1200" y="518" fill="#3fbf7f">ok</text>
+      <text x="790" y="540">log_cyclic_task</text>
+      <text x="1080" y="540">60%</text>
+      <text x="1200" y="540" fill="#3fbf7f">ok</text>
+    </g>
+
+    <!-- outcomes -->
+    <line x1="960" y1="548" x2="960" y2="592" stroke="#3fbf7f" stroke-width="2" marker-end="url(#arrGreen)"/>
+    <rect x="860" y="596" width="200" height="48" rx="4" fill="#143a2c" stroke="#3fbf7f" stroke-width="2"/>
+    <text x="960" y="626" font-size="15" fill="#a8e6c6" text-anchor="middle">✓ pass → flash</text>
+
+    <line x1="1180" y1="548" x2="1180" y2="592" stroke="#e2574c" stroke-width="2" marker-end="url(#arrRed)"/>
+    <rect x="1080" y="596" width="200" height="48" rx="4" fill="#3a1a1a" stroke="#e2574c" stroke-width="2"/>
+    <text x="1180" y="618" font-size="15" fill="#f1b8b2" text-anchor="middle">✗ fail → stop</text>
+    <text x="1180" y="636" font-size="11" fill="#e9a29b" text-anchor="middle">no override</text>
+  </g>
+</svg>

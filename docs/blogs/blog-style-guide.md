@@ -23,6 +23,8 @@ Same frame every time, in this order:
 2. **Subtitle (italic, one line):** *Part &lt;Roman numeral&gt; of Traveo II Domain — building an
    automotive body-domain network from scratch on an Infineon TRAVEO™ T2G, with the design done
    in the open and Claude used as a visible collaborator.*
+   The series is **"Traveo II Domain"** here, while *Follow along* names the repo **"Traveo II Body
+   Domain"**. Keep both as published (owner, 2026-11-14); don't "fix" one to match the other.
 3. **Hero image** (see *Hero Image*).
 4. **Intro, 3 short paragraphs max:** pick up the **previous post's promise** in its own words
    ("M4 ends with a promise: …"), one line contrasting this milestone with the last one
@@ -131,7 +133,14 @@ A short practical section a reader could follow:
 - Keep labels short (2–4 words per line, `<br/>` for a second line); long labels make
   Mermaid stretch diagrams sideways. Stack before/after cases vertically
   (`flowchart TB`, `direction LR` inside each subgraph, `A ~~~ B` to order them).
-- **Check every rendered PNG** before publishing (order, wrapping, colours).
+- **One box size per figure** (owner, 2026-11-14: uneven boxes look ugly). Every flowchart starts
+  with an init line that gives all boxes the widest label's size, e.g.
+  `%%{init: {"themeCSS": ".node:not(.dec):not(.out) .nodeLabel{display:inline-flex;flex-direction:column;justify-content:center;min-width:156px;min-height:48px} .node.out .nodeLabel{…;min-width:182px;min-height:63px}"}}%%`,
+  and ends with `class <diamonds> dec;` and `class <stadiums> out;`. Diamonds keep their own size;
+  stadiums need about +26 px width and +15 px height on the label to match a box. Measure the widest
+  and tallest label on `_measure.html`, then check every box's size there before shooting.
+  Unlinked nodes meant as a row need `A ~~~ B ~~~ C`, or Mermaid stacks them.
+- **Check every rendered PNG** before publishing (order, wrapping, colours, box sizes).
 
 ## 10. Hero Image — same look as M4/M5
 
