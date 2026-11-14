@@ -75,6 +75,7 @@ ADR-0026 says merges, tags, workflow changes and labels are "impossible, not onl
 | No agent changes a workflow | the Builder app has no Workflows permission; the `protected-paths` check | the app's permission page; `test_protected_paths.py`; `publish` refuses protected paths (`bundle_check.py`, tests); negative test: `security-check.yml`, the Builder app pushes a workflow change → refused |
 | Only my labels route | the Dispatcher reads who acted; `cr_queue.py` reads who set `ready` last | `test_dispatcher.py` (someone else's label), `test_cr_queue.py`; live: the status line names the actor it ignored |
 | No egress except the list | harden-runner `block`, `.github/pipeline/egress.json` | `test_egress.py`; each run's StepSecurity insights ("Blocked"); live 2026-11-14: `motd.ubuntu.com` refused in the Builder job; negative test: `security-check.yml`, example.com → refused |
+| The OAuth token is not visible to code the agents run | `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB` on every agent job (the action's best-effort scrub) | `test_egress.py` (the setting); `test_agent_env.py` fails inside a Builder or Inspector run if the token leaks to pytest |
 | Fork PRs start no agent (D8) | `same_repo` check in `dispatcher.py` | `test_dispatcher.py`; live: needs a PR from a second account's fork (not run yet) |
 
 Run the negative tests with `gh workflow run security-check.yml --ref main` (approve the
