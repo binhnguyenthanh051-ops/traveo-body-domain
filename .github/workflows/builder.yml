@@ -71,7 +71,7 @@ jobs:
       - name: Tools the Builder's allowlist runs
         run: |
           sudo apt-get update && sudo apt-get install -y cppcheck
-          python -m pip install -r host_tools/requirements.txt pytest
+          python -m pip install --require-hashes -r host_tools/requirements.lock
       - name: Drop sudo and container access before any repository or agent code runs
         # ADR-0026 D7: with sudo or Docker, code run later in this job (a test the Builder
         # writes, then runs with `make test`) could flush harden-runner's firewall rules.
