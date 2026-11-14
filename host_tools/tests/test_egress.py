@@ -54,8 +54,8 @@ def egress():
 
 
 def test_the_agent_workflows_have_runner_jobs():
-    # Guard for the parser: 11 jobs in five workflows on 2026-11-14.
-    assert len(runner_jobs()) == 11
+    # Guard for the parser: 12 jobs in five workflows (settle-rework added 2026-11-14).
+    assert len(runner_jobs()) == 12
 
 
 @pytest.mark.parametrize("key", sorted(runner_jobs()))
