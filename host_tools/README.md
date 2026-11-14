@@ -3,7 +3,11 @@
 Python 3.11+. CAN tooling, a UDS client, and integration test scripts that drive the
 protocol logic and assert responses (wired into CI in **EP.20**).
 
-- `requirements.txt` — dependencies (e.g. python-can, cantools)
+- `requirements.txt` — dependencies (e.g. python-can, cantools); what you edit, and what the
+  bench PC installs
+- `requirements.lock` — generated from it for the CI and agent runners (Linux, Python 3.11):
+  every package with an exact version and sha256, installed with `pip --require-hashes`.
+  After editing `requirements.txt`, regenerate it with the command in its header (`uv`).
 - tests run with `pytest` (CI calls `pytest host_tools`)
 - `pipeline_setup.py` — creates or updates the agent pipeline's GitHub labels and milestones
   from `.github/pipeline/setup.json`. Dry run by default, `--apply` to change GitHub; it never

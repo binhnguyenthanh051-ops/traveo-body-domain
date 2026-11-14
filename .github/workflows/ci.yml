@@ -38,10 +38,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      # Hash-pinned (owner's review of #52, point 3): every package and dependency has an
+      # exact version and sha256; pip refuses anything else. Regenerate: header of the lock.
       - name: Install host-tool deps
-        run: |
-          python -m pip install --upgrade pip
-          if [ -f host_tools/requirements.txt ]; then pip install -r host_tools/requirements.txt; fi
+        run: python -m pip install --require-hashes -r host_tools/requirements.lock
       # ADR-0023 D9: events.csv is the single source of truth for log event IDs.
       # A stale generated table does not fail loudly — it renders the wrong event
       # name for the right ID, i.e. a confidently wrong test result. Gate it.
@@ -50,7 +50,7 @@ jobs:
 
       - name: Run Python tests (if any)
         run: |
-          pip install pytest
+          # pytest comes from the lock (installed above).
           # No-op until host_tools/ has tests; -q so it passes cleanly when empty.
           pytest host_tools -q || [ $? -eq 5 ]   # exit 5 = "no tests collected"
 
