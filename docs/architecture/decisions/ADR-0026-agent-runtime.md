@@ -117,6 +117,14 @@ What remains open: a release on an **existing** tag cannot be blocked by permiss
 (Contents write allows it). The release check (step 9) flags any release not made by
 `release.yml`.
 
+What remains open inside the egress allowlist (D7): the allowed hosts (`github.com`,
+`api.github.com`, `pypi.org`, and the others in `.github/pipeline/egress.json`) accept requests
+with **any** credentials. An agent steered by injected text could send data there with an
+attacker's own token (a gist, an issue in another repository, a package upload), and the
+allowlist would let it through. The allowlist only narrows the channel. The real control is
+the input: the agents act only on text the owner wrote or approved, pinned at the owner's
+`ready` (D5 and `cr_queue.py`: no edit by anyone else after it).
+
 ## 4. Alternatives
 
 - **Claude Code cloud scheduled tasks.** Better sandbox: a network allowlist, and credentials
@@ -154,5 +162,7 @@ What remains open: a release on an **existing** tag cannot be blocked by permiss
 - The negative tests of runbook section 5 (app pushes to `main`, app creates a tag, a fork
   PR) have not run.
 - `Owner_approval` was applied and read back on 2026-11-13 (admin role `5`, PR-only bypass).
-  `Tags_owner_only` with the DeployKey bypass is not applied yet, and the deploy-key tag push in
-  `release.yml` has not run.
+  `Tags_owner_only` (create, update, delete of every tag; bypass: DeployKey and admin) was read
+  back active on 2026-11-14. No deploy key exists yet, so the deploy-key tag push has not run.
+- The owner accepts this ADR after the negative tests and one deploy-key tag push have run
+  (owner's review of #52, 2026-11-14).

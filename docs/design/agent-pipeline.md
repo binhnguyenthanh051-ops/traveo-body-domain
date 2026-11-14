@@ -559,10 +559,11 @@ Each boundary is enforced by the platform, not by the prompt.
   reason; `host_tools/tests/test_egress.py` keeps the workflows in step. Sudo and Docker are off
   in every job (the Builder drops them itself after `apt-get`), so code run in the job cannot
   remove the firewall rules. Claude Code's telemetry is turned off, not allowed.
-  - What stays reachable: GitHub (the agent job holds only a read-only token, so it cannot
-    write there), the Anthropic API, the npm and PyPI registries and the Ubuntu mirrors. A
-    prompt injection could still leak data in requests to those hosts; that channel is
-    accepted, and none of them gives a way to use the OAuth token against me.
+  - What stays reachable: GitHub, the Anthropic API, the npm and PyPI registries and the
+    Ubuntu mirrors. These hosts accept any credentials: an agent steered by injected text
+    could send data to GitHub or PyPI with an attacker's own token, and the allowlist lets it
+    through. The allowlist only narrows the channel. The real control is the input: owner-only
+    text, pinned at my `ready` (ADR-0026 section 3).
   - Observed by: the job's StepSecurity insights (Network Events, "Blocked"), linked from the
     harden-runner step's log.
 - A prompt is not a sandbox. The boundaries are token scopes, branch protection, the network
