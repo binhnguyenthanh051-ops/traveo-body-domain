@@ -142,6 +142,9 @@ starts jobs; it never pushes code.
 - The test level and the rework round are labels (`level:*`, `round:*`), because the
   Dispatcher reads no text. I set the level together with `ready` at gate 1b; only the
   Dispatcher sets the round.
+- Ticks run one at a time (a workflow-level concurrency group for ticks only), so two ticks
+  can't pick the same `ready` CR; a tick that arrives while another waits is dropped, and the
+  next nightly tick catches up. Every other event runs in a group of its own.
 - A missing form field is the Builder's to report: it checks the issue first and reports
   `blocked`, which row 10 routes to me.
 - The Inspector (step 5) posts its review on the pull request as a **comment, never a GitHub

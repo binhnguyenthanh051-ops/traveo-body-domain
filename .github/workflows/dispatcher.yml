@@ -32,6 +32,16 @@ on:
 
 permissions: {}
 
+# Only a tick (the schedule or the button) picks a `ready` CR, so ticks share one group and run
+# one at a time: a second tick waits until the first run has finished, then picks the next CR
+# (Challenger finding, 2026-11-13: two ticks at once could pick the same one). Every other event
+# gets a group of its own, because GitHub keeps only one pending run per group and would drop
+# label and CI events. Cost: a third tick arriving while one already waits is dropped, without a
+# status line; the next nightly tick catches up.
+concurrency:
+  group: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'dispatcher-tick' || format('dispatcher-{0}', github.run_id) }}
+  cancel-in-progress: false
+
 jobs:
   route:
     # Its own status comments, and every bot's comment, would only feed the loop back.
