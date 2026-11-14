@@ -119,6 +119,7 @@ def route(event, labels, owner, paused):
         return _decide(issue, labels, add={"building"}, remove={"ready"}, start="build",
                        line="building")
 
+    # @impl ADR-0026 D8 : CI results and merges from a fork never route
     if kind in ("ci", "merged") and not event.get("same_repo", False):
         return _nothing(issue, f"{kind} event from a fork ignored")
 

@@ -186,6 +186,7 @@ def test_paused_starts_nothing_and_changes_nothing(event):
     {"kind": "ci", "issue": 43, "conclusion": "success", "same_repo": False},
     {"kind": "merged", "issue": 43, "same_repo": False},
 ])
+# @test ADR-0026 D8 : fork events start nothing
 def test_fork_events_are_ignored(event):
     d = route(event, ["building", "awaiting-merge"])
     assert (d.start, d.add, d.remove) == (None, [], [])

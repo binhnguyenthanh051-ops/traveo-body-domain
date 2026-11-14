@@ -58,6 +58,7 @@ def test_the_agent_workflows_have_runner_jobs():
     assert len(runner_jobs()) == 12
 
 
+# @test ADR-0026 D7 : every agent job blocks egress except its measured hosts
 @pytest.mark.parametrize("key", sorted(runner_jobs()))
 def test_every_job_starts_with_harden_runner_in_block_mode(key):
     first = steps(runner_jobs()[key])[0]

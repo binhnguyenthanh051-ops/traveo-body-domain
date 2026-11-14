@@ -1,6 +1,6 @@
 # ADR-0026: Agent runtime — GitHub Actions, two GitHub Apps, rules the platform enforces
 
-**Status:** proposed · 2026-11-13 · build step 4 of [the agent pipeline](../../design/agent-pipeline.md)
+**Status:** accepted · 2026-11-14 (proposed 2026-11-13) · build step 4 of [the agent pipeline](../../design/agent-pipeline.md)
 
 **Summary.** The pipeline's agents run as GitHub Actions jobs with `claude-code-action`, and
 act on GitHub as two GitHub Apps of their own, never as the owner. That separate identity is

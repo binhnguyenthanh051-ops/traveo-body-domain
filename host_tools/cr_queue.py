@@ -23,6 +23,7 @@ import sys
 
 ISSUES_API = "repos/{owner}/{repo}/issues"
 
+# @impl ADR-0026 D5 : a label counts only when the owner added it last
 def last_labeler(events, label):
     """Who added the label last, or None when it was removed after its last add."""
     who = None
