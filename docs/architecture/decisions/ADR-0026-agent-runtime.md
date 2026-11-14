@@ -88,6 +88,14 @@ determined agent: D3 and D7 are the boundary.
 endpoints the first runs reach become the `allowed-endpoints` list, and a follow-up CR
 switches to `egress-policy: block` with `disable-sudo-and-containers`. No list is guessed.
 
+*Done 2026-11-14.* The lists were measured from StepSecurity insights of audit runs on
+2026-11-13 and live in `.github/pipeline/egress.json`, one per job, each host with its reason.
+The Inspector had no insights; its list is derived from the same steps in the Builder. The
+Builder's build job needs `sudo apt-get` for cppcheck, so instead of
+`disable-sudo-and-containers` it does the same thing itself (truncates
+`/etc/sudoers.d/runner`, closes the Docker and containerd sockets) right after its tools step,
+before any repository or agent code runs, and fails if sudo or Docker still work.
+
 ### D8. Fork pull requests never start an agent
 
 Agent jobs on pull request events (from step 5) start only when
