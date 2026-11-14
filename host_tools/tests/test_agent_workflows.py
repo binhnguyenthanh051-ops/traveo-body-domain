@@ -83,16 +83,46 @@ def test_a_waiting_tick_never_cancels_the_running_one():
     assert re.search(r"cancel-in-progress: false", dispatcher_concurrency())
 
 
+def job_text(job):
+    text = (WORKFLOWS / "dispatcher.yml").read_text(encoding="utf-8").replace("\r\n", "\n")
+    text = text[text.index("\njobs:\n"):]
+    return re.search(r"^  " + re.escape(job) + r":\n(.*?)(?=^  \S|\Z)", text, re.M | re.S).group(1)
+
+
+def test_row7_an_inspector_changes_verdict_starts_the_builder_rework():
+    # Found live on #50 (2026-11-14): settle decided `start: rework`, but no job read it,
+    # so the CR stalled in `rework`. Row 7 is decided by settle, like row 19.
+    assert job_needs("builder-rework") == ["route", "settle"]
+    block = job_text("builder-rework")
+    assert "needs.settle.outputs.start == 'rework'" in block
+    assert "uses: ./.github/workflows/builder.yml" in block
+    assert "mode: rework" in block
+
+
+def test_row10_the_rework_builders_result_is_routed_too():
+    # A blocked or failed rework goes to the owner (row 10), like a first build.
+    assert job_needs("settle-rework") == ["route", "builder-rework"]
+    block = job_text("settle-rework")
+    assert "needs.builder-rework.result != 'skipped'" in block
+    assert "dispatcher.py settle" in block and "--builder" in block
+
+
+def test_status_reports_the_rework_round():
+    needs = job_needs("status")
+    assert "builder-rework" in needs and "settle-rework" in needs
+    assert "needs.settle-rework.outputs.line" in job_text("status")
+
+
 def test_every_dispatcher_call_reads_the_pause_switch():
     # Build step 10: PIPELINE_PAUSED stops routing in both route and settle, so a job that
     # was already running when the owner paused changes no label when it finishes.
     text = (WORKFLOWS / "dispatcher.yml").read_text(encoding="utf-8").replace("\r\n", "\n")
     joined = text.replace("\\\n", " ")       # one shell command per line
     calls = re.findall(r"python host_tools/dispatcher\.py (?:decide|settle)[^\n]*", joined)
-    assert len(calls) == 2
+    assert len(calls) == 3                     # route, settle, settle-rework
     for call in calls:
         assert "$PAUSED" in call
-    assert text.count("PAUSED: ${{ vars.PIPELINE_PAUSED == 'true' && '--paused' || '' }}") == 2
+    assert text.count("PAUSED: ${{ vars.PIPELINE_PAUSED == 'true' && '--paused' || '' }}") == 3
 
 
 @pytest.mark.parametrize("name", ["builder.yml", "inspector.yml", "planner.yml", "challenger.yml"])
