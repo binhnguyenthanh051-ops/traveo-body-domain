@@ -176,8 +176,12 @@ def main() -> int:
         return 2
     src = pathlib.Path(args[0])
     dst = src.with_name(src.stem.replace("-blog-draft", "") + "-medium.html")
-    fig_dir = "img/" + src.stem.split("-", 1)[0]          # m5-secoc-blog-draft -> img/m5
-    dst.write_text(convert(src.read_text(encoding="utf-8"), img_base, fig_dir), encoding="utf-8")
+    md = src.read_text(encoding="utf-8")
+    # The figures sit next to the hero: ![](img/<dir>/hero.png) names the folder. Fall back to the
+    # file name's first word (m5-secoc-blog-draft -> img/m5), which breaks on "stack-1-...".
+    hero = re.search(r"!\[[^\]]*\]\((img/[^)/]+)/", md)
+    fig_dir = hero.group(1) if hero else "img/" + src.stem.split("-", 1)[0]
+    dst.write_text(convert(md, img_base, fig_dir), encoding="utf-8")
     print(f"wrote {dst}")
     return 0
 
