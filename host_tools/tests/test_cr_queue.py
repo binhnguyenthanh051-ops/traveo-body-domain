@@ -137,6 +137,7 @@ def test_pick_reads_no_issue_text():
 
 # --- who set the label ----------------------------------------------------------------
 
+# @test ADR-0026 D5 : the owner's label counts, anyone else's does not
 def test_label_added_by_the_owner_counts():
     assert cr_queue.last_labeler([labeled("ready", OWNER)], "ready") == OWNER
 

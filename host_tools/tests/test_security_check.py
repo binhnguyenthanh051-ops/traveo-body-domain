@@ -39,6 +39,7 @@ def test_every_job_runs_from_main_only_and_blocks_egress(job):
     assert "egress-policy: block" in first and "allowed-endpoints: >" in first
 
 
+# @test ADR-0026 D4 : GitHub refuses the Builder app main, tags and workflows (run by hand)
 def test_the_builder_app_is_refused_main_a_tag_and_a_workflow_change():
     block = jobs()["app-refused"]
     assert "private-key: ${{ secrets.BUILDER_APP_PRIVATE_KEY }}" in block
