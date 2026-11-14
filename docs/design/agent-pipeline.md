@@ -546,25 +546,31 @@ Each boundary is enforced by the platform, not by the prompt.
 
 | Agent | Runs in | Can reach | Cannot reach |
 |---|---|---|---|
-| Challenger, Planner, Inspector | a fresh GitHub-hosted Actions runner per job, destroyed after the job (ADR-0026) | in the agent job: a checkout (read), the issue or PR as data, the **open network** (egress audited, not blocked yet) and the OAuth token. Their comment or draft issues are posted by a separate scripted job with the Reviewer App token | a GitHub write token in the agent job, push, `main`, workflows, tags, keys, my PC, the board |
-| Builder | a fresh GitHub-hosted Actions runner per job, destroyed after the job (ADR-0026) | in the agent job: a checkout, local commits only, the **open network** (audited, not blocked yet) and the OAuth token. A separate scripted `publish` job checks its bundle and protected paths, then pushes its own branch and opens the PR with the Builder App token | a GitHub write token in the agent job, `main`, workflows (the app has no Workflows permission), tags, keys, my PC, the board |
+| Challenger, Planner, Inspector | a fresh GitHub-hosted Actions runner per job, destroyed after the job (ADR-0026) | in the agent job: a checkout (read), the issue or PR as data, only the hosts in `.github/pipeline/egress.json` (egress blocked, no sudo or Docker) and the OAuth token. Their comment or draft issues are posted by a separate scripted job with the Reviewer App token | a GitHub write token in the agent job, push, `main`, workflows, tags, keys, my PC, the board |
+| Builder | a fresh GitHub-hosted Actions runner per job, destroyed after the job (ADR-0026) | in the agent job: a checkout, local commits only, only the hosts in `.github/pipeline/egress.json` (egress blocked; sudo and Docker dropped right after `apt-get`) and the OAuth token. A separate scripted `publish` job checks its bundle and protected paths, then pushes its own branch and opens the PR with the Builder App token | a GitHub write token in the agent job, `main`, workflows (the app has no Workflows permission), tags, keys, my PC, the board |
 | Dispatcher | a fresh GitHub Actions runner, destroyed after the run | events, labels and who acted; change labels; start agent jobs; one status comment per run | issue and comment text, push, `main`, workflows, tags, keys, my PC, the board |
 | Bench run | my PC, started by me | the repo folder, the flashing tool, the board, local test keys | issue text, comments and the web: its only inputs are a commit and a CR number |
 
 - Separation rule: no agent has all three of untrusted input, access to keys or hardware,
   and a way to send data out. The cloud agents see untrusted input but hold no keys and no
   hardware. The bench run holds keys and hardware but takes no untrusted input.
-- **Open today (2026-11-14):** the cloud agents hold untrusted input **and** the OAuth token, and
-  their egress is audited, not blocked, so a prompt injection could send that token out. The token
-  reaches the model only (no repository keys, no board), but this leg stays open until egress is
-  blocked with a measured allowlist (ADR-0026 D7).
+- **Egress (2026-11-14):** every agent job runs harden-runner in `block` mode with the hosts
+  measured from audit runs, one list per job in `.github/pipeline/egress.json`, each host with its
+  reason; `host_tools/tests/test_egress.py` keeps the workflows in step. Sudo and Docker are off
+  in every job (the Builder drops them itself after `apt-get`), so code run in the job cannot
+  remove the firewall rules. Claude Code's telemetry is turned off, not allowed.
+  - What stays reachable: GitHub (the agent job holds only a read-only token, so it cannot
+    write there), the Anthropic API, the npm and PyPI registries and the Ubuntu mirrors. A
+    prompt injection could still leak data in requests to those hosts; that channel is
+    accepted, and none of them gives a way to use the OAuth token against me.
+  - Observed by: the job's StepSecurity insights (Network Events, "Blocked"), linked from the
+    harden-runner step's log.
 - A prompt is not a sandbox. The boundaries are token scopes, branch protection, the network
-  allowlist (once egress is blocked) and the lifetime of the environment.
+  allowlist and the lifetime of the environment.
 - The sandbox is tested with negative tests, at setup and at every release as part of the
   security check:
   - the Builder's credentials try to push to `main`: must fail
-  - a cloud run tries to reach a host that is not on the allowlist: must fail (cannot pass
-    until egress is blocked)
+  - a cloud run tries to reach a host that is not on the allowlist: must fail (not run yet)
   - a cloud run looks for key material: finds none
 - The sandbox limits the damage of a bad run. It does not stop a bad change from being
   proposed. The gates do that.
@@ -687,4 +693,6 @@ Rejected for now, to verify if the proposal is not enough:
   level and rework round become labels; the pause switch is a repository variable. Approved by me.
 - 2026-11-14: build step 10: how the three numbers per CR are measured (section 8; clock
   starts at my first `ready`, my choice), logged by row 13; pause switch behaviour (section 7).
+- 2026-11-14: section 13: egress blocked with a measured allowlist per job, sudo and Docker off
+  (Challenger finding on #52).
 - M5 (SecOC) was closed before this pipeline starts.

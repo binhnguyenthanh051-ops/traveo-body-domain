@@ -1,0 +1,49 @@
+{
+  "_about": "Egress allowlist per agent job (docs/design/agent-pipeline.md section 13). Every runner job in the agent workflows runs harden-runner with egress-policy: block and exactly these hosts; host_tools/tests/test_egress.py keeps the workflows in step with this file. Measured from StepSecurity insights of audit runs 43424076285 (Builder), 43432797252 (Planner) and 43434610481 (Challenger) on 2026-11-13. The Inspector had no insights; its hosts are derived from the same steps in the Builder.",
+  "hosts": {
+    "github.com:443": "actions/checkout and git push over HTTPS; claude-code-action setup",
+    "api.github.com:443": "gh CLI (labels, comments, pull requests), app tokens, claude-code-action",
+    "api.anthropic.com:443": "Claude Code talks to the model",
+    "claude.ai:443": "claude-code-action installs Claude Code from the official install script",
+    "downloads.claude.ai:443": "the Claude Code binary the install script fetches",
+    "registry.npmjs.org:443": "claude-code-action installs its own dependencies with bun",
+    "release-assets.githubusercontent.com:443": "claude-code-action downloads bun from its GitHub release",
+    "pypi.org:443": "pip install -r host_tools/requirements.txt pytest (index)",
+    "files.pythonhosted.org:443": "pip install -r host_tools/requirements.txt pytest (packages)",
+    "azure.archive.ubuntu.com:80": "apt-get install cppcheck (Ubuntu mirror of the Actions runner, plain HTTP, signed packages)",
+    "esm.ubuntu.com:443": "apt-get update on the runner image (Ubuntu Pro source list)",
+    "packages.microsoft.com:443": "apt-get update on the runner image (Microsoft source list)"
+  },
+  "jobs": {
+    "dispatcher.yml route": ["github.com:443", "api.github.com:443"],
+    "dispatcher.yml settle": ["github.com:443", "api.github.com:443"],
+    "dispatcher.yml status": ["api.github.com:443"],
+    "builder.yml build": [
+      "github.com:443", "api.github.com:443",
+      "api.anthropic.com:443", "claude.ai:443", "downloads.claude.ai:443",
+      "registry.npmjs.org:443", "release-assets.githubusercontent.com:443",
+      "pypi.org:443", "files.pythonhosted.org:443",
+      "azure.archive.ubuntu.com:80", "esm.ubuntu.com:443", "packages.microsoft.com:443"
+    ],
+    "builder.yml publish": ["github.com:443", "api.github.com:443"],
+    "inspector.yml review": [
+      "github.com:443", "api.github.com:443",
+      "api.anthropic.com:443", "claude.ai:443", "downloads.claude.ai:443",
+      "registry.npmjs.org:443", "release-assets.githubusercontent.com:443",
+      "pypi.org:443", "files.pythonhosted.org:443"
+    ],
+    "inspector.yml post": ["api.github.com:443"],
+    "planner.yml plan": [
+      "github.com:443", "api.github.com:443",
+      "api.anthropic.com:443", "claude.ai:443", "downloads.claude.ai:443",
+      "registry.npmjs.org:443", "release-assets.githubusercontent.com:443"
+    ],
+    "planner.yml publish": ["github.com:443", "api.github.com:443"],
+    "challenger.yml challenge": [
+      "github.com:443", "api.github.com:443",
+      "api.anthropic.com:443", "claude.ai:443", "downloads.claude.ai:443",
+      "registry.npmjs.org:443", "release-assets.githubusercontent.com:443"
+    ],
+    "challenger.yml post": ["api.github.com:443"]
+  }
+}

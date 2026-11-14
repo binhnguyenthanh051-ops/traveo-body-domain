@@ -45,7 +45,20 @@ jobs:
     steps:
       - uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a  # v2.22.4
         with:
-          egress-policy: audit
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+            api.anthropic.com:443
+            claude.ai:443
+            downloads.claude.ai:443
+            registry.npmjs.org:443
+            release-assets.githubusercontent.com:443
+            pypi.org:443
+            files.pythonhosted.org:443
+            azure.archive.ubuntu.com:80
+            esm.ubuntu.com:443
+            packages.microsoft.com:443
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
         with:
           ref: ${{ github.event.repository.default_branch }}
@@ -59,6 +72,17 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install -y cppcheck
           python -m pip install -r host_tools/requirements.txt pytest
+      - name: Drop sudo and container access before any repository or agent code runs
+        # ADR-0026 D7: with sudo or Docker, code run later in this job (a test the Builder
+        # writes, then runs with `make test`) could flush harden-runner's firewall rules.
+        # Same mechanism as harden-runner's disable-sudo-and-containers, after apt-get.
+        run: |
+          for sock in /var/run/docker.sock /run/containerd/containerd.sock; do
+            if [ -e "$sock" ]; then sudo chmod 000 "$sock"; fi
+          done
+          sudo truncate -s 0 /etc/sudoers.d/runner
+          if sudo -n true 2>/dev/null; then echo "::error::sudo still works"; exit 1; fi
+          if docker info >/dev/null 2>&1; then echo "::error::Docker still works"; exit 1; fi
       - name: Branch and identity
         run: |
           git config user.name "traveo-builder[bot]"
@@ -118,6 +142,9 @@ jobs:
       - name: Builder agent
         if: steps.pinned.outputs.ok == 'true'
         uses: anthropics/claude-code-action@4d75e5f390ee76b2e09c1980ecc99ff3a2e088c8  # v1.0.275
+        env:
+          # Egress is blocked (.github/pipeline/egress.json): no telemetry.
+          CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1"
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           # The Dispatcher reacts to CI started by the Builder app's push; allow that one bot only.
@@ -160,7 +187,11 @@ jobs:
     steps:
       - uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a  # v2.22.4
         with:
-          egress-policy: audit
+          egress-policy: block
+          allowed-endpoints: >
+            github.com:443
+            api.github.com:443
+          disable-sudo-and-containers: true
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
         with:
           ref: ${{ github.event.repository.default_branch }}
