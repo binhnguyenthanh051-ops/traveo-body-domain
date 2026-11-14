@@ -117,6 +117,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/out"
           cp .pipeline/result.md "$RUNNER_TEMP/out/result.md" 2>/dev/null || echo "STATUS: blocked" > "$RUNNER_TEMP/out/result.md"
           base=$(cat "$RUNNER_TEMP/base.txt")
+          cp "$RUNNER_TEMP/base.txt" "$RUNNER_TEMP/out/base.txt"   # publish checks the bundle against it
           if [ "$(git rev-list --count "$base..cr/$ISSUE")" -gt 0 ]; then
             git bundle create "$RUNNER_TEMP/out/cr.bundle" "cr/$ISSUE" "^$base"
           fi
@@ -177,6 +178,26 @@ jobs:
             exit 0
           fi
           if [ "$MODE" = "rework" ]; then git fetch --quiet origin "cr/$ISSUE"; fi
+          # The agent wrote the bundle, so it is untrusted input (Challenger finding, 2026-11-13).
+          # Its base must be where the build started: the branch head for rework, a commit of
+          # main for a build. Then host_tools/bundle_check.py checks the bundle itself.
+          base=$(cat "$out/base.txt" 2>/dev/null || true)
+          refused=""
+          if [ "$MODE" = "rework" ] && [ "$base" != "$(git rev-parse "origin/cr/$ISSUE")" ]; then
+            refused="the rework base ${base:0:7} is not the current head of cr/$ISSUE"
+          elif [ "$MODE" = "build" ] && ! git merge-base --is-ancestor "$base" origin/main 2>/dev/null; then
+            refused="the build base ${base:0:7} is not a commit of main"
+          elif ! python host_tools/bundle_check.py --bundle "$out/cr.bundle" --branch "cr/$ISSUE" \
+                 --base "$base" > "$RUNNER_TEMP/bundle.txt"; then
+            refused=$(cat "$RUNNER_TEMP/bundle.txt")
+          fi
+          if [ -n "$refused" ]; then
+            { echo "The publish job refused the Builder's commits (run $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID); nothing was pushed."
+              echo; echo "$refused"; } > "$RUNNER_TEMP/blocked.md"
+            gh issue comment "$ISSUE" --repo "$GITHUB_REPOSITORY" --body-file "$RUNNER_TEMP/blocked.md"
+            echo "result=blocked" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           git fetch --quiet "$out/cr.bundle" "cr/$ISSUE:cr/$ISSUE"
           git diff --name-only "origin/main...cr/$ISSUE" > "$RUNNER_TEMP/changed.txt"
           protected=0
