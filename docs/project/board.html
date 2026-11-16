@@ -266,69 +266,70 @@
 <!-- BOARD DATA — the only block the Sunday retro task edits. Source of truth: docs/project/ in the repo. -->
 <script id="board-data" type="application/json">
 {
-  "rebuilt": "2026-10-25",
-  "source": "docs/project/plan.md + docs/project/weeks/2026-W44.md",
+  "rebuilt": "2026-11-16",
+  "source": "docs/project/plan.md + docs/project/weeks/2026-W47.md",
   "readyToApply": "2026-11-01",
   "jobSearch": "2026-12-01",
-  "subtitle": "M5B (SecOC closed to the Definition of Done) proved on silicon on Oct 24. W44: README v1 and the m5b-secoc tag. Ready to apply by Nov 1; job search Dec 2026 – Feb 2027.",
+  "subtitle": "Ready to apply since Nov 1. W46: stack_bound shipped, F-020/F-021/F-022 closed on silicon, the agent pipeline built and ADR-0026 accepted. Job search Dec 2026 – Feb 2027.",
   "week": {
-    "code": "W44 · Oct 26–Nov 1",
-    "title": "Ready to apply: README v1 + M5B done",
-    "budget": "~15 h (burst, agreed at the W43 retro)",
-    "delivery": "README v1 on main (ready to apply) + tag m5b-secoc + GitHub Release",
+    "code": "W47 · Nov 16–22",
+    "title": "Publish, close the stacks, start the TARA",
+    "budget": "~14 h (Fri 20 worked; retro moved to Mon 16: sick)",
+    "delivery": "Stack posts Parts VI + VII published · stack_bound MSP slice on silicon · full TARA draft",
     "days": [
       {
-        "date": "2026-10-26",
+        "date": "2026-11-16",
+        "kind": "retro",
+        "hours": "1 h",
+        "task": "W46 retro + W47 plan (moved from Sun 15, sick). Sync main: PR #71's post files are untracked locally — compare, remove, pull."
+      },
+      {
+        "date": "2026-11-17",
+        "kind": "work",
+        "hours": "1.5 h",
+        "task": "Publish Part VI (Stacks 1/2) on Medium; read-through on the phone."
+      },
+      {
+        "date": "2026-11-18",
         "kind": "work",
         "hours": "2 h",
-        "task": "Close M5B to main: finish the M5 review record (3 sections, verdicts, M5-R findings incl. F-014), F-014 decision as an ADR-0021 addendum, regenerate the report → PR, CI green."
+        "task": "stack_bound MSP slice, tests first: REQ-SB-204..206 (test_main_stack)."
       },
       {
-        "date": "2026-10-27",
+        "date": "2026-11-19",
         "kind": "work",
         "hours": "2 h",
-        "task": "README v1 \"start here\", full draft: what it is, one diagram, what is proven on silicon (linked), build + host tests, where to read first."
+        "task": "MSP on both app images; submodule bump; MSP high-water contract event; both images build + pass the stack gate; checklist final."
       },
       {
-        "date": "2026-10-28",
+        "date": "2026-11-20",
         "kind": "work",
-        "hours": "2.5 h",
-        "task": "F-014 fix (option 1/2): host tests first, then both nodes; both images build. Option 3: write the deferral and start the post draft."
+        "hours": "2 h",
+        "task": "TARA draft, part 1 (worked this week): item + boundary, assets, damage scenarios, STRIDE threat scenarios."
       },
       {
-        "date": "2026-10-29",
-        "kind": "work",
-        "hours": "2.5 h",
-        "task": "M5B post draft (reset-then-replay: M5 vs M5B, two-slot store, rule 11, F-014). Both images build clean; finalize Saturday's checklist."
-      },
-      {
-        "date": "2026-10-30",
-        "kind": "off",
-        "hours": "—",
-        "task": "Off."
-      },
-      {
-        "date": "2026-10-31",
+        "date": "2026-11-21",
         "kind": "bench",
         "hours": "3.5 h",
-        "task": "F-014 on silicon (Node A reboots alone, telemetry recovers) + M5B regression + F-006/F-008 triage."
+        "task": "Bench: MSP static ≥ measured on both app cores + task-stack regression; then publish Part VII."
       },
       {
-        "date": "2026-11-01",
+        "date": "2026-11-22",
         "kind": "retro",
-        "hours": "2.5 h",
-        "task": "Captures → report · post draft reviewed · README v1 merged = ready to apply · tag m5b-secoc + Release · 10:00 retro + W45 plan."
+        "hours": "2 h",
+        "task": "10:00 retro + W48 plan; TARA draft, part 2: risk values, treatment, cybersecurity goals → full proposed ADR."
       }
     ],
     "checklist": {
-      "title": "Sat 31 bench pass criteria",
-      "goal": "Cheapest first. F before R; T is dropped first. Option 3 for F-014 → R + T only.",
+      "title": "Sat 21 bench pass criteria",
+      "goal": "Prep done Thu 19. MSP first; Part VII after the bench.",
       "items": [
-        "P: images from the committed tree, banner build time checked; can_sniff running; replay tool handles 0x200.",
-        "F: reset Node A alone ×3 → bounded REJECT_FRESHNESS (Sat 24: 460, unbounded), telemetry + courtesy light recover without touching Node B.",
-        "F: an old 0x200 replayed after the A reset is refused; a replayed boot sync is refused.",
-        "R: secoc_attack all 5/5 refused; Node B reset → resync + old 0x121 refused; power cycle both → epochs strictly +1.",
-        "T: F-008 one boot on a reset-button boot → reject; F-006 banner count + source tag captured."
+        "P: both app images from the committed tree, stack gate passes, report has a main-stack section per app core.",
+        "P: MSP high-water visible from the normal image via a contract event; MSP region from the linker script (verify, don't guess).",
+        "MSP: static bound ≥ measured on Node A CM4 and Node B CM7 after ≥ 10 min of CAN load.",
+        "Tasks: measured ≤ static for every analysed task; lost: 0 in both captures.",
+        "Node A reset alone: FBL jumps, telemetry back, MSP event seen after reset.",
+        "docs/bench/2026-11-21/: both captures + msp_crosscheck.md."
       ]
     }
   },
@@ -387,23 +388,23 @@
       "w": "W45",
       "start": "2026-11-02",
       "end": "2026-11-08",
-      "focus": "CM7 bring-up post + the M5B story · series index post",
+      "focus": "M5B post → tag m5b-secoc + Release · findings sweep (CM7 post dropped)",
       "bench": "",
-      "delivery": "CM7 post"
+      "delivery": "M5B tag + findings sweep"
     },
     {
       "w": "W46",
       "start": "2026-11-09",
       "end": "2026-11-15",
-      "focus": "M5 demo post from the W40 + W43 captures",
+      "focus": "Stack drill → stack_bound + ADR-0025 (vacation Mon–Tue)",
       "bench": "",
-      "delivery": "M5 demo post"
+      "delivery": "stack_bound + F-021 on silicon"
     },
     {
       "w": "W47–49",
       "start": "2026-11-16",
       "end": "2026-12-06",
-      "focus": "Interview prep (“10 decisions I can defend”, mock design questions) · M6-lite starts early",
+      "focus": "Interview prep (“10 decisions I can defend”, mock design questions) · W47: stack_bound interrupt-stack slice · M6-lite starts early",
       "bench": "",
       "delivery": ""
     }
