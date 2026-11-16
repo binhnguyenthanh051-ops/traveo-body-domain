@@ -1,0 +1,174 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Stacks 2/2 — The CAN task that outgrew its stack, and the tool I built so it can&#x27;t happen quietly again</title>
+<style>body{max-width:720px;margin:2em auto;font:18px/1.6 Georgia,serif;padding:0 16px}img{max-width:100%}pre{background:#f4f4f4;padding:12px;overflow-x:auto;font-size:14px}mark{background:#ffe08a}blockquote{border-left:3px solid #ccc;margin-left:0;padding-left:16px;color:#444}</style></head><body>
+<h1>Stacks 2/2 — The CAN task that outgrew its stack, and the tool I built so it can't happen quietly again</h1>
+<p><em>Part VII of Traveo II Domain — building an automotive body-domain network from scratch on an Infineon TRAVEO™ T2G, with the design done in the open and Claude used as a visible collaborator.</em></p>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-blog/docs/blogs/img/stack-2/hero.png" alt=""></figure>
+<p>Post 1 ends with a promise: <em>"Post 2 is how I made sure it can't happen quietly again."</em> This post keeps it.</p>
+<p>Post 1 reads <strong>one</strong> function's frame. Post 2 adds frames up along <strong>every path of every task</strong>, at build time, and stops the build when a stack is too small.</p>
+<p>The plan: the incident, the function pointer that hid it, the concept, the design, the implementation, and the test. The test has a twist: the stack I had doubled after the incident had <strong>48 bytes</strong> left on its worst path.</p>
+<hr>
+<h2>1. The incident</h2>
+<p>In the M5 bring-up, Node B's CAN task verified its first signed frame and overflowed. FreeRTOS's overflow hook fired. The hook's endless loop then tripped the hardware watchdog, and the chip reset.</p>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-blog/docs/blogs/img/stack-2/fig-01.png" alt="diagram"></figure>
+<p><em>I doubled three stacks. Nothing told me whether that was enough.</em></p>
+<p>A 30-line prototype added up frames along the calls and found <strong>856 B</strong> of call chain (no interrupt frame) against a <strong>768 B</strong> stack, in seconds, with no debugger. It proved the idea. Its one big gap: calls through function pointers had to be added by hand.</p>
+<p>The code kept growing after that fix. In November a crypto-error log was added below the MAC, 160 B deeper than anything the prototype saw. So the same task has several numbers in this post. Each one is labelled:</p>
+<pre><code>Sep 28  Node B  prototype            856 B   call chain only
+Nov 6   Node B  GCC&#x27;s graph alone    552 B   call chain, stops at the pointer
+Nov 6   Node B  pointer followed    1256 B   call chain, error log included
+Nov 11  Node B  stack_bound         1264 B   + 208 B switch frame = 1472 B
+Nov 11  Node A  stack_bound         1280 B   + 208 B switch frame = 1488 B</code></pre>
+<p>The 8 B between Nov 6 and Nov 11 is <code>memcpy</code>, which comes prebuilt with no frame file: the quick count missed it, the tool asked for it.</p>
+<hr>
+<h2>2. The call nobody can see</h2>
+<h3>Why did the compiler's own graph miss it?</h3>
+<p>GCC can write every function's frame and its call graph. Adding them up for the CAN task gave <strong>552 B</strong>. With the pointer followed, the same call chain was <strong>1256 B</strong>.</p>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-blog/docs/blogs/img/stack-2/fig-02.png" alt="diagram"></figure>
+<p><em>Node B, Nov 6, call chain only. The deepest frame sits behind a function pointer; the compiler marks the call and stops.</em></p>
+<p>The pointer is there on purpose. SecOC reaches the MAC through a small interface, so my PC tests plug in a fake MAC and the board plugs in the real one. Good for testing, invisible to a simple stack count.</p>
+<h3>What does a function pointer look like in the binary?</h3>
+<p>In C, it's one line in <code>verify_core</code>:</p>
+<pre><code>if (!cy-&gt;oracle-&gt;mac(cy-&gt;key_id, macin, macin_len, tag))</code></pre>
+<p>In the binary, the target isn't in the instruction. It's loaded into a register at run time:</p>
+<pre><code>10086880  mov    r7, r0          ← r7 = cy (argument 1)
+100868a4  ldr    r3, [r7, #0]    ← r3 = cy-&gt;oracle
+100868a6  ldr.w  fp, [r3]        ← fp = oracle-&gt;mac, the first slot
+100868b0  blx    fp              ← call whatever address fp holds</code></pre>
+<p>And the address itself sits in a constant table in flash:</p>
+<pre><code>10087eb0  29 61 08 10            ← g_oracle = { crypto_mac }: 0x10086129</code></pre>
+<p><code>0x10086129</code> is <code>crypto_mac</code> (<code>0x10086128</code>) <strong>+ 1</strong>: the Thumb bit from Post 1. Every function pointer on a Cortex-M carries it. That's how a tool can spot a stored function address in the image.</p>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-blog/docs/blogs/img/stack-2/fig-03.png" alt="diagram"></figure>
+<p><em>Tracing the register back to the word in flash. The 568 B frame is at the end of that chain.</em></p>
+<hr>
+<h2>3. The concept: walk every path, refuse to guess</h2>
+<p>A direct call (<code>bl</code>) carries its target. An indirect call (<code>blx</code>) needs a <strong>binding</strong>: a written answer to "what can this pointer hold?". The walk is short:</p>
+<pre><code>depth(f):
+    if f has no known frame:      error &quot;no frame&quot;          # never 0 B
+    if f is already on the path:  error &quot;recursion&quot;
+    worst = 0
+    for each call in f:
+        if call is direct (bl):   targets = [the address in the instruction]
+        else (blx rN):            targets = binding(call) or error &quot;no binding&quot;
+        for t in targets:
+            worst = max(worst, depth(t))
+    return frame(f) + worst
+
+required(task) = depth(task entry) + 208 B        # the switch frame from Post 1
+pass if required ≤ 80% of the task&#x27;s stack</code></pre>
+<p>Here it is on <code>verify_core</code>, Node B's Nov 12 build (call chain only, no switch frame):</p>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-blog/docs/blogs/img/stack-2/fig-04.png" alt="diagram"></figure>
+<p><em>The red branch is the deepest. It only exists if the pointer is followed.</em></p>
+<pre><code>depth(error logging) = 80 + 40 + 24 + 8          = 152 B
+depth(crypto_mac)    = 568 + 8 + 152             = 728 B
+depth(verify_core)   = 136 + 728                 = 864 B</code></pre>
+<p>The rule above all others: <strong>refuse to guess</strong>. A wrong "pass" is worse than no answer. If the tool can't give a safe number, it gives <strong>no number</strong> and says why.</p>
+<hr>
+<h2>4. The design, and why</h2>
+<h3>Which source do I trust?</h3>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-blog/docs/blogs/img/stack-2/fig-05.png" alt="diagram"></figure>
+<p><em>The ELF decides what exists. The compiler gives the numbers. The bench checks the tool.</em></p>
+<ul>
+<li><strong>Compiler data alone</strong> misses prebuilt code. <code>memcpy</code> comes from the C library with no frame file; a script would count it as 0 B. Here it's a written 8 B, with its source.</li>
+<li><strong>Runtime alone</strong> only sees what ran. It stays as the check on the tool: if the bench ever measures more than the static number, the tool is wrong.</li>
+</ul>
+<h3>How are pointers bound?</h3>
+<p>The full design follows stored <strong>values</strong>: const tables in flash, initialised data, registration calls. Types only narrow the list, because a <code>void *</code> cast breaks a type search.</p>
+<p>Honest — today the bindings are a list I write, and the tool checks each one against the binary. Following stored values automatically is the next slice.</p>
+<h3>Why 80%?</h3>
+<p>The worst path must fit in <strong>80%</strong> of the stack. The 20% covers the next small change to an error path, the kind nobody runs on the bench. A fixed byte margin doesn't scale: 64 B is plenty on 512 B and nothing on 2 KB.</p>
+<p>Nothing in the tool is about this project, so it lives in its own public repo, <strong>stack_bound</strong>, pinned here as a git submodule.</p>
+<hr>
+<h2>5. The implementation</h2>
+<h3>Five steps</h3>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-blog/docs/blogs/img/stack-2/fig-06.png" alt="diagram"></figure>
+<p><em>About 1,000 lines of Python. It runs on the PC, after every firmware build.</em></p>
+<ol>
+<li><strong>The ELF.</strong> Every function symbol becomes a function, keyed by address. DWARF adds where each one is declared. Any aligned word in the image that equals a function's start + 1 marks it <strong>address-taken</strong>.</li>
+<li><strong>GCC's output.</strong> Two flags write a frame file and a call-graph file per source file. The parsers are strict: a line they don't know, or a <code>dynamic</code> frame (a VLA or <code>alloca</code>), is an error.</li>
+<li><strong>Join and bind.</strong> Frames join on file, line, column and name, because two files can each have a <code>static</code> helper with the same name. Then each indirect call gets its binding.</li>
+<li><strong>Walk and check.</strong> The pseudo code from §3, with each function's result remembered.</li>
+<li><strong>Report.</strong> One model, rendered as text, JSON and an HTML page with no script, so it opens offline on a bench PC.</li>
+</ol>
+<p>The real compiler lines behind <code>verify_core</code>:</p>
+<pre><code>secoc.c:126:30:verify_core	136	static
+edge: { sourcename: &quot;secoc.c:verify_core&quot; targetname: &quot;__indirect_call&quot; label: &quot;secoc.c:139:10&quot; }</code></pre>
+<p>And the binding for that <code>__indirect_call</code>, with the reason the report prints:</p>
+<pre><code>[[indirect]]
+function = &quot;verify_core&quot;
+targets  = [&quot;crypto_mac&quot;]
+reason   = &quot;cy-&gt;oracle-&gt;mac: g_oracle = { crypto_mac } (secoc_app.c:27), the only secoc_mac_if_t in the image&quot;</code></pre>
+<p>The tool checks the claim. If the call has no binding, or the target is never address-taken, it stops:</p>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-blog/docs/blogs/img/stack-2/fig-07.png" alt="diagram"></figure>
+<p><em>Every pointer ends green or stops the build. There is no third way out.</em></p>
+<p>Each image binds <strong>9</strong> functions with indirect calls: the MAC, the flash store, the IPC port to the security core.</p>
+<pre><code>Language     Python 3.11+, pyelftools
+Input        unstripped ELF with -g, plus GCC -fstack-usage -fcallgraph-info=su
+Exit codes   0 pass · 1 a stack fails · 2 no safe result · 3 usage error
+Tests        47
+Run time     1.6–2.5 s per image on my PC</code></pre>
+<h3>Where it runs</h3>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-blog/docs/blogs/img/stack-2/fig-08.png" alt="diagram"></figure>
+<p><em>Blue runs on the PC, amber on the board. The build checks the stacks; the bench checks the tool.</em></p>
+<p>The gate sits in the build scripts I flash with, so it can't be forgotten. There's no override: a failing stack is fixed or raised. The analysis flags stay in the build, because the code bytes are identical with and without them.</p>
+<hr>
+<h2>6. The test</h2>
+<h3>The first real image broke the tool</h3>
+<p>The test programs passed. Then I ran it on the real firmware, and the <strong>tool</strong> had bugs. A vendor SDK does things my small test programs never did.</p>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-blog/docs/blogs/img/stack-2/fig-09.png" alt="diagram"></figure>
+<p><em>The one bug that broke the tool's own rule: it guessed, silently.</em></p>
+<p>The other two were noise, not danger: <strong>2,006</strong> compiler entries on Node B for functions the linker had removed, and a header's <code>static inline</code> showing up once per file that uses it. Neither could change a number. The <code>s_stack</code> one could have.</p>
+<h3>Three stacks failed the 80% rule, not one</h3>
+<p>I expected one failure: Node B's CAN task. Three stacks failed the 80% rule, two of them with under 64 B left. The third, Node A's <code>app</code> task, had 280 B left: not about to crash, but over the line. It signs the commands it sends, so it calls the same 568 B MAC function on the way out.</p>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-blog/docs/blogs/img/stack-2/fig-10.png" alt="diagram"></figure>
+<p><em>Nov 11, static worst case including the 208 B switch frame, as a share of the stack. Every analysed task now passes the 80% rule.</em></p>
+<p>The deepest branch on both CAN tasks is the error log after a failed MAC. It never runs on a healthy bench, but it's real: a fault test drove it 6,843 times. I raised the stacks rather than moving the MAC buffers to static memory: two tasks on Node A call the MAC, so static buffers would need a lock, and the RAM is there.</p>
+<p>Honest — the tool counts every path, even two branches that can never run together, so it over-estimates; it never under-estimates as long as the bindings are complete, which is the one thing I still vouch for by hand.</p>
+<h3>Does the bench agree?</h3>
+<p>I flashed both nodes through the gate and captured the logs. For every analysed task, the static number must be <strong>at least</strong> what the task really used.</p>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-blog/docs/blogs/img/stack-2/fig-11.png" alt="diagram"></figure>
+<p><em>Nov 11. Measured ≤ static on all 7 tasks; static includes the 208 B switch frame. The ~300 B gap on the CAN tasks is mostly the error branch the normal run skips.</em></p>
+<p>On the old 1536 B stacks, the normal path alone used 78% (Node A) and 74% (Node B). No high-water mark would ever have shown the error branch on top.</p>
+<h3>The gate stopped two good builds</h3>
+<p>The first two flash runs stopped at the gate with stacks that <strong>passed</strong>. The build shell gave Windows Python a <code>/cygdrive</code> path it couldn't open; then Python printed <code>pass\r</code> instead of <code>pass</code>. Both times the gate failed closed and flashed nothing. That's what I want from it, so I fixed the script, not the rule.</p>
+<h3>The cost</h3>
+<pre><code>Code bytes        identical with the analysis flags (both images)
+RAM               +512 B per raised stack, 3 stacks
+Log traffic       6 records every 5 s on Node A, 5 on Node B
+Build time        +1.6–2.5 s per image
+A new pointer     fails the build until I bind it (on purpose)
+Interrupt stack   not analysed yet</code></pre>
+<p>Honest — the interrupt stack is not analysed yet, and every report says so in one line. That's exactly what the next slice adds.</p>
+<hr>
+<h2>7. User manual — check your own stacks</h2>
+<p>Build with <code>-g -fstack-usage -fcallgraph-info=su</code>, then:</p>
+<pre><code>python -m stack_bound build/app.elf --su build --project stack_bound.toml --html report.html</code></pre>
+<p>Success: one line per task, all <code>ok</code>. Node B's gate output on the bench day:</p>
+<pre><code>task can_task             1472 B      2048 B    72%    1840 B (460 w)  ok     ← the SecOC task
+task heartbeat_task        400 B       512 B    78%     504 B (126 w)  ok
+task log_cyclic_task       308 B       512 B    60%      392 B (98 w)  ok
+not analysed: main stack (MSP): the interrupt chain and the code before …       ← says what it skips
+   ~&gt; crypto_mac 568 B   [listed: cy-&gt;oracle-&gt;mac: g_oracle = { crypto_mac } …] ← the pointer, with its reason</code></pre>
+<p>On the board, each task reports what it really used:</p>
+<pre><code>[   60000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212   ← Node A can: (512 − 212) × 4 = 1200 B</code></pre>
+<p>The failure demo — the best part. Delete the <code>verify_core</code> binding from the project file and run it again:</p>
+<pre><code>stack_bound: analysis error, no result:
+  - task can_task: verify_core: indirect call at shared/secoc/src/secoc.c:139:10 has no binding (add an [[indirect]] entry)</code></pre>
+<p>Exit code 2, no number, and the build script stops before flashing. Point the binding at the wrong function instead, and it says <em>"never address-taken, so no pointer can hold it"</em>.</p>
+<hr>
+<h2>Metadata</h2>
+<pre><code>Board      · Node A: TRAVEO™ T2G Body Entry (CYT2B7, Cortex-M4F) · Node B: KIT_T2G-B-H_LITE (CYT4BF, Cortex-M7)
+Toolchain  · ModusToolbox (GCC 14.2.1), Python
+RTOS       · FreeRTOS
+Tool       · stack_bound 0.2.0 (MIT) · pyelftools
+Repo       · traveo-body-domain (main) · stack_bound (tag v0.2.0)
+Written    · November 2026</code></pre>
+<h2>Follow along</h2>
+<p>💻 GitHub — Traveo II Body Domain</p>
+<p>🔗 https://github.com/binhnguyenthanh051-ops/traveo-body-domain (main)</p>
+<p>💻 GitHub — stack_bound</p>
+<p>🔗 https://github.com/binhnguyenthanh051-ops/stack_bound (tag v0.2.0)</p>
+<p>💻 LinkedIn</p>
+<p>🔗 https://www.linkedin.com/in/binh-nguyen-thanh-2b807714b/</p>
+<hr>
+</body></html>

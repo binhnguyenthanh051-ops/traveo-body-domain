@@ -29,7 +29,14 @@ INIT = ("mermaid.initialize({startOnLoad:true, theme:'default', "
 
 FIG_PAGE = """<!doctype html><html><head><meta charset="utf-8"><script src="{js}"></script>
 </head><body style="margin:0;padding:{pad}px;background:#fff"><pre class="mermaid" style="margin:0">{code}</pre><style>svg{{max-width:none!important}}</style>
-<script>{init}</script></body></html>"""
+<script>{init}
+// Headless Edge lays a narrow window out wider than it is, and Mermaid's SVG is width:100%, so a
+// narrow figure was drawn scaled up and clipped. Pin the SVG to its natural (viewBox) size.
+mermaid.run().then(() => {{
+  const s = document.querySelector('svg'), v = s.viewBox.baseVal;
+  s.style.width = v.width + 'px';
+  s.style.height = v.height + 'px';
+}});</script></body></html>"""
 
 MEASURE_PAGE = """<!doctype html><html><head><meta charset="utf-8"><script src="{js}"></script>
 </head><body style="margin:0;background:#fff">{blocks}

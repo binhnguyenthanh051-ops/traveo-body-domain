@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="734" viewBox="0 0 1400 734">
+  <defs>
+    <pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse">
+      <path d="M 28 0 L 0 0 0 28" fill="none" stroke="#18292f" stroke-width="1"/>
+    </pattern>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3fb6a8"/>
+    </marker>
+    <marker id="arrAmber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#d4a24c"/>
+    </marker>
+  </defs>
+
+  <rect width="1400" height="734" fill="#0f1a1f"/>
+  <rect width="1400" height="734" fill="url(#grid)"/>
+
+  <!-- left: text block -->
+  <text x="90" y="175" font-family="Consolas, 'Courier New', monospace" font-size="17" letter-spacing="4" fill="#d4a24c">TRAVEO T2G · STACKS 1/2</text>
+  <text x="88" y="270" font-family="Georgia, 'Times New Roman', serif" font-size="68" font-weight="bold" fill="#f3f1ea">What a call</text>
+  <text x="88" y="350" font-family="Georgia, 'Times New Roman', serif" font-size="68" font-weight="bold" fill="#f3f1ea">leaves behind.</text>
+  <rect x="90" y="385" width="96" height="4" fill="#d4a24c"/>
+  <text x="90" y="440" font-family="Georgia, serif" font-size="23" font-style="italic" fill="#9fb3bb">One real function, read from the binary —</text>
+  <text x="90" y="472" font-family="Georgia, serif" font-size="23" font-style="italic" fill="#9fb3bb">byte by byte, push to pop.</text>
+
+  <!-- right: the stack column of verify_core -->
+  <g font-family="Consolas, 'Courier New', monospace">
+    <text x="900" y="112" font-size="13" letter-spacing="2" fill="#3fb6a8">TASK STACK · verify_core</text>
+
+    <!-- caller's frame -->
+    <rect x="900" y="128" width="300" height="56" fill="none" stroke="#d4a24c" stroke-width="1.5"/>
+    <text x="1050" y="152" font-size="14" fill="#e8d7b0" text-anchor="middle">caller's frame</text>
+    <text x="1050" y="172" font-size="12" fill="#b9a780" text-anchor="middle">arguments 5–8</text>
+
+    <!-- saved registers -->
+    <rect x="900" y="184" width="300" height="56" fill="#143a2c" stroke="#3fbf7f" stroke-width="1.5"/>
+    <text x="1050" y="208" font-size="14" fill="#a8e6c6" text-anchor="middle">saved r4–r11 + lr</text>
+    <text x="1050" y="228" font-size="12" fill="#7fc4a2" text-anchor="middle">36 B · the way home</text>
+
+    <!-- locals -->
+    <rect x="900" y="240" width="300" height="96" fill="#16324a" stroke="#4a90d9" stroke-width="1.5"/>
+    <text x="1050" y="276" font-size="14" fill="#a9cdf2" text-anchor="middle">locals · 100 B</text>
+    <text x="1050" y="298" font-size="12" fill="#86aed6" text-anchor="middle">MAC input · tag · argument 5</text>
+
+    <!-- sp -->
+    <line x1="820" y1="336" x2="892" y2="336" stroke="#3fb6a8" stroke-width="2" marker-end="url(#arr)"/>
+    <text x="780" y="341" font-size="15" fill="#3fb6a8">sp</text>
+
+    <!-- frame bracket -->
+    <path d="M 1214 184 L 1226 184 L 1226 336 L 1214 336" fill="none" stroke="#d4a24c" stroke-width="1.5"/>
+    <text x="1238" y="256" font-size="14" fill="#d4a24c">frame</text>
+    <text x="1238" y="276" font-size="14" fill="#d4a24c">136 B</text>
+
+    <!-- free stack -->
+    <rect x="900" y="336" width="300" height="150" fill="#1e2a2e" stroke="#5d7a82" stroke-width="1.5" stroke-dasharray="6 4"/>
+    <text x="1050" y="410" font-size="14" fill="#8fa5ad" text-anchor="middle">free · 0xA5 0xA5 0xA5 …</text>
+
+    <!-- lowest 16 B -->
+    <rect x="900" y="486" width="300" height="26" fill="#3a1a1a" stroke="#e2574c" stroke-width="1.5"/>
+    <text x="1050" y="504" font-size="12" fill="#e9a29b" text-anchor="middle">lowest 16 B · checked at switch-out</text>
+
+    <!-- grows down -->
+    <line x1="860" y1="380" x2="860" y2="470" stroke="#d4a24c" stroke-width="2" marker-end="url(#arrAmber)"/>
+    <text x="852" y="430" font-size="12" fill="#d4a24c" text-anchor="end">grows</text>
+    <text x="852" y="446" font-size="12" fill="#d4a24c" text-anchor="end">down</text>
+
+    <!-- the instructions that built it -->
+    <text x="900" y="572" font-size="15" fill="#bfe9e2">stmdb  sp!, {r4–fp, lr}</text>
+    <text x="900" y="600" font-size="15" fill="#bfe9e2">sub    sp, #100</text>
+    <text x="900" y="628" font-size="15" fill="#5d7a82">…</text>
+    <text x="900" y="656" font-size="15" fill="#bfe9e2">ldmia  sp!, {…, pc}</text>
+  </g>
+</svg>
