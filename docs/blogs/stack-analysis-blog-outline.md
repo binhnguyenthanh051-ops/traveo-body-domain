@@ -11,113 +11,77 @@ Drafts: `docs/blogs/stack-1-blog-draft.md`, `docs/blogs/stack-2-blog-draft.md`.*
 
 ---
 
-## Post 1 — "What a function leaves on the stack"
+## Post 1 — "What happens on the stack when a function calls another" (reworked 2026-11-14)
 
-*Explainer, built on real Traveo code. Lens: design essay (style guide §13). ~6 min.*
+*For a **fresher**: knows what RAM, a pointer and a function call are; has never looked inside a stack.
+Owner, 2026-11-14: the first draft read like it was written for a senior. ~6 min.*
 
-### 1. Hook: a high-water mark only covers paths that ran
-- M2 set the task stacks for the CM4F context frame, then planned to "trim later from
-  `uxTaskGetStackHighWaterMark`" (`docs/briefs/M2-bringup_log.md` §3).
-- By M5 the `can` stack was 192 words (768 B), sized before SecOC existed. The first `crypto_mac()`
-  overflowed it (`docs/briefs/M5-bringup-plan.md` row 14; ADR-0025 Table 1).
-- The question for this post: what does a function actually put on the stack, byte by byte?
+**One small example, not the CAN code.** A demo task built only with `STACK_DEMO=1`:
 
-### 2. The registers a call uses (AAPCS)
-- `r0–r3`: arguments and the return value. `r4–r11`: callee-saved. `r12`: scratch. `sp`, `lr`, `pc`.
-- Source: Arm's public *Procedure Call Standard for the Arm Architecture* (AAPCS32). Clean-room: only
-  public Arm docs and our own objdump output.
-- Real argument 7 and 8: `verify_core` reads them from the caller's frame at `[sp, #144]` and
-  `[sp, #148]` (A).
+```c
+task  -> func_a(0x11): uint32_t arr_a[2] = {0xAAAA0001, 0xAAAA0002}
+      -> func_b(0x22): uint32_t arr_b[2] = {0xBBBB0001, 0xBBBB0002}
+      -> func_c(0x33): uint32_t arr_c[4] = {0xCCCC0001 … 0xCCCC0004}   <- breakpoint
+```
 
-### 3. One real function, line by line: `verify_core`
-- Prologue: `stmdb sp!, {r4, r5, r6, r7, r8, r9, sl, fp, lr}` = 36 B, then `sub sp, #100` → **136 B**,
-  equal to GCC's `.su` (A).
-- Epilogue: `add sp, #100`, then `ldmia.w sp!, {…, pc}`: the saved `lr` becomes `pc` and the function returns (A).
-- Leaf function `get_u16le`: no push, no `sub sp`; it returns with `bx lr`, frame 0 B (A, objdump 2026-11-14).
-- `vpush`: no app function on either node uses it (0 hits on Node B). The only one is FreeRTOS's switch,
-  `vstmdbeq r0!, {s16-s31}` on Node A (objdump 2026-11-14), so it's shown in §6.
+Values chosen to be easy to spot in a hex dump. **Every word shown in the post comes from the bench
+capture** (Node B, GDB `x/…wx`), planned for 2026-11-15. Until then: `[TODO: measure]`.
+The CAN chain, `verify_core`, `blx`, PendSV, EXC_RETURN, AAPCS details and the float ABI move to Post 2
+or out.
 
-### 4. The frame, as a block diagram
-- From `sp` upward: outgoing argument 5 for `build_mac_input` at `[sp]` (A), the MAC tag (16 B) and
-  the MAC input (70 B = 2 + 4 + 64, `shared/secoc` defines), then 36 B of saved registers including `lr`.
-- Above them, the caller's frame with `verify_core`'s arguments 5–8 (A).
-- Stack alignment: 8 B at a public interface (AAPCS). Our profile uses 8 B
-  (`tools/stack_bound/src/stack_bound/profiles/cortex-m-freertos.toml`).
+### 1. Hook (keep)
+M5's confession: the stack doubled from 768 B to 1.5 KB. "I'd never looked inside one."
 
-### 5. `bl` sets `lr`, so a caller must save it
-- `bl 100867c4 <build_mac_input>`: the target is in the instruction, and `lr` = the return address (A).
-- `verify_core` calls four functions, so it pushes `lr`. `get_u16le` calls none, so it doesn't (A).
-- Return paths: `bx lr` (leaf) and `ldmia … {…, pc}` (non-leaf), both real (A).
-- `blx fp` is shown once and left as the teaser for Post 2.
+### 2. What is a stack?
+- A block of RAM set aside for one task, plus one register, `sp`, that marks how full it is.
+- Last in, first out: a pile of plates.
+- In FreeRTOS it's literally an array: `static StackType_t stack[128];` (512 B). Its real address from the
+  capture `[TODO: measure]`.
+- **Fig:** RAM as a strip of addresses, the demo task's array highlighted, `sp` pointing into it.
 
-### 6. Exceptions: what the hardware pushes
-- Hardware frame: 8 words, or 26 with an FP context, + 1 alignment word (ADR-0025 D2; M2 log §3).
-- `EXC_RETURN` in `lr` tells the core which stack and frame to restore. Tasks run on PSP; interrupts and
-  `main()` run on MSP. [TODO: measure] if any number is quoted for MSP: not analysed until W47.
-- FreeRTOS then pushes `s16–s31` (64 B, the real `vstmdbeq` from §3) and `r4–r11, lr` (36 B):
-  **208 B** per task in total (ADR-0025 D2).
-- How FreeRTOS spots an overflow: new stacks are filled with `0xA5`, and at each switch-out it checks
-  that the lowest 16 B are still `0xA5` (method 2, both nodes; A, last section).
+### 3. Why does a function need the stack?
+Three things it can't keep in registers, each with a one-line reason:
+- **the way home** (return address): the CPU must know where to continue after the call;
+- **local variables**, especially arrays: too big for registers;
+- **saved registers**: the caller's values it borrows and must give back.
+- **Fig:** one frame = way home + saved registers + locals.
 
-### 7. The whole call, as pseudo code
-- **Illustration, not evidence** (owner, 2026-11-14): no memory dump. Pseudo code replays §3–§6 one step
-  at a time, with `sp` tracked. The numbers are `verify_core`'s real ones (A).
-- Block 1, one call and its return:
+### 4. The example
+The C code above, 15 lines. "Watch the stack while it runs."
 
-  ```
-  # caller (secoc_verify_len)
-  r0..r3 = cy, can_id, frame, plen        # arguments 1-4 travel in registers
-  sp -= 16; [sp..] = epoch, counter, pdu_out, pdu_len   # 5-8 go on the stack
-  bl verify_core                          # lr = return address, pc = verify_core
+### 5. Watch it fill up (the core of the post, 4 real snapshots)
+Water-tank figures, **lowest address on top** (like a debugger's memory window), so the stack rises like water:
+1. Task just started: everything still `0xA5` (FreeRTOS's paint).
+2. Inside `func_a`: `arr_a` + the way home.
+3. Inside `func_b`.
+4. Inside `func_c`, at the breakpoint: **the whole stack, every word**, coloured by function:
+   `address · value · whose · what` (e.g. `0xCCCC0001 · func_c · arr_c[0]`, `0x1008…  · func_c · way back into func_b`).
+- **Fig:** the 4 tanks side by side. **Fig:** the full word-by-word dump at the breakpoint.
 
-  # verify_core
-  push {r4..r11, lr}                      # sp -= 36   saved registers + return address
-  sp -= 100                               # locals: MAC input, tag, outgoing arg
-  r6 = [sp + 144]                         # argument 7, read from the caller's frame
-  bl build_mac_input                      # overwrites lr: that's why it was saved
-  blx oracle->mac                         # target from a register (Post 2)
-  sp += 100                               # locals gone
-  pop {r4..r11, pc}                       # sp += 36   saved lr -> pc = return
-  ```
-  (Shown as 16 B for arguments 5–8; in the real code the caller reserves that space in its own frame.)
+### 6. Push and pop, in 4 instructions
+`func_b`'s disassembly: `push {…, lr}` / `sub sp, #…` … `add sp, #…` / `pop {…, pc}`.
+Why `lr` must be saved: `bl` overwrites it, there's only one. **Fig:** sequence a → b → c → back.
 
-- Block 2, how FreeRTOS sees it (method 2 + the high-water mark, as configured on both nodes, A):
+### 7. Coming back: the stain = the high-water mark
+- After the calls return, `sp` is back at the top, but the old values are still there (capture #5).
+- FreeRTOS counts the bytes still `0xA5`: that's the high-water mark. **Fig:** the tank with the stain line.
+- The catch: it only knows the paths that ran. One line → Post 2.
 
-  ```
-  create(task):
-      fill task.stack with 0xA5               # every byte, once
-  switch_out(task):
-      push the context (208 B) onto task.stack
-      if any of task.stack[0..15] != 0xA5:    # lowest 16 bytes
-          vApplicationStackOverflowHook(task) # after the damage, not before
-  high_water(task):
-      return count of 0xA5 bytes from the bottom up   # only paths that ran
-  ```
-- Block 3, the overflow in one line of arithmetic: `sp_at_entry − (deepest path + 208) < stack_bottom`
-  → a write below the array, into whatever the linker placed there.
-- Honest — every example is a `-Og` debug build; `-O2` frames differ.
+### 8. What happens when it doesn't fit?
+- `STACK_DEMO=2`: `func_c` gets an array bigger than the task's stack. The water goes over the rim into the
+  next variable in RAM, and FreeRTOS's overflow hook fires at the next task switch (capture: breakpoint in
+  the hook, the stack's lowest 16 B no longer `0xA5`) `[TODO: measure]`.
+- One line: an interrupt also needs room on the task's stack at any moment.
 
-### 8. Teaser → Post 2
-- One line: a 568 B frame (`push {r4, r5, lr}` + `sub.w sp, sp, #556`, A) behind a `blx` is exactly
-  what blew up my CAN task. Post 2 is how I made sure it can't happen quietly again.
+### 9. User manual
+- GDB: `break func_c`, `bt`, `x/128wx <stack base>`; what each shows.
+- Build switch: `STACK_DEMO=1` / `=2` on the make line (off by default).
+- Failure demo = §8.
+- Forward link: "Now imagine a call where nobody can tell who gets called." → Post 2.
 
 ### MEDIA — Post 1
-- **Hero:** `img/stack-p1/hero.svg` from the M5 template; caption `TRAVEO T2G · STACK SERIES 1/2`
-  [TODO: Ben — caption wording].
-- **Fig 1** (flowchart LR): paths that ran vs the `crypto_mac` path that hadn't been written yet; 768 B stack vs
-  856 B worst case (M5 bring-up row 14).
-- **Fig 2** (register strip): `r0–r3` · `r4–r11` · `r12` · `sp` · `lr` · `pc`, colour-coded by who saves them.
-- **Code block:** `verify_core` prologue/epilogue, 6 lines, tagged with `←` notes (A).
-- **Code block:** `get_u16le`, 4 lines, the leaf (A).
-- **Fig 3** (stack column, flowchart TB): caller's args 5–8 · saved regs + `lr` 36 B · locals 100 B · `sp`;
-  "grows down" arrow; free stack in grey.
-- **Fig 4** (sequence diagram): `bl` → `lr` = return address → callee pushes `lr` → `pop {…, pc}`.
-- **Fig 5** (stack column): exception entry 104 B + 4 alignment + FreeRTOS 64 + 36 = 208 B.
-- **Fig 6** (before/after): healthy stack with its `0xA5` floor intact vs overflow into the neighbour,
-  caught only at switch-out.
-- **Code blocks (§7):** the three pseudo-code blocks. Optional **Fig 7** (sequence diagram): caller →
-  `verify_core` → `build_mac_input`, with `sp` and `lr` noted on each arrow.
-- **Metadata + Follow along**, per the template.
+- Hero: redo to match (the tank).
+- Figs: RAM strip · one frame · 4 tanks · full dump · sequence · stain · overflow. Every value from the capture.
 
 ---
 

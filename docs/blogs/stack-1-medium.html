@@ -1,136 +1,157 @@
 <!doctype html>
-<html><head><meta charset="utf-8"><title>Stacks 1/2 — What a function leaves on the stack</title>
+<html><head><meta charset="utf-8"><title>Stacks 1/2 — What happens on the stack when a function calls another</title>
 <style>body{max-width:720px;margin:2em auto;font:18px/1.6 Georgia,serif;padding:0 16px}img{max-width:100%}pre{background:#f4f4f4;padding:12px;overflow-x:auto;font-size:14px}mark{background:#ffe08a}blockquote{border-left:3px solid #ccc;margin-left:0;padding-left:16px;color:#444}</style></head><body>
-<h1>Stacks 1/2 — What a function leaves on the stack</h1>
+<h1>Stacks 1/2 — What happens on the stack when a function calls another</h1>
 <p><em>Part VI of Traveo II Domain — building an automotive body-domain network from scratch on an Infineon TRAVEO™ T2G, with the design done in the open and Claude used as a visible collaborator.</em></p>
-<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-blog/docs/blogs/img/stack-1/hero.png" alt=""></figure>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-1-rework/docs/blogs/img/stack-1/hero.png" alt=""></figure>
 <p>M5 ends its cost list with a confession: <em>"FreeRTOS caught the overflow on the first run, and the stacks went from 768 B to 1.5 KB."</em> I doubled the number and moved on.</p>
-<p>M5 fixed the number. This post looks at the <strong>bytes</strong> behind it: what one real function from this project puts on its stack, line by line, from the compiled binary.</p>
-<p>Two posts. This one is the basics, built on a single function that checks a CAN frame's MAC. The twist is one instruction in it, <code>blx</code>, that hides 568 bytes from any tool that reads the code. The high-water mark sees them only once that path has run. Post 2 is about that.</p>
+<p>Doubling a number is easy. Knowing what fills it is not. So this time I stopped the chip in the middle of three function calls and read the stack out, word by word.</p>
+<p>This post is the basics, with real bytes from a real board. Post 2 is about the calls you can't see coming.</p>
 <hr>
-<h2>1. The problem</h2>
-<h3>Why wasn't the high-water mark enough?</h3>
-<p>In M2 I gave each task room for the CPU's context frame and planned to trim later from FreeRTOS's high-water mark. That number only knows the paths that <strong>ran</strong>.</p>
-<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-blog/docs/blogs/img/stack-1/fig-01.png" alt="diagram"></figure>
-<p><em>Node B, September. The red path didn't exist when the stack was sized. The first signed frame took it.</em></p>
-<p>The 856 B came from a quick prototype that counted the call chain only, with no interrupt frame. Add the 208 B from §6 and it needs 1064 B. I doubled the stack to 1536 B. Post 2 shows why even that was nearly too small.</p>
-<p>To know the worst case without running it, I first had to know what a function actually puts on the stack.</p>
-<hr>
-<h2>2. The registers a call uses</h2>
-<p>Arm's calling convention (the AAPCS) decides who keeps what. A function call on a Cortex-M uses these registers:</p>
-<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-blog/docs/blogs/img/stack-1/fig-02.png" alt="diagram"></figure>
-<p><em>Green is what a function may have to push onto the stack: <code>r4–r11</code> and <code>lr</code>.</em></p>
+<h2>1. What is a stack?</h2>
+<p><strong>A stack is the memory that gives every call still running its own private space: its way back, the registers it borrows, its local variables. That space is handed back in reverse order as the calls return.</strong> One CPU register, <code>sp</code> (the stack pointer), marks how far it is filled.</p>
+<p>A bare-metal program has one stack. With FreeRTOS, every task gets its own, so a task can be paused and resumed without stepping on another's calls. Interrupts use a separate one, the main stack.</p>
+<p>Here is where all of them live on Node B:</p>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-1-rework/docs/blogs/img/stack-1/stack-ram-map.png" alt=""></figure>
+<p><em>Not to scale. Five task stacks sit among the static variables. The main stack sits alone at the top of RAM.</em></p>
+<p>The linker's map file says the same, line by line:</p>
+<pre><code>.bss.s_stack        0x28005020   0x800   can_task.o   ← the CAN task&#x27;s stack
+.bss.s_tcb          0x28005820    0xbc   can_task.o   ← its TCB, right after it
+.bss.s_log_stack    0x280058ec   0x200   log_task.o
+.bss.s_timer_stack  0x28005bb8   0x400   main.o       ← FreeRTOS&#x27;s own timer task
+.bss.s_idle_stack   0x28006074   0x200   main.o       ← and its idle task
+.bss.s_hb_stack     0x28006330   0x200   main.o
+__StackTop   = 0x280e0000                             ← the main stack: no variable,
+__StackLimit = 0x280df000                               just two linker symbols</code></pre>
+<p>A task's stack is an ordinary variable. Nothing marks it as a stack. The main stack isn't a variable at all: it's the last 4 KB of RAM, and the CPU loads its top address from the vector table at reset.</p>
+<p>Not every RTOS forces this. An AUTOSAR OS, for example, can let tasks share one stack when the configuration guarantees they never wait mid-run. A task that preempts another must then finish first, so it stacks up just like a function call. Tasks that can wait, or that must be kept apart, get stacks of their own. A FreeRTOS task can always block in the middle of a call, so FreeRTOS gives every task its own.</p>
+<p>For this post I added one more task, with a small stack of its own:</p>
+<pre><code>static StackType_t s_demo_stack[128];   // 128 words × 4 bytes = 512 bytes</code></pre>
+<p>The linker put it here in Node B's RAM:</p>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-1-rework/docs/blogs/img/stack-1/fig-01.png" alt="diagram"></figure>
+<p><em>Lowest address at the top, the way a debugger's memory window lists it. The stack is the blue one.</em></p>
+<p>Two things are worth knowing up front:</p>
 <ul>
-<li>Integer and pointer arguments 1–4 travel in <code>r0–r3</code>; a 64-bit value takes a pair. The rest go <strong>on the stack</strong>.</li>
-<li>Floats depend on the build's float ABI. Node B builds hard-float, so float arguments go in <code>s0–s15</code>. Node A builds <code>softfp</code> and passes them in <code>r0–r3</code> like integers.</li>
-<li>A function may use <code>r4–r11</code> only if it saves them first and puts them back before returning.</li>
-<li><code>lr</code> holds the return address. It's a register, not a stack slot, until the function calls someone else.</li>
+<li>The stack fills from the <strong>end</strong> of the array (the high address) towards the start. In the pictures below, it fills from the bottom up, like water in a tank.</li>
+<li>Before the task runs, FreeRTOS paints every byte with <code>0xA5</code>. Any word that still reads <code>0xa5a5a5a5</code> has never been used.</li>
 </ul>
 <hr>
-<h2>3. One real function, line by line</h2>
-<p><code>verify_core</code> checks the MAC of a received CAN frame. It takes <strong>8 arguments</strong>, has two buffers on the stack, and calls four functions. Here it is on Node B (Cortex-M7), from <code>objdump</code>:</p>
-<pre><code>1008687a  stmdb   sp!, {r4, r5, r6, r7, r8, r9, sl, fp, lr}   ← push 9 registers = 36 B
-1008687e  sub     sp, #100                                     ← room for locals: frame = 136 B
-10086880  mov     r7, r0                                       ← keep argument 1 in a saved register
-10086888  ldr     r6, [sp, #144]                               ← argument 7, read from the caller&#x27;s frame
-1008689e  bl      100867c4 &lt;build_mac_input&gt;                   ← call: lr = 0x100868a3
+<h2>2. Why does a function need the stack?</h2>
+<p>When a function calls another one, it has to park a few things somewhere safe until the call comes back:</p>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-1-rework/docs/blogs/img/stack-1/fig-02.png" alt="diagram"></figure>
+<p><em>One function's slice of the stack is called its frame. It holds these three things.</em></p>
+<p>Small arguments don't need the stack at all. The first four travel in CPU registers (<code>r0</code> to <code>r3</code>).</p>
+<hr>
+<h2>3. The example</h2>
+<p>Three functions, each with a small array of values that are easy to spot in a hex dump:</p>
+<pre><code>void func_c(uint32_t x) {
+    uint32_t arr_c[4] = {0xCCCC0001, 0xCCCC0002, 0xCCCC0003, x};
+    stack_demo_mark(4, arr_c, 4);          // breakpoint here: the deepest point
+}
+void func_b(uint32_t x) {
+    uint32_t arr_b[2] = {0xBBBB0001, 0xBBBB0002};
+    func_c(x + 0x11);
+}
+void func_a(uint32_t x) {
+    uint32_t arr_a[2] = {0xAAAA0001, 0xAAAA0002};
+    func_b(x + 0x11);
+}
+// the task calls func_a(0x11)</code></pre>
+<p><code>stack_demo_mark()</code> does nothing useful. It's just a place to put a breakpoint. I ran this on Node B as its own small task, stopped it with GDB at each step, and dumped all 512 bytes of its stack every time.</p>
+<hr>
+<h2>4. Watch it fill up</h2>
+<p>Here is the whole run, one instruction at a time. Every value comes from the chip:</p>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-1-rework/docs/blogs/img/stack-1/stack-calls.gif" alt=""></figure>
+<p><em>Three calls in, three returns out. Yellow marks the words written in that step.</em></p>
+<ul>
+<li><strong>At the start:</strong> the task itself uses only 8 bytes. Its one important word is <code>100810bd</code>, the "way back" FreeRTOS gave it.</li>
+<li><strong>Each call</strong> takes two steps: <code>push</code> saves the way back, then <code>sub sp</code> makes room for the array. Here each call happens to take 24 bytes. A bigger array, or more registers to save, makes a bigger frame.</li>
+<li><strong>Before any call,</strong> the striped words under <code>sp</code> are leftovers of a task switch. Section 6 shows where they come from.</li>
+</ul>
+<p>At the deepest point, inside <code>func_c</code>, here is every word, with whose it is:</p>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-1-rework/docs/blogs/img/stack-1/stack-window.png" alt=""></figure>
+<p><em>80 bytes in use at the deepest point. The 428 bytes above them were never touched.</em></p>
+<p>Read it from the bottom up and it tells the whole story:</p>
+<ul>
+<li>Each frame ends with <strong>"way back"</strong>: the address to return to. <code>0x10080f4f</code> is inside the task, <code>0x10080f23</code> inside <code>func_a</code>, <code>0x10080eef</code> inside <code>func_b</code>. A debugger's call stack window is built from exactly these words.</li>
+<li><code>func_b</code> saved <code>0x00000011</code> for <code>func_a</code>. That's <code>func_a</code>'s <code>x</code>, kept in a register that <code>func_b</code> wanted to borrow.</li>
+<li>Some words are just padding. The compiler keeps <code>sp</code> a multiple of 8, so a frame is rounded up.</li>
+<li>The odd last digit in every way-back address isn't a typo. Bit 0 set means "Thumb code" on this CPU. The real address is one less.</li>
+</ul>
+<p>Honest — this is a debug build (<code>-Og</code>). An optimised build can keep small arrays in registers, and the frames come out different.</p>
+<hr>
+<h2>5. Push and pop</h2>
+<p>How does a frame get there? Two instructions on the way in, two on the way out. This is <code>func_b</code>, from the same image:</p>
+<pre><code>10080ecc  push  {r4, r5, lr}         ← save 3 registers, including lr (the way back): 12 B
+10080ece  sub   sp, #12              ← make room for arr_b + padding: 12 B more
    …
-100868f0  add     sp, #100                                     ← drop the locals
-100868f2  ldmia.w sp!, {r4, r5, r6, r7, r8, r9, sl, fp, pc}   ← pop: the saved lr lands in pc = return</code></pre>
+10080eea  bl    func_c               ← call: lr = 0x10080eef
+   …
+10080ef6  add   sp, #12              ← give the room back
+10080ef8  pop   {r4, r5, pc}         ← restore, and jump back through the saved lr</code></pre>
+<p><code>bl</code> puts the way back in a register called <code>lr</code>. There is only one <code>lr</code>, so before <code>func_b</code> calls <code>func_c</code>, it must save its own way back first. That's what the <code>push</code> is for:</p>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-1-rework/docs/blogs/img/stack-1/fig-03.png" alt="diagram"></figure>
+<p><em>Every <code>push</code> on the way in has a <code>pop</code> on the way out. Each frame is 24 bytes here.</em></p>
+<hr>
+<h2>6. What happens at a task switch?</h2>
+<p>A task doesn't own the CPU. Many times a second, the scheduler pauses it and runs another task. The paused task's registers have to go somewhere, and they go onto its own stack:</p>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-1-rework/docs/blogs/img/stack-1/stack-switch.gif" alt=""></figure>
+<p><em>From the task's creation to its first switch-out and back in. Every value is from the chip.</em></p>
+<ol>
+<li><strong>Created:</strong> FreeRTOS writes a fake "switched-out" frame before the task ever runs. Starting a task is then the same as resuming one.</li>
+<li><strong>Switched out:</strong> the CPU saves 8 registers by itself. One of them is <code>pc</code>, the exact place the task stopped.</li>
+<li>FreeRTOS's switch code saves 9 more, then writes <code>sp</code> into the task's control block (TCB).</li>
+<li><strong>Switched back in:</strong> it reads <code>sp</code> from the TCB and pops everything again.</li>
+</ol>
+<p>Only the registers go on the stack. The rest of the task's info (its name, its priority, that saved <code>sp</code>) lives in the TCB, the block right next to the stack in the first figure.</p>
+<p>So a task's stack needs room for its deepest call chain <strong>plus</strong> one of these switch frames: 68 bytes here, and up to 208 if the task uses the floating-point unit.</p>
+<hr>
+<h2>7. Coming back: the stain</h2>
+<p>After all three functions return, <code>sp</code> is back where it started. But look at the memory:</p>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-1-rework/docs/blogs/img/stack-1/stack-stain.png" alt=""></figure>
+<p><em>Right: back in the task. The arrays are still there. Popping only moved <code>sp</code>.</em></p>
+<p>Nothing gets erased. The old values stay until something else writes over them. A few words did change after the return, and each one came from a later <code>push</code>, so they're new values, not leftovers.</p>
+<p>That's where FreeRTOS's <strong>high-water mark</strong> comes from. It counts how many bytes at the far end are still <code>0xA5</code>. Here that's 424 bytes, the part above the red line. Like a stain on a wall, it shows how high the water once came.</p>
+<p>Honest — the mark only knows the paths that ran. If one rare call goes deeper, and it never ran while I watched, the mark has no idea. That's what Post 2 is about.</p>
+<hr>
+<h2>8. What happens when it doesn't fit?</h2>
+<p>To see it, I built a second version where <code>func_c</code>'s array is 640 bytes, bigger than the whole 512-byte stack. Here is the memory where the stack begins:</p>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-1-rework/docs/blogs/img/stack-1/stack-overflow.png" alt=""></figure>
+<p><em><code>sp</code> ended up 196 bytes below the stack, inside another variable.</em></p>
+<p>Nothing stopped the CPU from writing there. The array, and then the saved registers, landed in <code>s_demo_spill</code>, the variable below the stack: 264 bytes of it.</p>
+<p>FreeRTOS only noticed at the next task switch. It checks that the stack's lowest 16 bytes are still <code>0xA5</code>. They weren't, so it called its overflow hook. GDB caught the hook, called from the task-switch code, with the task's name: <code>&quot;stackdemo&quot;</code>.</p>
+<p>So the check works, but it comes <strong>after</strong> the damage. On a real task, that other variable could be a CAN queue.</p>
+<hr>
+<h2>9. User manual — see it on your own board</h2>
+<p>Build the demo into the image (it's off by default), flash it, then start a GDB server that attaches without resetting the chip:</p>
+<pre><code>bash ./zz_build_actuator_app.sh program all STACK_DEMO=1
+bash ./tools/bench/gdbserver_node.sh B
+arm-none-eabi-gdb -batch -x tools/bench/stack_demo_capture.gdb actuator_cm7.elf</code></pre>
+<p>The script sets the breakpoint, lets the task run, and dumps the stack at each step. What success looks like: at step 4, <code>bt</code> shows the whole chain (shortened):</p>
+<pre><code>#0  stack_demo_mark (step=4, arr=0x28007240, n=4)      ← the breakpoint
+#1  0x10080ec0 in func_c (x=51)                          ← 0x33
+#2  0x10080eee in func_b (x=34)                          ← 0x22
+#3  0x10080f22 in func_a (x=17)                          ← 0x11
+#4  0x10080f4e in stack_demo_task (…)                    ← the task</code></pre>
+<p>To dump the stack yourself at any stop: <code>x/128wx &amp;s_demo_stack</code>.</p>
+<p>The failure demo: build with <code>STACK_DEMO=2</code> and run <code>stack_demo_overflow.gdb</code> instead. It should stop in the overflow hook:</p>
+<pre><code>#0  vApplicationStackOverflowHook (…, pcTaskName=&quot;stackdemo&quot;)
+#1  vTaskSwitchContext () at tasks.c:3132
+#2  PendSV_Handler () at port.c:473</code></pre>
+<p>Then flash the normal image back with <code>program all</code>. The demo exists only in these two bench builds.</p>
+<h3>Where to read more</h3>
+<p>Three free Arm documents cover everything in this post. Search the ID on developer.arm.com. Both Cortex-M4 and Cortex-M7 are Armv7-M, so the same manuals apply to either.</p>
 <ul>
-<li><code>stmdb sp!</code> is a push. objdump calls <code>r10</code> <code>sl</code> and <code>r11</code> <code>fp</code>.</li>
-<li><strong>36 + 100 = 136 B.</strong> GCC's own stack-usage file says the same: <code>verify_core 136</code>.</li>
-<li>After <code>bl</code>, <code>lr</code> is the next instruction's address with bit 0 set. Bit 0 means "Thumb code". Remember it for Post 2.</li>
-<li>The epilogue doesn't need a separate return. It pops the saved <code>lr</code> straight into <code>pc</code>.</li>
+<li><strong>Cortex-M7 Devices Generic User Guide</strong> (DUI 0646), or the Cortex-M4 one (DUI 0553). Start here: chapter 2, <em>Programmers model</em>, explains <code>r0</code> to <code>pc</code>, the main stack and the process stack in plain words.</li>
+<li><strong>Procedure Call Standard for the Arm Architecture</strong>, the "AAPCS" (IHI 0042). The calling rules: <code>r0</code>–<code>r3</code> carry arguments, <code>r4</code>–<code>r11</code> must be saved by the function that uses them, <code>sp</code> stays 8-aligned, and the stack grows down. Read <em>Core registers</em> and <em>The stack</em>.</li>
+<li><strong>Armv7-M Architecture Reference Manual</strong> (DDI 0403). The final word: what each instruction does (<code>push</code>, <code>sub sp</code>, <code>bl</code>), the Thumb bit, and what the CPU pushes on an interrupt (<em>Exception entry behavior</em>, and <em>Exception return behavior</em> for <code>EXC_RETURN</code>).</li>
 </ul>
-<p>A <strong>leaf</strong> function, one that calls nothing, can skip all of that:</p>
-<pre><code>100867ba  ldrb   r3, [r0, #0]
-100867bc  ldrb   r0, [r0, #1]
-100867be  orr.w  r0, r3, r0, lsl #8     ← result in r0
-100867c2  bx     lr                     ← return: lr was never touched</code></pre>
-<p><em><code>get_u16le</code>: frame 0 B. Nothing pushed, nothing reserved.</em></p>
-<p>Honest — every listing here is a <code>-Og</code> debug build. Optimised builds have different frames.</p>
-<hr>
-<h2>4. The frame, as a picture</h2>
-<p>Where do the 136 bytes go? The stack grows <strong>down</strong>, so the newest frame is at the bottom.</p>
-<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-blog/docs/blogs/img/stack-1/fig-03.png" alt="diagram"></figure>
-<p><em><code>sp</code> points at the bottom box's top edge. 100 B of locals: the three blue boxes plus 10 B spare.</em></p>
-<p>Three kinds of thing live in a frame:</p>
-<ul>
-<li><strong>saved registers</strong>, including the return address</li>
-<li><strong>locals</strong>: here, two buffers for the MAC</li>
-<li><strong>arguments</strong> for the next call, when there are more than four</li>
-</ul>
-<hr>
-<h2>5. Why must a caller save <code>lr</code>?</h2>
-<p><code>bl</code> writes the return address into <code>lr</code>. There's only one <code>lr</code>. So the moment <code>verify_core</code> calls <code>build_mac_input</code>, its own way home is overwritten, unless it saved it first.</p>
-<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-blog/docs/blogs/img/stack-1/fig-04.png" alt="diagram"></figure>
-<p><em>The push at the start is what lets the function call anyone else. A leaf never needs it.</em></p>
-<p>So the depth of a call chain is simple: each function adds its own frame, and the deepest chain wins. Post 2 walks every chain that way.</p>
-<hr>
-<h2>6. What an interrupt pushes</h2>
-<p>FreeRTOS tasks run on the <strong>process stack</strong> (PSP); interrupts and <code>main()</code> use the <strong>main stack</strong> (MSP). When the scheduler switches a task out, the task's registers go onto <strong>its own</strong> stack.</p>
-<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-blog/docs/blogs/img/stack-1/fig-05.png" alt="diagram"></figure>
-<p><em>Up to 208 B on every task stack, on top of its deepest call chain. 72 B for a task that never touches the FPU.</em></p>
-<p>The hardware pushes the first part by itself. FreeRTOS's switch handler pushes the rest. Here it is on Node A:</p>
-<pre><code>10041690  mrs       r0, PSP                                       ← the task&#x27;s stack pointer
-1004169c  tst.w     lr, #16                                       ← lr = EXC_RETURN: did the task use the FPU?
-100416a2  vstmdbeq  r0!, {s16-s31}                                ← yes: save 16 FP registers, 64 B
-100416a6  stmdb     r0!, {r4, r5, r6, r7, r8, r9, sl, fp, lr}     ← always: r4–r11 + EXC_RETURN, 36 B
-100416c0  bl        1004279c &lt;vTaskSwitchContext&gt;                 ← pick the next task</code></pre>
-<p>Inside an interrupt, <code>lr</code> doesn't hold an address. It holds <strong>EXC_RETURN</strong>, a code that tells the core how to return: which stack, and whether an FP frame was saved. That's what <code>tst.w lr, #16</code> reads.</p>
-<h3>What does an overflow look like?</h3>
-<p>FreeRTOS fills every new stack with <code>0xA5</code>. Both nodes use its overflow check "method 2": at each switch-out it looks at the <strong>lowest 16 bytes</strong>.</p>
-<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-blog/docs/blogs/img/stack-1/fig-06.png" alt="diagram"></figure>
-<p><em>The check runs after the damage. In M5 the hook fired, and its endless loop then let the watchdog reset the chip.</em></p>
-<hr>
-<h2>7. The whole call, as pseudo code</h2>
-<p>Everything above, one step at a time, with <code>sp</code> tracked:</p>
-<pre><code># caller
-r0..r3 = cy, can_id, frame, plen             # arguments 1–4 in registers
-[sp..] = epoch, counter, pdu_out, pdu_len    # arguments 5–8 on the stack
-bl verify_core                               # lr = way back, pc = verify_core
-
-# verify_core
-push {r4..r11, lr}                           # sp -= 36   saved registers + return address
-sp -= 100                                    # locals: MAC input, tag, outgoing argument
-r6 = [sp + 144]                              # argument 7, from the caller&#x27;s frame
-bl build_mac_input                           # overwrites lr: that&#x27;s why it was saved
-blx oracle-&gt;mac                              # target from a register (Post 2)
-sp += 100                                    # locals gone
-pop {r4..r11, pc}                            # sp += 36   saved lr -&gt; pc = return</code></pre>
-<p>And how FreeRTOS sees it:</p>
-<pre><code>create(task):
-    fill task.stack with 0xA5                 # every byte, once
-
-switch_out(task):
-    push the context (up to 208 B) onto task.stack
-    if any of task.stack[0..15] != 0xA5:      # the lowest 16 bytes
-        vApplicationStackOverflowHook(task)   # after the damage, not before
-
-high_water(task):
-    return count of 0xA5 bytes from the bottom up   # only paths that ran</code></pre>
-<p>The overflow itself is one line of arithmetic:</p>
-<pre><code>overflow  if  top_of_stack − (deepest chain + 208 B)  &lt;  bottom_of_stack</code></pre>
-<p>Honest — the pseudo code is an illustration, not a capture. In the real code the caller reserves the space for arguments 5–8 inside its own frame.</p>
-<hr>
-<h2>8. User manual — read your own frames</h2>
-<p>Disassemble one function from your build:</p>
-<pre><code>arm-none-eabi-objdump -d --no-show-raw-insn build/app.elf --disassemble=verify_core</code></pre>
-<p>Then add <code>-fstack-usage</code> to your compiler flags: GCC writes one <code>.su</code> file per source file, one line per function.</p>
-<p>What to look for, with this function as the example:</p>
-<pre><code>1008687a  stmdb   sp!, {r4, …, fp, lr}      ← saved registers: count them × 4
-1008687e  sub     sp, #100                  ← locals
-1008689e  bl      100867c4 &lt;build_mac_input&gt; ← a direct call: the target is in the instruction
-100868b0  blx     fp                         ← an indirect call: the target is in a register
-secoc.c:126:30:verify_core	136	static      ← the .su line: 36 + 100, the compiler agrees</code></pre>
-<p>The demo: add a used local <code>uint8_t scratch[256];</code> to any function and rebuild. The <code>sub sp</code> should grow by about 256, and so should its <code>.su</code> line. Then look for the <code>blx</code> lines in your own image. Each one is a call whose target no tool can read from the code.</p>
-<p>That's exactly what blew up my CAN task: <code>crypto_mac</code> opens with <code>push {r4, r5, lr}</code> and <code>sub.w sp, sp, #556</code>, a 568 B frame, reached only through <code>blx</code>. Post 2 is how I made sure it can't happen quietly again.</p>
 <hr>
 <h2>Metadata</h2>
-<pre><code>Board      · Node A: TRAVEO™ T2G Body Entry (CYT2B7, Cortex-M4F) · Node B: KIT_T2G-B-H_LITE (CYT4BF, Cortex-M7)
-Toolchain  · ModusToolbox, GCC 14.2.1 (-Og), arm-none-eabi-objdump
-RTOS       · FreeRTOS (stack overflow check, method 2)
+<pre><code>Board      · Node B: KIT_T2G-B-H_LITE (TRAVEO™ T2G Body High, CYT4BF, Cortex-M7)
+Toolchain  · ModusToolbox, GCC 14.2.1 (-Og), arm-none-eabi-gdb, OpenOCD
+RTOS       · FreeRTOS 10.6.2 (stack overflow check, method 2)
+Evidence   · GDB dumps on silicon, 2026-11-16
 Repo       · main
 Written    · November 2026</code></pre>
 <h2>Follow along</h2>

@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="930" height="726" viewBox="0 0 930 726">
+<defs>
+<pattern id="stale" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#eef1f5"/><line x1="0" y1="0" x2="0" y2="8" stroke="#b6c0cc" stroke-width="3"/></pattern>
+<marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1f2937"/></marker>
+</defs>
+<rect width="930" height="726" fill="#ffffff"/>
+<text x="40" y="30.0" font-family="Consolas, 'Courier New', monospace" font-size="13" fill="#6b7280" text-anchor="start" font-weight="normal">address</text>
+<text x="190" y="30.0" font-family="Consolas, 'Courier New', monospace" font-size="13" fill="#6b7280" text-anchor="start" font-weight="normal">value</text>
+<text x="330" y="30.0" font-family="'Segoe UI', Arial, sans-serif" font-size="13" fill="#6b7280" text-anchor="start" font-weight="normal">whose</text>
+<text x="440" y="30.0" font-family="'Segoe UI', Arial, sans-serif" font-size="13" fill="#6b7280" text-anchor="start" font-weight="normal">what</text>
+<rect x="30" y="44" width="840" height="30" fill="#f3f4f6"/>
+<text x="40" y="64.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#6b7280" text-anchor="start" font-weight="normal">0x28007094</text>
+<text x="190" y="64.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#6b7280" text-anchor="start" font-weight="normal">0xa5a5a5a5</text>
+<text x="330" y="64.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#6b7280" text-anchor="start" font-weight="normal">… 107 words like this, up to 0x2800723c: never used yet</text>
+<rect x="30" y="80" width="840" height="30" fill="#fff7ed" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="100.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x28007240</text>
+<text x="190" y="100.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0xcccc0001</text>
+<text x="330" y="100.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">func_c</text>
+<text x="440" y="100.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">arr_c[0]</text>
+<text x="890" y="100.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="bold">← sp</text>
+<rect x="30" y="110" width="840" height="30" fill="#fff7ed" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="130.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x28007244</text>
+<text x="190" y="130.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0xcccc0002</text>
+<text x="330" y="130.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">func_c</text>
+<text x="440" y="130.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">arr_c[1]</text>
+<rect x="30" y="140" width="840" height="30" fill="#fff7ed" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="160.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x28007248</text>
+<text x="190" y="160.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0xcccc0003</text>
+<text x="330" y="160.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">func_c</text>
+<text x="440" y="160.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">arr_c[2]</text>
+<rect x="30" y="170" width="840" height="30" fill="#fff7ed" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="190.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x2800724c</text>
+<text x="190" y="190.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x00000033</text>
+<text x="330" y="190.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">func_c</text>
+<text x="440" y="190.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">arr_c[3] = x</text>
+<rect x="30" y="200" width="840" height="30" fill="#fff7ed" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="220.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x28007250</text>
+<text x="190" y="220.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0xa5a5a5a5</text>
+<text x="330" y="220.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">func_c</text>
+<text x="440" y="220.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">padding</text>
+<rect x="30" y="230" width="840" height="30" fill="#fff7ed" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="250.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x28007254</text>
+<text x="190" y="250.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="bold">0x10080eef</text>
+<text x="330" y="250.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">func_c</text>
+<text x="440" y="250.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="bold">way back → func_b</text>
+<rect x="30" y="260" width="840" height="30" fill="#dcfce7" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="280.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x28007258</text>
+<text x="190" y="280.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0xbbbb0001</text>
+<text x="330" y="280.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">func_b</text>
+<text x="440" y="280.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">arr_b[0]</text>
+<rect x="30" y="290" width="840" height="30" fill="#dcfce7" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="310.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x2800725c</text>
+<text x="190" y="310.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0xbbbb0002</text>
+<text x="330" y="310.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">func_b</text>
+<text x="440" y="310.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">arr_b[1]</text>
+<rect x="30" y="320" width="840" height="30" fill="#dcfce7" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="340.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x28007260</text>
+<text x="190" y="340.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0xa5a5a5a5</text>
+<text x="330" y="340.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">func_b</text>
+<text x="440" y="340.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">padding</text>
+<rect x="30" y="350" width="840" height="30" fill="#dcfce7" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="370.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x28007264</text>
+<text x="190" y="370.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0xa5a5a5a5</text>
+<text x="330" y="370.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">func_b</text>
+<text x="440" y="370.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">saved r4</text>
+<rect x="30" y="380" width="840" height="30" fill="#dcfce7" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="400.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x28007268</text>
+<text x="190" y="400.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x00000011</text>
+<text x="330" y="400.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">func_b</text>
+<text x="440" y="400.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">saved r5 (func_a's x)</text>
+<rect x="30" y="410" width="840" height="30" fill="#dcfce7" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="430.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x2800726c</text>
+<text x="190" y="430.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="bold">0x10080f23</text>
+<text x="330" y="430.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">func_b</text>
+<text x="440" y="430.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="bold">way back → func_a</text>
+<rect x="30" y="440" width="840" height="30" fill="#dbeafe" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="460.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x28007270</text>
+<text x="190" y="460.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0xaaaa0001</text>
+<text x="330" y="460.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">func_a</text>
+<text x="440" y="460.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">arr_a[0]</text>
+<rect x="30" y="470" width="840" height="30" fill="#dbeafe" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="490.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x28007274</text>
+<text x="190" y="490.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0xaaaa0002</text>
+<text x="330" y="490.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">func_a</text>
+<text x="440" y="490.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">arr_a[1]</text>
+<rect x="30" y="500" width="840" height="30" fill="#dbeafe" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="520.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x28007278</text>
+<text x="190" y="520.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0xa5a5a5a5</text>
+<text x="330" y="520.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">func_a</text>
+<text x="440" y="520.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">padding</text>
+<rect x="30" y="530" width="840" height="30" fill="#dbeafe" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="550.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x2800727c</text>
+<text x="190" y="550.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0xa5a5a5a5</text>
+<text x="330" y="550.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">func_a</text>
+<text x="440" y="550.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">saved r4</text>
+<rect x="30" y="560" width="840" height="30" fill="#dbeafe" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="580.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x28007280</text>
+<text x="190" y="580.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0xa5a5a5a5</text>
+<text x="330" y="580.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">func_a</text>
+<text x="440" y="580.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">saved r5</text>
+<rect x="30" y="590" width="840" height="30" fill="#dbeafe" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="610.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x28007284</text>
+<text x="190" y="610.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="bold">0x10080f4f</text>
+<text x="330" y="610.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">func_a</text>
+<text x="440" y="610.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="bold">way back → task</text>
+<rect x="30" y="620" width="840" height="30" fill="#ede9fe" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="640.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x28007288</text>
+<text x="190" y="640.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0xa5a5a5a5</text>
+<text x="330" y="640.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">task</text>
+<text x="440" y="640.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">saved r3 (alignment)</text>
+<rect x="30" y="650" width="840" height="30" fill="#ede9fe" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="670.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x2800728c</text>
+<text x="190" y="670.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="bold">0x100810bd</text>
+<text x="330" y="670.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">task</text>
+<text x="440" y="670.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="bold">way back → prvTaskExitError</text>
+<rect x="30" y="680" width="840" height="30" fill="#f3f4f6" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="700.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x28007290</text>
+<text x="190" y="700.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0xa5a5a5a5</text>
+<text x="330" y="700.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">—</text>
+<text x="440" y="700.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">never used</text>
+</svg>
