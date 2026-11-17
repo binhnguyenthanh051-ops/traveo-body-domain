@@ -21,6 +21,7 @@
 #include "port_log.h"      /* log_port_init — SCB0 UART sink (ADR-0023) */
 #include "tb_log.h"        /* log_evt */
 #include "log_events.h"    /* LOG_EVT_APP_ALIVE — generated from events.csv */
+#include "stack_demo.h"    /* bench only: STACK_DEMO=1|2 (docs/hardware/kits.md) */
 
 /* F-002 (after F-001): with this off, heartbeat_log_alive() is a linker error on
  * a full firmware build only. Fail here instead, at compile time, naming the fix. */
@@ -189,6 +190,12 @@ int main(void)
     /* Bring up CANFD + create the CAN RX/TX task (Phase A: internal loopback).
      * The actuator FSM task joins here in a later seam. */
     can_task_create();
+
+#if defined(STACK_DEMO)
+    /* Bench only (kits.md "Bring-up switches"): a small call chain for the stack
+     * blog post, to stop in with the debugger. Not in the normal image. */
+    stack_demo_create();
+#endif
 
     vTaskStartScheduler();
 

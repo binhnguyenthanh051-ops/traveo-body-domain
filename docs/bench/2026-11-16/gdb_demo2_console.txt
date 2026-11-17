@@ -1,0 +1,173 @@
+0x10080f4a in stack_demo_task (arg=<optimized out>) at C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/src/stack_demo.c:130
+130	        while (g_stack_demo_go == 0U)
+warning: could not convert 'stack_demo.c' from the host encoding (CP1252) to UTF-32.
+This normally should not happen, please file a bug report.
+$1 = (volatile uint32_t (*)[128]) 0x28006e94 <s_demo_spill>
+$2 = (StackType_t (*)[128]) 0x28007094 <s_demo_stack>
+Breakpoint 1 at 0x10080e70: file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/src/stack_demo.c, line 80.
+Note: automatically using hardware breakpoints for read-only addresses.
+Breakpoint 2 at 0x0: vApplicationStackOverflowHook. (2 locations)
+Breakpoint 3 at 0x10085d8e: file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/bsps/TARGET_APP_KIT_T2G-B-H_LITE/COMPONENT_CM7/startup_cm7.c, line 106.
+
+Breakpoint 1, stack_demo_mark (step=step@entry=4, arr=arr@entry=0x28006fd0 <s_demo_spill+316>, n=n@entry=160) at C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/src/stack_demo.c:80
+80	{
+=== stop 1: func_c has filled arr_c (step 4), before the task switch ===
+sp             0x28006fd0          0x28006fd0 <s_demo_spill+316>
+lr             0x10080ebd          268963517
+pc             0x10080e70          0x10080e70 <stack_demo_mark>
+psp            0x28006fd0          0x28006fd0 <s_demo_spill+316>
+msp            0x280dffe0          0x280dffe0
+#0  stack_demo_mark (step=step@entry=4, arr=arr@entry=0x28006fd0 <s_demo_spill+316>, n=n@entry=160) at C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/src/stack_demo.c:80
+#1  0x10080ebc in func_c (x=x@entry=51) at C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/src/stack_demo.c:100
+#2  0x10080efe in func_b (x=x@entry=34) at C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/src/stack_demo.c:111
+#3  0x10080f32 in func_a (x=x@entry=17) at C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/src/stack_demo.c:120
+#4  0x10080f5e in stack_demo_task (arg=<optimized out>) at C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/src/stack_demo.c:135
+#5  0x100810cc in ?? ()
+Backtrace stopped: previous frame identical to this frame (corrupt stack?)
+--- s_demo_spill (the variable below the stack) ---
+0x28006e94 <s_demo_spill>:	0x00000000	0x00000000	0x00000000	0x00000000
+0x28006ea4 <s_demo_spill+16>:	0x00000000	0x00000000	0x00000000	0x00000000
+0x28006eb4 <s_demo_spill+32>:	0x00000000	0x00000000	0x00000000	0x00000000
+0x28006ec4 <s_demo_spill+48>:	0x00000000	0x00000000	0x00000000	0x00000000
+0x28006ed4 <s_demo_spill+64>:	0x00000000	0x00000000	0x00000000	0x00000000
+0x28006ee4 <s_demo_spill+80>:	0x00000000	0x00000000	0x00000000	0x00000000
+0x28006ef4 <s_demo_spill+96>:	0x00000000	0x00000000	0x00000000	0x00000000
+0x28006f04 <s_demo_spill+112>:	0x00000000	0x00000000	0x00000000	0x00000000
+0x28006f14 <s_demo_spill+128>:	0x00000000	0x00000000	0x00000000	0x00000000
+0x28006f24 <s_demo_spill+144>:	0x00000000	0x00000000	0x00000000	0x00000000
+0x28006f34 <s_demo_spill+160>:	0x00000000	0x00000000	0x00000000	0x00000000
+0x28006f44 <s_demo_spill+176>:	0x00000000	0x00000000	0x00000000	0x00000000
+0x28006f54 <s_demo_spill+192>:	0x00000000	0x00000000	0x00000000	0x00000000
+0x28006f64 <s_demo_spill+208>:	0x00000000	0x00000000	0x00000000	0x00000000
+0x28006f74 <s_demo_spill+224>:	0x00000000	0x00000000	0x00000000	0x00000000
+0x28006f84 <s_demo_spill+240>:	0x00000000	0x00000000	0x00000000	0x00000000
+0x28006f94 <s_demo_spill+256>:	0x00000000	0x00000000	0x00000000	0x00000000
+0x28006fa4 <s_demo_spill+272>:	0x00000000	0x00000000	0x00000000	0x00000000
+0x28006fb4 <s_demo_spill+288>:	0x00000000	0x00000000	0x00000000	0x00000000
+0x28006fc4 <s_demo_spill+304>:	0x00000000	0x00000000	0x00000000	0xcccc0001
+0x28006fd4 <s_demo_spill+320>:	0xcccc0002	0xcccc0003	0xcccc0004	0xcccc0005
+0x28006fe4 <s_demo_spill+336>:	0xcccc0006	0xcccc0007	0xcccc0008	0xcccc0009
+0x28006ff4 <s_demo_spill+352>:	0xcccc000a	0xcccc000b	0xcccc000c	0xcccc000d
+0x28007004 <s_demo_spill+368>:	0xcccc000e	0xcccc000f	0xcccc0010	0xcccc0011
+0x28007014 <s_demo_spill+384>:	0xcccc0012	0xcccc0013	0xcccc0014	0xcccc0015
+0x28007024 <s_demo_spill+400>:	0xcccc0016	0xcccc0017	0xcccc0018	0xcccc0019
+0x28007034 <s_demo_spill+416>:	0xcccc001a	0xcccc001b	0xcccc001c	0xcccc001d
+0x28007044 <s_demo_spill+432>:	0xcccc001e	0xcccc001f	0xcccc0020	0xcccc0021
+0x28007054 <s_demo_spill+448>:	0xcccc0022	0xcccc0023	0xcccc0024	0xcccc0025
+0x28007064 <s_demo_spill+464>:	0xcccc0026	0xcccc0027	0xcccc0028	0xcccc0029
+0x28007074 <s_demo_spill+480>:	0xcccc002a	0xcccc002b	0xcccc002c	0xcccc002d
+0x28007084 <s_demo_spill+496>:	0xcccc002e	0xcccc002f	0xcccc0030	0xcccc0031
+--- s_demo_stack ---
+0x28007094 <s_demo_stack>:	0xcccc0032	0xcccc0033	0xcccc0034	0xcccc0035
+0x280070a4 <s_demo_stack+16>:	0xcccc0036	0xcccc0037	0xcccc0038	0xcccc0039
+0x280070b4 <s_demo_stack+32>:	0xcccc003a	0xcccc003b	0xcccc003c	0xcccc003d
+0x280070c4 <s_demo_stack+48>:	0xcccc003e	0xcccc003f	0xcccc0040	0xcccc0041
+0x280070d4 <s_demo_stack+64>:	0xcccc0042	0xcccc0043	0xcccc0044	0xcccc0045
+0x280070e4 <s_demo_stack+80>:	0xcccc0046	0xcccc0047	0xcccc0048	0xcccc0049
+0x280070f4 <s_demo_stack+96>:	0xcccc004a	0xcccc004b	0xcccc004c	0xcccc004d
+0x28007104 <s_demo_stack+112>:	0xcccc004e	0xcccc004f	0xcccc0050	0xcccc0051
+0x28007114 <s_demo_stack+128>:	0xcccc0052	0xcccc0053	0xcccc0054	0xcccc0055
+0x28007124 <s_demo_stack+144>:	0xcccc0056	0xcccc0057	0xcccc0058	0xcccc0059
+0x28007134 <s_demo_stack+160>:	0xcccc005a	0xcccc005b	0xcccc005c	0xcccc005d
+0x28007144 <s_demo_stack+176>:	0xcccc005e	0xcccc005f	0xcccc0060	0xcccc0061
+0x28007154 <s_demo_stack+192>:	0xcccc0062	0xcccc0063	0xcccc0064	0xcccc0065
+0x28007164 <s_demo_stack+208>:	0xcccc0066	0xcccc0067	0xcccc0068	0xcccc0069
+0x28007174 <s_demo_stack+224>:	0xcccc006a	0xcccc006b	0xcccc006c	0xcccc006d
+0x28007184 <s_demo_stack+240>:	0xcccc006e	0xcccc006f	0xcccc0070	0xcccc0071
+0x28007194 <s_demo_stack+256>:	0xcccc0072	0xcccc0073	0xcccc0074	0xcccc0075
+0x280071a4 <s_demo_stack+272>:	0xcccc0076	0xcccc0077	0xcccc0078	0xcccc0079
+0x280071b4 <s_demo_stack+288>:	0xcccc007a	0xcccc007b	0xcccc007c	0xcccc007d
+0x280071c4 <s_demo_stack+304>:	0xcccc007e	0xcccc007f	0xcccc0080	0xcccc0081
+0x280071d4 <s_demo_stack+320>:	0xcccc0082	0xcccc0083	0xcccc0084	0xcccc0085
+0x280071e4 <s_demo_stack+336>:	0xcccc0086	0xcccc0087	0xcccc0088	0xcccc0089
+0x280071f4 <s_demo_stack+352>:	0xcccc008a	0xcccc008b	0xcccc008c	0xcccc008d
+0x28007204 <s_demo_stack+368>:	0xcccc008e	0xcccc008f	0xcccc0090	0xcccc0091
+0x28007214 <s_demo_stack+384>:	0xcccc0092	0xcccc0093	0xcccc0094	0xcccc0095
+0x28007224 <s_demo_stack+400>:	0xcccc0096	0xcccc0097	0xcccc0098	0xcccc0099
+0x28007234 <s_demo_stack+416>:	0xcccc009a	0xcccc009b	0xcccc009c	0xcccc009d
+0x28007244 <s_demo_stack+432>:	0xcccc009e	0xcccc009f	0x00000033	0xa5a5a5a5
+0x28007254 <s_demo_stack+448>:	0x10080eff	0xbbbb0001	0xbbbb0002	0xa5a5a5a5
+0x28007264 <s_demo_stack+464>:	0xa5a5a5a5	0x00000011	0x10080f33	0xaaaa0001
+0x28007274 <s_demo_stack+480>:	0xaaaa0002	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5
+0x28007284 <s_demo_stack+496>:	0x10080f5f	0xa5a5a5a5	0x100810cd	0xa5a5a5a5
+
+Breakpoint 2.2, vApplicationStackOverflowHook (xTask=0x28007294 <s_demo_tcb>, pcTaskName=0x280072c8 <s_demo_tcb+52> "stackdemo") at C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/src/main.c:231
+231	    g_overflow_task = xTask;
+=== stop 2: where it ended ===
+$3 = 0x0 <ulTaskGenericNotifyValueClear>
+sp             0x280dffd0          0x280dffd0
+lr             0x10082655          268969557
+pc             0x1008084c          0x1008084c <vApplicationStackOverflowHook>
+psp            0x28006fb0          0x28006fb0 <s_demo_spill+284>
+msp            0x280dffd0          0x280dffd0
+#0  vApplicationStackOverflowHook (xTask=0x28007294 <s_demo_tcb>, pcTaskName=0x280072c8 <s_demo_tcb+52> "stackdemo") at C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/src/main.c:231
+#1  0x10082654 in vTaskSwitchContext () at C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/mtb_shared/freertos/release-v10.6.202/Source/tasks.c:3132
+#2  0x10081288 in PendSV_Handler () at C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/mtb_shared/freertos/release-v10.6.202/Source/portable/COMPONENT_CM7/TOOLCHAIN_GCC_ARM/port.c:473
+Backtrace stopped: previous frame identical to this frame (corrupt stack?)
+--- s_demo_spill (the variable below the stack) ---
+0x28006e94 <s_demo_spill>:	0x00000000	0x00000000	0x00000000	0x00000000
+0x28006ea4 <s_demo_spill+16>:	0x00000000	0x00000000	0x00000000	0x00000000
+0x28006eb4 <s_demo_spill+32>:	0x00000000	0x00000000	0x00000000	0x00000000
+0x28006ec4 <s_demo_spill+48>:	0x00000000	0x00000000	0x00000000	0x00000000
+0x28006ed4 <s_demo_spill+64>:	0x00000000	0x00000000	0x00000000	0x00000000
+0x28006ee4 <s_demo_spill+80>:	0x00000000	0x00000000	0x00000000	0x00000000
+0x28006ef4 <s_demo_spill+96>:	0x00000000	0x00000000	0x00000000	0x00000000
+0x28006f04 <s_demo_spill+112>:	0x00000000	0x00000000	0x00000000	0x00000000
+0x28006f14 <s_demo_spill+128>:	0x00000000	0x00000000	0x00000000	0x00000000
+0x28006f24 <s_demo_spill+144>:	0x00000000	0x00000000	0x00000000	0x00000000
+0x28006f34 <s_demo_spill+160>:	0x00000000	0x00000000	0x00000000	0x00000000
+0x28006f44 <s_demo_spill+176>:	0x00000000	0x00000000	0x00000000	0x00000000
+0x28006f54 <s_demo_spill+192>:	0x00000000	0x00000000	0x00000000	0x00000000
+0x28006f64 <s_demo_spill+208>:	0x00000000	0x00000000	0x00000000	0x00000000
+0x28006f74 <s_demo_spill+224>:	0x00000000	0x00000000	0x00000000	0x00000000
+0x28006f84 <s_demo_spill+240>:	0x00000000	0x00000000	0xa5a5a5a5	0x00000022
+0x28006f94 <s_demo_spill+256>:	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5
+0x28006fa4 <s_demo_spill+272>:	0xa5a5a5a5	0xa5a5a5a5	0xfffffffd	0x00000004
+0x28006fb4 <s_demo_spill+288>:	0x28006fd0	0x10000000	0xe000e000	0xa5a5a5a5
+0x28006fc4 <s_demo_spill+304>:	0x10080ebd	0x10080ecc	0x61000000	0xcccc0001
+0x28006fd4 <s_demo_spill+320>:	0xcccc0002	0xcccc0003	0xcccc0004	0xcccc0005
+0x28006fe4 <s_demo_spill+336>:	0xcccc0006	0xcccc0007	0xcccc0008	0xcccc0009
+0x28006ff4 <s_demo_spill+352>:	0xcccc000a	0xcccc000b	0xcccc000c	0xcccc000d
+0x28007004 <s_demo_spill+368>:	0xcccc000e	0xcccc000f	0xcccc0010	0xcccc0011
+0x28007014 <s_demo_spill+384>:	0xcccc0012	0xcccc0013	0xcccc0014	0xcccc0015
+0x28007024 <s_demo_spill+400>:	0xcccc0016	0xcccc0017	0xcccc0018	0xcccc0019
+0x28007034 <s_demo_spill+416>:	0xcccc001a	0xcccc001b	0xcccc001c	0xcccc001d
+0x28007044 <s_demo_spill+432>:	0xcccc001e	0xcccc001f	0xcccc0020	0xcccc0021
+0x28007054 <s_demo_spill+448>:	0xcccc0022	0xcccc0023	0xcccc0024	0xcccc0025
+0x28007064 <s_demo_spill+464>:	0xcccc0026	0xcccc0027	0xcccc0028	0xcccc0029
+0x28007074 <s_demo_spill+480>:	0xcccc002a	0xcccc002b	0xcccc002c	0xcccc002d
+0x28007084 <s_demo_spill+496>:	0xcccc002e	0xcccc002f	0xcccc0030	0xcccc0031
+--- s_demo_stack ---
+0x28007094 <s_demo_stack>:	0xcccc0032	0xcccc0033	0xcccc0034	0xcccc0035
+0x280070a4 <s_demo_stack+16>:	0xcccc0036	0xcccc0037	0xcccc0038	0xcccc0039
+0x280070b4 <s_demo_stack+32>:	0xcccc003a	0xcccc003b	0xcccc003c	0xcccc003d
+0x280070c4 <s_demo_stack+48>:	0xcccc003e	0xcccc003f	0xcccc0040	0xcccc0041
+0x280070d4 <s_demo_stack+64>:	0xcccc0042	0xcccc0043	0xcccc0044	0xcccc0045
+0x280070e4 <s_demo_stack+80>:	0xcccc0046	0xcccc0047	0xcccc0048	0xcccc0049
+0x280070f4 <s_demo_stack+96>:	0xcccc004a	0xcccc004b	0xcccc004c	0xcccc004d
+0x28007104 <s_demo_stack+112>:	0xcccc004e	0xcccc004f	0xcccc0050	0xcccc0051
+0x28007114 <s_demo_stack+128>:	0xcccc0052	0xcccc0053	0xcccc0054	0xcccc0055
+0x28007124 <s_demo_stack+144>:	0xcccc0056	0xcccc0057	0xcccc0058	0xcccc0059
+0x28007134 <s_demo_stack+160>:	0xcccc005a	0xcccc005b	0xcccc005c	0xcccc005d
+0x28007144 <s_demo_stack+176>:	0xcccc005e	0xcccc005f	0xcccc0060	0xcccc0061
+0x28007154 <s_demo_stack+192>:	0xcccc0062	0xcccc0063	0xcccc0064	0xcccc0065
+0x28007164 <s_demo_stack+208>:	0xcccc0066	0xcccc0067	0xcccc0068	0xcccc0069
+0x28007174 <s_demo_stack+224>:	0xcccc006a	0xcccc006b	0xcccc006c	0xcccc006d
+0x28007184 <s_demo_stack+240>:	0xcccc006e	0xcccc006f	0xcccc0070	0xcccc0071
+0x28007194 <s_demo_stack+256>:	0xcccc0072	0xcccc0073	0xcccc0074	0xcccc0075
+0x280071a4 <s_demo_stack+272>:	0xcccc0076	0xcccc0077	0xcccc0078	0xcccc0079
+0x280071b4 <s_demo_stack+288>:	0xcccc007a	0xcccc007b	0xcccc007c	0xcccc007d
+0x280071c4 <s_demo_stack+304>:	0xcccc007e	0xcccc007f	0xcccc0080	0xcccc0081
+0x280071d4 <s_demo_stack+320>:	0xcccc0082	0xcccc0083	0xcccc0084	0xcccc0085
+0x280071e4 <s_demo_stack+336>:	0xcccc0086	0xcccc0087	0xcccc0088	0xcccc0089
+0x280071f4 <s_demo_stack+352>:	0xcccc008a	0xcccc008b	0xcccc008c	0xcccc008d
+0x28007204 <s_demo_stack+368>:	0xcccc008e	0xcccc008f	0xcccc0090	0xcccc0091
+0x28007214 <s_demo_stack+384>:	0xcccc0092	0xcccc0093	0xcccc0094	0xcccc0095
+0x28007224 <s_demo_stack+400>:	0xcccc0096	0xcccc0097	0xcccc0098	0xcccc0099
+0x28007234 <s_demo_stack+416>:	0xcccc009a	0xcccc009b	0xcccc009c	0xcccc009d
+0x28007244 <s_demo_stack+432>:	0xcccc009e	0xcccc009f	0x00000033	0xa5a5a5a5
+0x28007254 <s_demo_stack+448>:	0x10080eff	0xbbbb0001	0xbbbb0002	0xa5a5a5a5
+0x28007264 <s_demo_stack+464>:	0xa5a5a5a5	0x00000011	0x10080f33	0xaaaa0001
+0x28007274 <s_demo_stack+480>:	0xaaaa0002	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5
+0x28007284 <s_demo_stack+496>:	0x10080f5f	0xa5a5a5a5	0x100810cd	0xa5a5a5a5
+[Inferior 1 (Remote target) detached]

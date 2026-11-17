@@ -1,0 +1,45 @@
+0x000001e6 in Cy_SysClk_FllConfigure (inputFreq=277, outputFreq=2147483664, outputMode=<optimized out>) at C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/mtb_shared/mtb-pdl-cat1/release-v3.23.0/drivers/source/cy_sysclk_v2.c:3387
+3387	                    uint64_t cmp = CY_SYSLIB_DIV_ROUND(((TRIM_STEPS_SCALE / MARGIN_SCALE) * (uint64_t)ccoFreq), (uint64_t)margin[config.ccoRange]);
+=== the task's stack array and its neighbours ===
+warning: could not convert 'stack_demo.c' from the host encoding (CP1252) to UTF-32.
+This normally should not happen, please file a bug report.
+s_demo_stack in section .bss
+$1 = (StackType_t (*)[128]) 0x28007094 <s_demo_stack>
+$2 = 512
+$3 = (volatile uint32_t (*)[128]) 0x28006e94 <s_demo_spill>
+$4 = (StaticTask_t *) 0x28007294 <s_demo_tcb>
+=== before the chain runs (the task is waiting) ===
+0x28007094 <s_demo_stack>:	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5
+0x280070a4 <s_demo_stack+16>:	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5
+0x280070b4 <s_demo_stack+32>:	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5
+0x280070c4 <s_demo_stack+48>:	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5
+0x280070d4 <s_demo_stack+64>:	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5
+0x280070e4 <s_demo_stack+80>:	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5
+0x280070f4 <s_demo_stack+96>:	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5
+0x28007104 <s_demo_stack+112>:	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5
+0x28007114 <s_demo_stack+128>:	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5
+0x28007124 <s_demo_stack+144>:	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5
+0x28007134 <s_demo_stack+160>:	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5
+0x28007144 <s_demo_stack+176>:	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5
+0x28007154 <s_demo_stack+192>:	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5
+0x28007164 <s_demo_stack+208>:	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5
+0x28007174 <s_demo_stack+224>:	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5
+0x28007184 <s_demo_stack+240>:	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5
+0x28007194 <s_demo_stack+256>:	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5
+0x280071a4 <s_demo_stack+272>:	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5
+0x280071b4 <s_demo_stack+288>:	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5
+0x280071c4 <s_demo_stack+304>:	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5
+0x280071d4 <s_demo_stack+320>:	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5
+0x280071e4 <s_demo_stack+336>:	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5
+0x280071f4 <s_demo_stack+352>:	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5
+0x28007204 <s_demo_stack+368>:	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5
+0x28007214 <s_demo_stack+384>:	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5
+0x28007224 <s_demo_stack+400>:	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5
+0x28007234 <s_demo_stack+416>:	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5
+0x28007244 <s_demo_stack+432>:	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5
+0x28007254 <s_demo_stack+448>:	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5
+0x28007264 <s_demo_stack+464>:	0xa5a5a5a5	0xa5a5a5a5	0xfffffffd	0x00000000
+0x28007274 <s_demo_stack+480>:	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5	0xa5a5a5a5
+0x28007284 <s_demo_stack+496>:	0x100810bd	0x10080f34	0x01000000	0xa5a5a5a5
+Breakpoint 1 at 0x10080e70: file C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/node_b_actuator/proj_cm7/src/stack_demo.c, line 80.
+Note: automatically using hardware breakpoints for read-only addresses.
