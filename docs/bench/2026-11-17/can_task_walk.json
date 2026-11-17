@@ -1,0 +1,407 @@
+{
+ "image_sha256": "10b2b3d0577fe0ede6a88c6e32242f8eb9d27a265891186ba5a54fa3351964fa",
+ "entry": "can_task",
+ "path_bytes": 1256,
+ "switch_bytes": 208,
+ "required": 1464,
+ "configured": 2048,
+ "levels": [
+  {
+   "name": "can_task",
+   "frame": 168,
+   "depth": 1256,
+   "indirect_sites": [],
+   "callees": [
+    {
+     "name": "secoc_app_verify_and_decode",
+     "frame": 104,
+     "depth": 1088,
+     "via": "call"
+    },
+    {
+     "name": "secoc_app_handle_gw_sync",
+     "frame": 96,
+     "depth": 1080,
+     "via": "call"
+    },
+    {
+     "name": "secoc_app_build_telemetry",
+     "frame": 24,
+     "depth": 936,
+     "via": "call"
+    },
+    {
+     "name": "secoc_app_build_boot_sync",
+     "frame": 16,
+     "depth": 928,
+     "via": "call"
+    },
+    {
+     "name": "can_tx",
+     "frame": 128,
+     "depth": 188,
+     "via": "call"
+    },
+    {
+     "name": "light_output_update",
+     "frame": 8,
+     "depth": 160,
+     "via": "call"
+    },
+    {
+     "name": "log_evt",
+     "frame": 80,
+     "depth": 152,
+     "via": "call"
+    },
+    {
+     "name": "xQueueReceive",
+     "frame": 40,
+     "depth": 72,
+     "via": "call"
+    },
+    {
+     "name": "actuator_fsm_apply",
+     "frame": 0,
+     "depth": 0,
+     "via": "call"
+    },
+    {
+     "name": "door_ajar_switch",
+     "frame": 0,
+     "depth": 0,
+     "via": "call"
+    }
+   ]
+  },
+  {
+   "name": "secoc_app_verify_and_decode",
+   "frame": 104,
+   "depth": 1088,
+   "indirect_sites": [],
+   "callees": [
+    {
+     "name": "secoc_rx_process",
+     "frame": 64,
+     "depth": 984,
+     "via": "call"
+    },
+    {
+     "name": "body_decode",
+     "frame": 8,
+     "depth": 8,
+     "via": "call"
+    }
+   ]
+  },
+  {
+   "name": "secoc_rx_process",
+   "frame": 64,
+   "depth": 984,
+   "indirect_sites": [
+    "C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/shared/secoc/src/secoc_rx.c:90:55"
+   ],
+   "callees": [
+    {
+     "name": "secoc_verify_len",
+     "frame": 56,
+     "depth": 920,
+     "via": "call"
+    },
+    {
+     "name": "secoc_verify",
+     "frame": 56,
+     "depth": 920,
+     "via": "call"
+    },
+    {
+     "name": "secoc_rx_accept",
+     "frame": 32,
+     "depth": 248,
+     "via": "call"
+    },
+    {
+     "name": "drop_mac",
+     "frame": 8,
+     "depth": 160,
+     "via": "call"
+    },
+    {
+     "name": "drop_fresh",
+     "frame": 8,
+     "depth": 160,
+     "via": "call"
+    },
+    {
+     "name": "log_evt",
+     "frame": 80,
+     "depth": 152,
+     "via": "call"
+    },
+    {
+     "name": "secoc_rx_check",
+     "frame": 24,
+     "depth": 28,
+     "via": "call"
+    },
+    {
+     "name": "body_msg_pdu_len",
+     "frame": 0,
+     "depth": 0,
+     "via": "listed"
+    }
+   ]
+  },
+  {
+   "name": "secoc_verify_len",
+   "frame": 56,
+   "depth": 920,
+   "indirect_sites": [],
+   "callees": [
+    {
+     "name": "verify_core",
+     "frame": 136,
+     "depth": 864,
+     "via": "call"
+    },
+    {
+     "name": "verify_args_ok",
+     "frame": 0,
+     "depth": 0,
+     "via": "call"
+    },
+    {
+     "name": "secoc_fd_frame_len",
+     "frame": 0,
+     "depth": 0,
+     "via": "call"
+    }
+   ]
+  },
+  {
+   "name": "verify_core",
+   "frame": 136,
+   "depth": 864,
+   "indirect_sites": [
+    "C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/shared/secoc/src/secoc.c:139:10"
+   ],
+   "callees": [
+    {
+     "name": "crypto_mac",
+     "frame": 568,
+     "depth": 728,
+     "via": "listed"
+    },
+    {
+     "name": "build_mac_input",
+     "frame": 24,
+     "depth": 24,
+     "via": "call"
+    },
+    {
+     "name": "secoc_ct_equal",
+     "frame": 8,
+     "depth": 8,
+     "via": "call"
+    },
+    {
+     "name": "get_u16le",
+     "frame": 0,
+     "depth": 0,
+     "via": "call"
+    }
+   ]
+  },
+  {
+   "name": "crypto_mac",
+   "frame": 568,
+   "depth": 728,
+   "indirect_sites": [],
+   "callees": [
+    {
+     "name": "crypto_report",
+     "frame": 8,
+     "depth": 160,
+     "via": "call"
+    },
+    {
+     "name": "ipc_transact",
+     "frame": 32,
+     "depth": 40,
+     "via": "call"
+    },
+    {
+     "name": "crypto_make_mac_request",
+     "frame": 24,
+     "depth": 24,
+     "via": "call"
+    },
+    {
+     "name": "crypto_msg_decode",
+     "frame": 8,
+     "depth": 8,
+     "via": "call"
+    },
+    {
+     "name": "crypto_msg_encode",
+     "frame": 4,
+     "depth": 4,
+     "via": "call"
+    },
+    {
+     "name": "crypto_fail_from_ipc",
+     "frame": 0,
+     "depth": 0,
+     "via": "call"
+    },
+    {
+     "name": "crypto_parse_mac_response",
+     "frame": 0,
+     "depth": 0,
+     "via": "call"
+    },
+    {
+     "name": "crypto_parse_verdict",
+     "frame": 0,
+     "depth": 0,
+     "via": "call"
+    }
+   ]
+  },
+  {
+   "name": "crypto_report",
+   "frame": 8,
+   "depth": 160,
+   "indirect_sites": [],
+   "callees": [
+    {
+     "name": "log_evt",
+     "frame": 80,
+     "depth": 152,
+     "via": "call"
+    }
+   ]
+  },
+  {
+   "name": "log_evt",
+   "frame": 80,
+   "depth": 152,
+   "indirect_sites": [],
+   "callees": [
+    {
+     "name": "log_ring_put_locked",
+     "frame": 40,
+     "depth": 72,
+     "via": "call"
+    },
+    {
+     "name": "log_rec_encode",
+     "frame": 8,
+     "depth": 12,
+     "via": "call"
+    },
+    {
+     "name": "log_port_now_ms",
+     "frame": 8,
+     "depth": 8,
+     "via": "call"
+    },
+    {
+     "name": "log_port_lock",
+     "frame": 0,
+     "depth": 0,
+     "via": "call"
+    },
+    {
+     "name": "log_note_drop_locked",
+     "frame": 0,
+     "depth": 0,
+     "via": "call"
+    },
+    {
+     "name": "log_port_unlock",
+     "frame": 0,
+     "depth": 0,
+     "via": "call"
+    }
+   ]
+  },
+  {
+   "name": "log_ring_put_locked",
+   "frame": 40,
+   "depth": 72,
+   "indirect_sites": [],
+   "callees": [
+    {
+     "name": "log_ring_copy_in",
+     "frame": 24,
+     "depth": 32,
+     "via": "call"
+    },
+    {
+     "name": "log_port_head",
+     "frame": 0,
+     "depth": 0,
+     "via": "call"
+    },
+    {
+     "name": "log_port_tail",
+     "frame": 0,
+     "depth": 0,
+     "via": "call"
+    },
+    {
+     "name": "log_port_ring_cap",
+     "frame": 0,
+     "depth": 0,
+     "via": "call"
+    },
+    {
+     "name": "log_port_publish_barrier",
+     "frame": 0,
+     "depth": 0,
+     "via": "call"
+    }
+   ]
+  },
+  {
+   "name": "log_ring_copy_in",
+   "frame": 24,
+   "depth": 32,
+   "indirect_sites": [],
+   "callees": [
+    {
+     "name": "memcpy",
+     "frame": 8,
+     "depth": 8,
+     "via": "call"
+    },
+    {
+     "name": "log_port_ring",
+     "frame": 0,
+     "depth": 0,
+     "via": "call"
+    },
+    {
+     "name": "log_port_ring_cap",
+     "frame": 0,
+     "depth": 0,
+     "via": "call"
+    },
+    {
+     "name": "log_min_size",
+     "frame": 0,
+     "depth": 0,
+     "via": "call"
+    }
+   ]
+  },
+  {
+   "name": "memcpy",
+   "frame": 8,
+   "depth": 8,
+   "indirect_sites": [],
+   "callees": []
+  }
+ ]
+}

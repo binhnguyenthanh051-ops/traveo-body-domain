@@ -4,19 +4,19 @@
 
 ![](img/stack-2/hero.png)
 
-Post 1 ends with a promise: *"Post 2 is how I made sure it can't happen quietly again."* This post keeps it.
+At the end of Post 1 I admitted the weak spot of FreeRTOS's high-water mark: *"the mark only knows the paths that ran. If one rare call goes deeper, and it never ran while I watched, the mark has no idea."*
 
-Post 1 reads **one** function's frame. Post 2 adds frames up along **every path of every task**, at build time, and stops the build when a stack is too small.
+That's how my CAN task overflowed. One call hid 568 bytes from me, and from every quick check I had. So I wrote a tool that works out each task's worst case from the build itself, before anything goes on the chip.
 
-The plan: the incident, the function pointer that hid it, the concept, the design, the implementation, and the test. The test has a twist: the stack I had doubled after the incident had **48 bytes** left on its worst path.
+The first real run surprised me. The stack I'd already doubled after the overflow had just **48 bytes** to spare.
 
-<!-- Post 1 last line: docs/blogs/stack-1-blog-draft.md §8. 48 B = 1536 − 1488 (Node A can_task: docs/bench/2026-11-11/stack_bound_nodeA_app.txt; old stack 384 w, docs/project/findings.md F-021). -->
+<!-- Post 1 quote: docs/blogs/stack-1-blog-draft.md §7 Honest line. 48 B = 1536 − 1488 (Node A can_task: docs/bench/2026-11-11/stack_bound_nodeA_app.txt; old stack 384 words, docs/project/findings.md F-021). 568 B: crypto_mac push {r4, r5, lr} + sub.w sp, sp, #556 (docs/bench/2026-11-14/stack_bound_asm_examples.md). -->
 
 ---
 
 ## 1. The incident
 
-In the M5 bring-up, Node B's CAN task verified its first signed frame and overflowed. FreeRTOS's overflow hook fired. The hook's endless loop then tripped the hardware watchdog, and the chip reset.
+It happened during the M5 bring-up. Node B's CAN task got its first signed frame, started checking the signature (the MAC), and ran off the end of its stack. FreeRTOS caught it and called the overflow hook. The hook just loops forever, so a moment later the watchdog reset the chip.
 
 ```mermaid
 %%{init: {"themeCSS": ".node:not(.dec):not(.out) .nodeLabel{display:inline-flex;flex-direction:column;justify-content:center;min-width:146px;min-height:48px} .node.out .nodeLabel{display:inline-flex;flex-direction:column;justify-content:center;min-width:172px;min-height:63px}"}}%%
@@ -37,38 +37,35 @@ flowchart LR
 
 <!-- docs/briefs/M5-bringup-plan.md row 14 (Node B can; Node A can + app had the same 192 words) and commit 0cab23f. -->
 
-A 30-line prototype added up frames along the calls and found **856 B** of call chain (no interrupt frame) against a **768 B** stack, in seconds, with no debugger. It proved the idea. Its one big gap: calls through function pointers had to be added by hand.
+Before writing a real tool, I tried a 30-line script. It added up the frames along the calls and came back in seconds: **856 B** of calls, on a **768 B** stack. No debugger needed. The catch was function pointers. The script couldn't follow them, so I had to add those calls by hand.
 
-The code kept growing after that fix. In November a crypto-error log was added below the MAC, 160 B deeper than anything the prototype saw. So the same task has several numbers in this post. Each one is labelled:
+The code kept growing after that, so you'll see several numbers for the same task in this post. Here they all are, with what each one counts:
 
 ```
-Sep 28  Node B  prototype            856 B   call chain only
-Nov 6   Node B  GCC's graph alone    552 B   call chain, stops at the pointer
-Nov 6   Node B  pointer followed    1256 B   call chain, error log included
-Nov 11  Node B  stack_bound         1264 B   + 208 B switch frame = 1472 B
-Nov 11  Node A  stack_bound         1280 B   + 208 B switch frame = 1488 B
+Sep 28  Node B  prototype script     856 B   calls only
+Nov 6   Node B  GCC's graph alone    552 B   calls, stops at the pointer
+Nov 6   Node B  pointer followed    1256 B   calls, error log included
+Nov 11  Node B  stack_bound         1264 B   + 208 B task switch = 1472 B
+Nov 11  Node A  stack_bound         1280 B   + 208 B task switch = 1488 B
+Nov 16  Node B  stack_bound         1256 B   + 208 B task switch = 1464 B   ← the GIFs below
 ```
 
-The 8 B between Nov 6 and Nov 11 is `memcpy`, which comes prebuilt with no frame file: the quick count missed it, the tool asked for it.
-
-<!-- 856: docs/briefs/M5-bringup-plan.md row 14 + docs/future-ideas.md (Sep 28 = idea date, W40 Stage 3). Error log: F-018, commit b17c7f5 (2026-11-06); 160 B below crypto_mac: docs/project/findings.md F-021. 552 / 1256: ADR-0025 Table 5; "missed memcpy (8 B)": ADR-0025 D4 under Table 4. 1264 / 1280 + 208: docs/bench/2026-11-11/stack_bound_node*.txt. -->
-
-<!-- docs/future-ideas.md "Stack drill". -->
+<!-- 856: docs/briefs/M5-bringup-plan.md row 14 + docs/future-ideas.md (Sep 28 = idea date). Error log below the MAC: F-018, commit b17c7f5 (2026-11-06), 160 B deeper: docs/project/findings.md F-021. 552 / 1256: ADR-0025 Table 5. 1264 / 1280 + 208: docs/bench/2026-11-11/stack_bound_node*.txt. 1256 + 208 = 1464 (Nov 16 image, sha256 10b2b3d0577f): docs/bench/2026-11-17/stack_bound_nodeB.txt; 8 B less than Nov 11 = log_ring_put_locked 40 B replaced log_try_enqueue 48 B (the F-022 fix, 2026-11-12, stack_bound_asm_examples.md). -->
 
 ---
 
 ## 2. The call nobody can see
 
-### Why did the compiler's own graph miss it?
+### Why did the compiler's own count miss it?
 
-GCC can write every function's frame and its call graph. Adding them up for the CAN task gave **552 B**. With the pointer followed, the same call chain was **1256 B**.
+GCC can tell you every function's frame size and which functions it calls. Add those up for the CAN task and you get **552 B**. Follow one function pointer, and the same chain comes to **1256 B**.
 
 ```mermaid
 %%{init: {"themeCSS": ".node:not(.dec):not(.out) .nodeLabel{display:inline-flex;flex-direction:column;justify-content:center;min-width:105px;min-height:48px} .node.out .nodeLabel{display:inline-flex;flex-direction:column;justify-content:center;min-width:131px;min-height:63px}"}}%%
 flowchart TB
     subgraph G["GCC's call graph alone — 552 B"]
         direction LR
-        G1["can_task"] --> G2["… SecOC verify"] --> G3["verify_core"] --> G4(["indirect call<br/>= ?"])
+        G1["can_task"] --> G2["… SecOC verify"] --> G3["verify_core"] --> G4(["call through<br/>a pointer = ?"])
     end
     subgraph R["Following the pointer — 1256 B"]
         direction LR
@@ -84,111 +81,67 @@ flowchart TB
     class G4 out;
 ```
 
-*Node B, Nov 6, call chain only. The deepest frame sits behind a function pointer; the compiler marks the call and stops.*
+*Node B, Nov 6. The biggest frame is hiding behind a function pointer, and the compiler's count stops right there.*
 
-<!-- 552 B vs 1256 B: ADR-0025 Table 5 (Node B spike, 2026-11-06). 568 B: docs/bench/2026-11-14/stack_bound_asm_examples.md. -->
+<!-- 552 B vs 1256 B: ADR-0025 Table 5 (Node B spike, 2026-11-06). -->
 
-The pointer is there on purpose. SecOC reaches the MAC through a small interface, so my PC tests plug in a fake MAC and the board plugs in the real one. Good for testing, invisible to a simple stack count.
-
-### What does a function pointer look like in the binary?
-
-In C, it's one line in `verify_core`:
+The function in the middle, `verify_core`, checks a frame's MAC. It never calls the MAC code by name. It calls whatever a small interface points to:
 
 ```c
 if (!cy->oracle->mac(cy->key_id, macin, macin_len, tag))
 ```
 
-In the binary, the target isn't in the instruction. It's loaded into a register at run time:
+<!-- shared/secoc/src/secoc.c:139; g_oracle = { crypto_mac }: node_b_actuator/proj_cm7/src/secoc_app.c:27. -->
 
-```
-10086880  mov    r7, r0          ← r7 = cy (argument 1)
-100868a4  ldr    r3, [r7, #0]    ← r3 = cy->oracle
-100868a6  ldr.w  fp, [r3]        ← fp = oracle->mac, the first slot
-100868b0  blx    fp              ← call whatever address fp holds
-```
+I put that pointer there on purpose. On the PC, my tests plug in a fake MAC; on the board, it's the real one, `crypto_mac`. Great for testing. But a simple count can't see through it.
 
-And the address itself sits in a constant table in flash:
+### What does a pointer call look like to a tool?
 
-```
-10087eb0  29 61 08 10            ← g_oracle = { crypto_mac }: 0x10086129
-```
+In a normal call, the target address is part of the instruction. In a pointer call, it isn't. This is what that looks like inside `verify_core`, and how a tool can still dig the answer out of the program's data:
 
-`0x10086129` is `crypto_mac` (`0x10086128`) **+ 1**: the Thumb bit from Post 1. Every function pointer on a Cortex-M carries it. That's how a tool can spot a stored function address in the image.
+![](img/stack-2/stack-fnptr.gif)
 
-<!-- docs/bench/2026-11-14/stack_bound_asm_examples.md (Node B, built 2026-11-12): verify_core, g_oracle objdump -s, nm. Source line: shared/secoc/src/secoc.c:139; g_oracle: node_b_actuator/proj_cm7/src/secoc_app.c:27. -->
+*From the instruction to the word in flash that holds `crypto_mac`'s address. All values come from the Node B image.*
 
-```mermaid
-%%{init: {"themeCSS": ".node:not(.dec):not(.out) .nodeLabel{display:inline-flex;flex-direction:column;justify-content:center;min-width:167px;min-height:48px} .node.out .nodeLabel{display:inline-flex;flex-direction:column;justify-content:center;min-width:193px;min-height:63px}"}}%%
-flowchart TB
-    BLX["blx fp<br/>in verify_core"] --> FP["fp = [r3]"]
-    FP --> R3["r3 = [r7]"]
-    R3 --> R7["r7 = cy<br/>argument 1"]
-    R7 --> OR["cy->oracle = &g_oracle"]
-    OR --> W["g_oracle in flash<br/>0x10086129"]
-    W --> T(["crypto_mac<br/>568 B"])
-    classDef tgt fill:#fff7ed,stroke:#f59e0b,color:#3a2a08;
-    classDef pure fill:#dbeafe,stroke:#3b82f6,color:#0b1f44;
-    classDef bad fill:#fee2e2,stroke:#ef4444,color:#3a0a0a;
-    class BLX,FP,R3,R7 tgt;
-    class OR,W pure;
-    class T bad;
-    class T out;
-```
+<!-- docs/bench/2026-11-17/stack_bound_post2.md: nm, objdump -d (verify_core), objdump -s (0x10087ea0–0x10087ebf) of the Nov 16 image, same addresses as Nov 12. Drawn by host_tools/blog/stack_bound_gifs.py. -->
 
-*Tracing the register back to the word in flash. The 568 B frame is at the end of that chain.*
+The giveaway is the **odd** number. On a Cortex-M, a function's address is always stored as its start + 1 (that's the Thumb bit from Post 1). So if some word in the program equals a function's start + 1, that function can be called through a pointer. The tool calls it **address-taken**.
 
 ---
 
-## 3. The concept: walk every path, refuse to guess
+## 3. The idea: walk every path, refuse to guess
 
-A direct call (`bl`) carries its target. An indirect call (`blx`) needs a **binding**: a written answer to "what can this pointer hold?". The walk is short:
+The idea fits in two sentences. Every function gets a number, its **depth**: its own frame plus the deepest call below it. A task's worst case is then just the depth of its first function. Here's the tool doing that for the CAN task:
+
+![](img/stack-2/stack-walk.gif)
+
+*At every step, the deepest call wins. One link, `verify_core → crypto_mac`, is only there because the tool followed the pointer.*
+
+<!-- docs/bench/2026-11-17/can_task_walk.json: the tree stack_bound walks (host_tools/blog/stack_bound_walk.py, stack_bound as a library; its worst path and 1256 B are asserted equal to the tool's own report). Report: stack_bound_nodeB.txt, can_task 1464 B / 2048 B = 71 %, ok. -->
+
+In pseudo code, the whole walk is only a few lines:
 
 ```
 depth(f):
-    if f has no known frame:      error "no frame"          # never 0 B
+    if f has no known frame:      error "no frame"          # never count it as 0 B
     if f is already on the path:  error "recursion"
     worst = 0
     for each call in f:
-        if call is direct (bl):   targets = [the address in the instruction]
-        else (blx rN):            targets = binding(call) or error "no binding"
+        if it's a direct call (bl):    targets = [the address in the instruction]
+        if it's a pointer call (blx):  targets = binding(call) or error "no binding"
         for t in targets:
             worst = max(worst, depth(t))
     return frame(f) + worst
 
-required(task) = depth(task entry) + 208 B        # the switch frame from Post 1
+required(task) = depth(task) + 208 B        # room for one task switch, Post 1
 pass if required ≤ 80% of the task's stack
 ```
 
-Here it is on `verify_core`, Node B's Nov 12 build (call chain only, no switch frame):
-
-```mermaid
-%%{init: {"themeCSS": ".node:not(.dec):not(.out) .nodeLabel{display:inline-flex;flex-direction:column;justify-content:center;min-width:116px;min-height:48px} .node.out .nodeLabel{display:inline-flex;flex-direction:column;justify-content:center;min-width:142px;min-height:63px}"}}%%
-flowchart LR
-    V["verify_core<br/>136 B"] --> B["build_mac_input<br/>24 B"]
-    V --> C["secoc_ct_equal<br/>8 B"]
-    V --> G["get_u16le<br/>0 B"]
-    V -.->|"blx"| M["crypto_mac<br/>568 B"] --> R["crypto_report<br/>8 B"] --> L["error logging<br/>152 B"]
-    classDef pure fill:#dbeafe,stroke:#3b82f6,color:#0b1f44;
-    classDef bad fill:#fee2e2,stroke:#ef4444,color:#3a0a0a;
-    class V,B,C,G pure;
-    class M,R,L bad;
-```
-
-*The red branch is the deepest. It only exists if the pointer is followed.*
-
-```
-depth(error logging) = 80 + 40 + 24 + 8          = 152 B
-depth(crypto_mac)    = 568 + 8 + 152             = 728 B
-depth(verify_core)   = 136 + 728                 = 864 B
-```
-
-<!-- Frames: GCC .su (secoc.su: build_mac_input 24, secoc_ct_equal 8, get_u16le 0) and the worst path in docs/bench/2026-11-14/stack_bound_asm_examples.md (log_evt 80 → log_ring_put_locked 40 → log_ring_copy_in 24 → memcpy 8). -->
-
-The rule above all others: **refuse to guess**. A wrong "pass" is worse than no answer. If the tool can't give a safe number, it gives **no number** and says why.
+A **binding** is just me writing down what a pointer can hold. And one rule matters more than all the others: **never guess**. A wrong "pass" is worse than no answer at all. So when the tool can't give a safe number, it gives none, and tells you why.
 
 ---
 
-## 4. The design, and why
+## 4. How the tool works
 
 ### Which source do I trust?
 
@@ -201,7 +154,7 @@ flowchart TB
         CC["compiler data<br/>exact frames<br/>blind to libraries"]
         BI["linked ELF<br/>sees every function"]
     end
-    BI --> REF["referee<br/>the inventory"]
+    BI --> REF["referee<br/>what exists"]
     CC --> WIT["witness<br/>frames + calls"]
     RT --> X["cross-check<br/>on the bench"]
     REF --> J{"every function<br/>has a frame?"}
@@ -217,33 +170,17 @@ flowchart TB
     class E out;
 ```
 
-*The ELF decides what exists. The compiler gives the numbers. The bench checks the tool.*
+*The linked program decides what exists. The compiler gives the numbers. The bench checks the tool.*
 
-- **Compiler data alone** misses prebuilt code. `memcpy` comes from the C library with no frame file; a script would count it as 0 B. Here it's a written 8 B, with its source.
-- **Runtime alone** only sees what ran. It stays as the check on the tool: if the bench ever measures more than the static number, the tool is wrong.
-
-### How are pointers bound?
-
-The full design follows stored **values**: const tables in flash, initialised data, registration calls. Types only narrow the list, because a `void *` cast breaks a type search.
-
-Honest — today the bindings are a list I write, and the tool checks each one against the binary. Following stored values automatically is the next slice.
-
-### Why 80%?
-
-The worst path must fit in **80%** of the stack. The 20% covers the next small change to an error path, the kind nobody runs on the bench. A fixed byte margin doesn't scale: 64 B is plenty on 512 B and nothing on 2 KB.
-
-Nothing in the tool is about this project, so it lives in its own public repo, **stack_bound**, pinned here as a git submodule.
-
----
-
-## 5. The implementation
+- **Compiler data alone** misses code that comes prebuilt. `memcpy` ships in the C library without a frame file, so a script would count it as 0 B. The tool makes me write down 8 B, and where that number came from.
+- **The high-water mark alone** only sees what ran. It still has a job, though: it checks the tool. If the bench ever measures more than the tool predicted, the tool is wrong.
 
 ### Five steps
 
 ```mermaid
 %%{init: {"themeCSS": ".node:not(.dec):not(.out) .nodeLabel{display:inline-flex;flex-direction:column;justify-content:center;min-width:153px;min-height:72px} .node.out .nodeLabel{display:inline-flex;flex-direction:column;justify-content:center;min-width:179px;min-height:87px}"}}%%
 flowchart LR
-    ELF["1 · read the ELF<br/>functions · DWARF<br/>address-taken"] --> J["3 · join + bind<br/>frames · pointers"]
+    ELF["1 · read the ELF<br/>every function<br/>address-taken"] --> J["3 · join + bind<br/>frames · pointers"]
     GCC["2 · read GCC output<br/>.su frames · .ci calls"] --> J
     PF["project file<br/>tasks · bindings"] --> J
     J --> W["4 · walk + check<br/>deepest path per task"]
@@ -254,24 +191,15 @@ flowchart LR
     class PF tgt;
 ```
 
-*About 1,000 lines of Python. It runs on the PC, after every firmware build.*
+*About 1,000 lines of Python. It runs on the PC after every firmware build.*
 
-1. **The ELF.** Every function symbol becomes a function, keyed by address. DWARF adds where each one is declared. Any aligned word in the image that equals a function's start + 1 marks it **address-taken**.
-2. **GCC's output.** Two flags write a frame file and a call-graph file per source file. The parsers are strict: a line they don't know, or a `dynamic` frame (a VLA or `alloca`), is an error.
-3. **Join and bind.** Frames join on file, line, column and name, because two files can each have a `static` helper with the same name. Then each indirect call gets its binding.
-4. **Walk and check.** The pseudo code from §3, with each function's result remembered.
-5. **Report.** One model, rendered as text, JSON and an HTML page with no script, so it opens offline on a bench PC.
+1. **Read the ELF**, the linked program, to get every function and its address. Any word that equals a function's start + 1 marks that function as address-taken.
+2. **Read GCC's output.** Two compiler flags make GCC write a frame file and a call file for each source file. If the tool meets a line it doesn't understand, it stops. It never skips it.
+3. **Join and bind.** Match every function to its frame, and every pointer call to its binding in the project file.
+4. **Walk and check**, as in section 3.
+5. **Report** the result as text, JSON, and an HTML page that opens offline on a bench PC.
 
-The real compiler lines behind `verify_core`:
-
-```
-secoc.c:126:30:verify_core	136	static
-edge: { sourcename: "secoc.c:verify_core" targetname: "__indirect_call" label: "secoc.c:139:10" }
-```
-
-<!-- node_b_actuator/proj_cm7/build (2026-11-12 build), path prefixes shortened. -->
-
-And the binding for that `__indirect_call`, with the reason the report prints:
+Here's the binding for `verify_core`'s pointer call. The reason is what the report prints next to it:
 
 ```toml
 [[indirect]]
@@ -280,41 +208,31 @@ targets  = ["crypto_mac"]
 reason   = "cy->oracle->mac: g_oracle = { crypto_mac } (secoc_app.c:27), the only secoc_mac_if_t in the image"
 ```
 
-The tool checks the claim. If the call has no binding, or the target is never address-taken, it stops:
+The tool doesn't take my word for it, though. Here's what happens when the binding is missing, or wrong:
 
-```mermaid
-%%{init: {"themeCSS": ".node:not(.dec):not(.out) .nodeLabel{display:inline-flex;flex-direction:column;justify-content:center;min-width:179px;min-height:48px} .node.out .nodeLabel{display:inline-flex;flex-direction:column;justify-content:center;min-width:205px;min-height:63px}"}}%%
-flowchart TB
-    S["indirect call<br/>verify_core, line 139"] --> Q{"binding in the<br/>project file?"}
-    Q -->|no| E1(["error: no binding<br/>no result"])
-    Q -->|yes| A{"target is<br/>address-taken?"}
-    A -->|no| E2(["error: no pointer<br/>can hold it"])
-    A -->|yes| OK(["edge added<br/>verify_core → crypto_mac"])
-    classDef pure fill:#dbeafe,stroke:#3b82f6,color:#0b1f44;
-    classDef ok fill:#dcfce7,stroke:#22c55e,color:#052e14;
-    classDef bad fill:#fee2e2,stroke:#ef4444,color:#3a0a0a;
-    class S,Q,A pure;
-    class OK ok;
-    class E1,E2 bad;
-    class A,Q dec;
-    class E1,E2,OK out;
-```
+![](img/stack-2/stack-refusal.gif)
 
-*Every pointer ends green or stops the build. There is no third way out.*
+*Forget the binding, or point it at a function no pointer can hold, and you get no number and exit code 2. These are the real messages.*
 
-Each image binds **9** functions with indirect calls: the MAC, the flash store, the IPC port to the security core.
+<!-- docs/bench/2026-11-17/refusal_nobinding.txt and refusal_wrongtarget.txt (edited copies of node_b_actuator/proj_cm7/stack_bound.toml, run on the Nov 16 image); absolute path prefix shortened in the GIF. Same messages as docs/bench/2026-11-14/stack_bound_failure_demo.md. -->
 
-<!-- 9 [[indirect]] entries in both stack_bound.toml files. -->
+Honest — for now I still write the bindings myself, and the tool checks each one against the binary. Teaching it to follow the stored values on its own is the next step.
+
+### Why 80%?
+
+The worst path has to fit in **80%** of the stack. The other 20% leaves room for the next small change to some error path, the kind nobody ever runs on the bench. I didn't want a fixed number of bytes, because that doesn't scale: 64 B is plenty on a 512 B stack and almost nothing on 2 KB.
 
 ```
 Language     Python 3.11+, pyelftools
-Input        unstripped ELF with -g, plus GCC -fstack-usage -fcallgraph-info=su
+Input        the ELF built with -g, plus GCC -fstack-usage -fcallgraph-info=su
 Exit codes   0 pass · 1 a stack fails · 2 no safe result · 3 usage error
 Tests        47
 Run time     1.6–2.5 s per image on my PC
 ```
 
-<!-- 47: pytest on tools/stack_bound v0.2.0 (2026-11-14). Run time: docs/bench/2026-11-14/stack_bound_failure_demo.md §3. ~1,000 lines: wc -l tools/stack_bound/src = 1,057 incl. the profile. -->
+<!-- 47: pytest on tools/stack_bound v0.2.0 (2026-11-14). Run time: docs/bench/2026-11-14/stack_bound_failure_demo.md §3. ~1,000 lines: wc -l tools/stack_bound/src = 1,057 incl. the profile. 9 [[indirect]] entries in each stack_bound.toml. -->
+
+Nothing in the tool is specific to this project, so I gave it its own public repo, **stack_bound**.
 
 ### Where it runs
 
@@ -326,7 +244,7 @@ flowchart LR
     G -->|no| X(["stop<br/>no override"])
     G -->|yes| F["flash"]
     F --> L["log: free stack<br/>per task, every 5 s"]
-    L --> C{"measured ≤<br/>static?"}
+    L --> C{"measured ≤<br/>tool's number?"}
     classDef pure fill:#dbeafe,stroke:#3b82f6,color:#0b1f44;
     classDef tgt fill:#fff7ed,stroke:#f59e0b,color:#3a2a08;
     classDef bad fill:#fee2e2,stroke:#ef4444,color:#3a0a0a;
@@ -339,15 +257,15 @@ flowchart LR
 
 *Blue runs on the PC, amber on the board. The build checks the stacks; the bench checks the tool.*
 
-The gate sits in the build scripts I flash with, so it can't be forgotten. There's no override: a failing stack is fixed or raised. The analysis flags stay in the build, because the code bytes are identical with and without them.
+The check lives in the same build scripts I flash with, so I can't forget to run it. And there's no override. If a stack fails, I fix the code or give the stack more room.
 
 ---
 
-## 6. The test
+## 5. The test
 
 ### The first real image broke the tool
 
-The test programs passed. Then I ran it on the real firmware, and the **tool** had bugs. A vendor SDK does things my small test programs never did.
+All my test programs passed. Then I pointed the tool at the real firmware, and found bugs in the **tool**. A vendor SDK does things my little test programs never did.
 
 ```mermaid
 %%{init: {"themeCSS": ".node:not(.dec):not(.out) .nodeLabel{display:inline-flex;flex-direction:column;justify-content:center;min-width:128px;min-height:48px} .node.out .nodeLabel{display:inline-flex;flex-direction:column;justify-content:center;min-width:154px;min-height:63px}"}}%%
@@ -372,13 +290,13 @@ flowchart TB
 
 *The one bug that broke the tool's own rule: it guessed, silently.*
 
-The other two were noise, not danger: **2,006** compiler entries on Node B for functions the linker had removed, and a header's `static inline` showing up once per file that uses it. Neither could change a number. The `s_stack` one could have.
+The other two bugs were just noise: **2,006** compiler entries on Node B for functions the linker had thrown away, and a header's `static inline` showing up once in every file that used it. Neither could change a number. The `s_stack` one could have.
 
 <!-- tools/stack_bound/docs/adr/ADR-0001-architecture.md §8 Table 12; 2,006: docs/bench/2026-11-11/stack_bound_nodeB_cm7.txt. -->
 
 ### Three stacks failed the 80% rule, not one
 
-I expected one failure: Node B's CAN task. Three stacks failed the 80% rule, two of them with under 64 B left. The third, Node A's `app` task, had 280 B left: not about to crash, but over the line. It signs the commands it sends, so it calls the same 568 B MAC function on the way out.
+I expected one failure, Node B's CAN task. I got three. Two of them had less than 64 B left. The third, Node A's `app` task, still had 280 B, so it wasn't about to crash, but it was over the line. It signs every command it sends, so it calls the same 568 B MAC function too.
 
 ```mermaid
 %%{init: {"themeCSS": ".node:not(.dec):not(.out) .nodeLabel{display:inline-flex;flex-direction:column;justify-content:center;min-width:101px;min-height:48px} .node.out .nodeLabel{display:inline-flex;flex-direction:column;justify-content:center;min-width:127px;min-height:63px}"}}%%
@@ -405,17 +323,17 @@ flowchart TB
     class A1,A2,B1,B2,C1,C2 out;
 ```
 
-*Nov 11, static worst case including the 208 B switch frame, as a share of the stack. Every analysed task now passes the 80% rule.*
+*Nov 11, worst case including the 208 B task switch, as a share of the stack. Every analysed task now passes.*
 
 <!-- docs/project/findings.md F-021; ADR-0025 Table 4; docs/bench/2026-11-11/stack_bound_node*.txt. 48 B = 1536 − 1488; 64 B = 1536 − 1472; 280 B = 1536 − 1256 (Node A app_task: 1048 + 208). -->
 
-The deepest branch on both CAN tasks is the error log after a failed MAC. It never runs on a healthy bench, but it's real: a fault test drove it 6,843 times. I raised the stacks rather than moving the MAC buffers to static memory: two tasks on Node A call the MAC, so static buffers would need a lock, and the RAM is there.
+On both CAN tasks, the deepest branch is the error log that runs after a failed MAC. On a healthy bench it never runs. But it's real: one fault test drove it 6,843 times. I chose to raise the stacks instead of moving the MAC buffers to static memory. Two tasks on Node A call the MAC, so shared static buffers would need a lock, and there's RAM to spare.
 
-Honest — the tool counts every path, even two branches that can never run together, so it over-estimates; it never under-estimates as long as the bindings are complete, which is the one thing I still vouch for by hand.
+Honest — the tool counts every path, even two branches that can never run together, so it over-estimates a little. It never under-estimates, as long as the bindings are complete. That's the one part I still check by hand.
 
 ### Does the bench agree?
 
-I flashed both nodes through the gate and captured the logs. For every analysed task, the static number must be **at least** what the task really used.
+Then I flashed both nodes through the check and captured their logs. For every task the tool analysed, its number had to be **at least** what the task really used on the chip.
 
 ```mermaid
 %%{init: {"themeCSS": ".node:not(.dec):not(.out) .nodeLabel{display:inline-flex;flex-direction:column;justify-content:center;min-width:103px;min-height:48px} .node.out .nodeLabel{display:inline-flex;flex-direction:column;justify-content:center;min-width:129px;min-height:63px}"}}%%
@@ -433,15 +351,15 @@ flowchart TB
     class A1,A2,A3,A4,B1,B2,B3 ok;
 ```
 
-*Nov 11. Measured ≤ static on all 7 tasks; static includes the 208 B switch frame. The ~300 B gap on the CAN tasks is mostly the error branch the normal run skips.*
+*Nov 11. Measured ≤ the tool's number on all 7 tasks. The ~300 B gap on the CAN tasks is mostly the error branch a normal run skips.*
 
 <!-- docs/bench/2026-11-11/stack_crosscheck.md Check 1; summary.txt. -->
 
-On the old 1536 B stacks, the normal path alone used 78% (Node A) and 74% (Node B). No high-water mark would ever have shown the error branch on top.
+With the old 1536 B stacks, the normal path alone already used 78% on Node A and 74% on Node B. A high-water mark would never have shown me the error branch sitting on top of that.
 
-### The gate stopped two good builds
+### The check stopped two good builds
 
-The first two flash runs stopped at the gate with stacks that **passed**. The build shell gave Windows Python a `/cygdrive` path it couldn't open; then Python printed `pass\r` instead of `pass`. Both times the gate failed closed and flashed nothing. That's what I want from it, so I fixed the script, not the rule.
+Funny enough, my first two flash runs stopped at the check even though every stack **passed**. First the build shell handed Windows Python a path it couldn't open. Then Python printed `pass\r` instead of `pass`. Both times the check refused and flashed nothing, which is exactly what I want when something's off. So I fixed the script and left the rule alone.
 
 <!-- stack_crosscheck.md Check 3; commit 94ce2f5. -->
 
@@ -458,11 +376,11 @@ Interrupt stack   not analysed yet
 
 <!-- ADR-0025 D7 / Table 7 (bytes); 384 → 512 words = +512 B; ADR-0025 D5 + stack_crosscheck.md Check 2 (log); stack_bound_failure_demo.md §3 (time). -->
 
-Honest — the interrupt stack is not analysed yet, and every report says so in one line. That's exactly what the next slice adds.
+Honest — the tool doesn't check the interrupt stack yet (the main stack from Post 1), and every report says so in one line. That's the next thing I'm adding.
 
 ---
 
-## 7. User manual — check your own stacks
+## 6. User manual — check your own stacks
 
 Build with `-g -fstack-usage -fcallgraph-info=su`, then:
 
@@ -470,34 +388,36 @@ Build with `-g -fstack-usage -fcallgraph-info=su`, then:
 python -m stack_bound build/app.elf --su build --project stack_bound.toml --html report.html
 ```
 
-Success: one line per task, all `ok`. Node B's gate output on the bench day:
+If all is well, you get one line per task, all `ok`. This is Node B, on the Nov 16 image:
 
 ```
-task can_task             1472 B      2048 B    72%    1840 B (460 w)  ok     ← the SecOC task
-task heartbeat_task        400 B       512 B    78%     504 B (126 w)  ok
+task can_task             1464 B      2048 B    71%    1832 B (458 w)  ok     ← the CAN task
+task heartbeat_task        392 B       512 B    77%     496 B (124 w)  ok
 task log_cyclic_task       308 B       512 B    60%      392 B (98 w)  ok
 not analysed: main stack (MSP): the interrupt chain and the code before …       ← says what it skips
    ~> crypto_mac 568 B   [listed: cy->oracle->mac: g_oracle = { crypto_mac } …] ← the pointer, with its reason
 ```
 
-On the board, each task reports what it really used:
+<!-- docs/bench/2026-11-17/stack_bound_nodeB.txt (shortened with "…"). -->
+
+On the board, each task logs what it really used:
 
 ```
 [   60000 app] LOG_EVT_TASK_STACK task_id=0x1 free_words=212   ← Node A can: (512 − 212) × 4 = 1200 B
 ```
 
-<!-- docs/bench/2026-11-11/flash_nodeB.log lines 81–97 (shortened with "…"); docs/bench/2026-11-11/nodeA.txt line 215. -->
+<!-- docs/bench/2026-11-11/nodeA.txt line 215. -->
 
-The failure demo — the best part. Delete the `verify_core` binding from the project file and run it again:
+For the failure demo, delete the `verify_core` binding from the project file and run it again. You should get exit code 2, no number, and this:
 
 ```
 stack_bound: analysis error, no result:
   - task can_task: verify_core: indirect call at shared/secoc/src/secoc.c:139:10 has no binding (add an [[indirect]] entry)
 ```
 
-Exit code 2, no number, and the build script stops before flashing. Point the binding at the wrong function instead, and it says *"never address-taken, so no pointer can hold it"*.
+<!-- docs/bench/2026-11-17/refusal_nobinding.txt (absolute path prefix shortened). -->
 
-<!-- docs/bench/2026-11-14/stack_bound_failure_demo.md §1–2 (absolute path prefix shortened). -->
+The build script then stops before flashing.
 
 ---
 
@@ -529,5 +449,6 @@ Written    · November 2026
 ---
 
 ## Figures list
-- `img/stack-2/hero.png` (from `hero.svg`, caption `TRAVEO T2G · STACKS 2/2`) and `img/stack-2/fig-01…11.png`, rendered by `host_tools/blog/render_diagrams.py`.
+- `img/stack-2/hero.png` (from `hero.svg`, caption `TRAVEO T2G · STACKS 2/2`) and `img/stack-2/fig-01…08.png`, rendered by `host_tools/blog/render_diagrams.py`.
+- `img/stack-2/stack-fnptr.gif`, `stack-walk.gif`, `stack-refusal.gif`: `host_tools/blog/stack_bound_gifs.py` from `docs/bench/2026-11-17/` (needs Pillow).
 - Medium tags: Embedded Systems, Automotive, Static Analysis, FreeRTOS, Microcontrollers.

@@ -1,0 +1,2 @@
+stack_bound: analysis error, no result:
+  - task can_task: verify_core: indirect call at C:/00_Projects/00_Portfolio/00_TraveoBody/traveo-body-domain/shared/secoc/src/secoc.c:139:10 has no binding (add an [[indirect]] entry)
