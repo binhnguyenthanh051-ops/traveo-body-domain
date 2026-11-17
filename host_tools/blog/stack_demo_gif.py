@@ -15,6 +15,7 @@ every word.
 """
 import pathlib
 import sys
+import xml.etree.ElementTree as ET
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 import render_diagrams as rd          # noqa: E402  (shot(): headless Edge screenshot)
@@ -221,6 +222,7 @@ def build(frames: list[tuple], out: pathlib.Path, name: str, pil) -> None:
     for i, (st, new, title, lines, code, leg) in enumerate(frames, start=1):
         svg = work / f"f{i:02d}.svg"
         svg.write_text(frame_svg(st, new, i, len(frames), title, lines, code, leg), encoding="utf-8", newline="\n")
+        ET.fromstring(svg.read_text(encoding="utf-8"))   # a broken frame would bake a browser error page into the GIF
         png = work / f"f{i:02d}.png"
         png.unlink(missing_ok=True)
         rd.shot(svg, png, W, H, profile)

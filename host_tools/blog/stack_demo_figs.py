@@ -12,6 +12,7 @@ docs/bench/2026-11-16/stack_demo.md.
 Memory is drawn the way a debugger's memory window lists it: lowest address at the top. So the
 stack fills from the bottom (its first word, 0x28007290) upwards, like water in a tank.
 """
+import html
 import pathlib
 import re
 import sys
@@ -81,8 +82,9 @@ def svg(w: int, h: int, body: list[str]) -> str:
 
 
 def t(x, y, s, size=14, fill=INK, anchor="start", font=SANS, weight="normal"):
+    # escape: a label like "bl 100867c4 <build_mac_input>" is text, not an SVG tag
     return (f'<text x="{x}" y="{y:.1f}" font-family="{font}" font-size="{size}" fill="{fill}" '
-            f'text-anchor="{anchor}" font-weight="{weight}">{s}</text>')
+            f'text-anchor="{anchor}" font-weight="{weight}">{html.escape(str(s), quote=False)}</text>')
 
 
 def state(dump: dict[int, int], step: int, addr: int) -> str:
