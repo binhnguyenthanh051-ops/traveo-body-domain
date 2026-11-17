@@ -1,0 +1,2 @@
+stack_bound: analysis error, no result:
+  - indirect 'verify_core' -> 'secoc_rx_process': secoc_rx_process is never address-taken, so no pointer can hold it
