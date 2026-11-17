@@ -3,7 +3,7 @@
 <style>body{max-width:720px;margin:2em auto;font:18px/1.6 Georgia,serif;padding:0 16px}img{max-width:100%}pre{background:#f4f4f4;padding:12px;overflow-x:auto;font-size:14px}mark{background:#ffe08a}blockquote{border-left:3px solid #ccc;margin-left:0;padding-left:16px;color:#444}</style></head><body>
 <h1>Stacks 1/2 — What happens on the stack when a function calls another</h1>
 <p><em>Part VI of Traveo II Domain — building an automotive body-domain network from scratch on an Infineon TRAVEO™ T2G, with the design done in the open and Claude used as a visible collaborator.</em></p>
-<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-1-rework/docs/blogs/img/stack-1/hero.png" alt=""></figure>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/main/docs/blogs/img/stack-1/hero.png" alt=""></figure>
 <p>M5 ends its cost list with a confession: <em>"FreeRTOS caught the overflow on the first run, and the stacks went from 768 B to 1.5 KB."</em> I doubled the number and moved on.</p>
 <p>Doubling a number is easy. Knowing what fills it is not. So this time I stopped the chip in the middle of three function calls and read the stack out, word by word.</p>
 <p>This post is the basics, with real bytes from a real board. Post 2 is about the calls you can't see coming.</p>
@@ -12,7 +12,7 @@
 <p><strong>A stack is the memory that gives every call still running its own private space: its way back, the registers it borrows, its local variables. That space is handed back in reverse order as the calls return.</strong> One CPU register, <code>sp</code> (the stack pointer), marks how far it is filled.</p>
 <p>A bare-metal program has one stack. With FreeRTOS, every task gets its own, so a task can be paused and resumed without stepping on another's calls. Interrupts use a separate one, the main stack.</p>
 <p>Here is where all of them live on Node B:</p>
-<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-1-rework/docs/blogs/img/stack-1/stack-ram-map.png" alt=""></figure>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/main/docs/blogs/img/stack-1/stack-ram-map.png" alt=""></figure>
 <p><em>Not to scale. Five task stacks sit among the static variables. The main stack sits alone at the top of RAM.</em></p>
 <p>The linker's map file says the same, line by line:</p>
 <pre><code>.bss.s_stack        0x28005020   0x800   can_task.o   ← the CAN task&#x27;s stack
@@ -28,7 +28,7 @@ __StackLimit = 0x280df000                               just two linker symbols<
 <p>For this post I added one more task, with a small stack of its own:</p>
 <pre><code>static StackType_t s_demo_stack[128];   // 128 words × 4 bytes = 512 bytes</code></pre>
 <p>The linker put it here in Node B's RAM:</p>
-<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-1-rework/docs/blogs/img/stack-1/fig-01.png" alt="diagram"></figure>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/main/docs/blogs/img/stack-1/fig-01.png" alt="diagram"></figure>
 <p><em>Lowest address at the top, the way a debugger's memory window lists it. The stack is the blue one.</em></p>
 <p>Two things are worth knowing up front:</p>
 <ul>
@@ -38,7 +38,7 @@ __StackLimit = 0x280df000                               just two linker symbols<
 <hr>
 <h2>2. Why does a function need the stack?</h2>
 <p>When a function calls another one, it has to park a few things somewhere safe until the call comes back:</p>
-<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-1-rework/docs/blogs/img/stack-1/fig-02.png" alt="diagram"></figure>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/main/docs/blogs/img/stack-1/fig-02.png" alt="diagram"></figure>
 <p><em>One function's slice of the stack is called its frame. It holds these three things.</em></p>
 <p>Small arguments don't need the stack at all. The first four travel in CPU registers (<code>r0</code> to <code>r3</code>).</p>
 <hr>
@@ -61,7 +61,7 @@ void func_a(uint32_t x) {
 <hr>
 <h2>4. Watch it fill up</h2>
 <p>Here is the whole run, one instruction at a time. Every value comes from the chip:</p>
-<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-1-rework/docs/blogs/img/stack-1/stack-calls.gif" alt=""></figure>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/main/docs/blogs/img/stack-1/stack-calls.gif" alt=""></figure>
 <p><em>Three calls in, three returns out. Yellow marks the words written in that step.</em></p>
 <ul>
 <li><strong>At the start:</strong> the task itself uses only 8 bytes. Its one important word is <code>100810bd</code>, the "way back" FreeRTOS gave it.</li>
@@ -69,7 +69,7 @@ void func_a(uint32_t x) {
 <li><strong>Before any call,</strong> the striped words under <code>sp</code> are leftovers of a task switch. Section 6 shows where they come from.</li>
 </ul>
 <p>At the deepest point, inside <code>func_c</code>, here is every word, with whose it is:</p>
-<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-1-rework/docs/blogs/img/stack-1/stack-window.png" alt=""></figure>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/main/docs/blogs/img/stack-1/stack-window.png" alt=""></figure>
 <p><em>80 bytes in use at the deepest point. The 428 bytes above them were never touched.</em></p>
 <p>Read it from the bottom up and it tells the whole story:</p>
 <ul>
@@ -90,12 +90,12 @@ void func_a(uint32_t x) {
 10080ef6  add   sp, #12              ← give the room back
 10080ef8  pop   {r4, r5, pc}         ← restore, and jump back through the saved lr</code></pre>
 <p><code>bl</code> puts the way back in a register called <code>lr</code>. There is only one <code>lr</code>, so before <code>func_b</code> calls <code>func_c</code>, it must save its own way back first. That's what the <code>push</code> is for:</p>
-<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-1-rework/docs/blogs/img/stack-1/fig-03.png" alt="diagram"></figure>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/main/docs/blogs/img/stack-1/fig-03.png" alt="diagram"></figure>
 <p><em>Every <code>push</code> on the way in has a <code>pop</code> on the way out. Each frame is 24 bytes here.</em></p>
 <hr>
 <h2>6. What happens at a task switch?</h2>
 <p>A task doesn't own the CPU. Many times a second, the scheduler pauses it and runs another task. The paused task's registers have to go somewhere, and they go onto its own stack:</p>
-<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-1-rework/docs/blogs/img/stack-1/stack-switch.gif" alt=""></figure>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/main/docs/blogs/img/stack-1/stack-switch.gif" alt=""></figure>
 <p><em>From the task's creation to its first switch-out and back in. Every value is from the chip.</em></p>
 <ol>
 <li><strong>Created:</strong> FreeRTOS writes a fake "switched-out" frame before the task ever runs. Starting a task is then the same as resuming one.</li>
@@ -108,7 +108,7 @@ void func_a(uint32_t x) {
 <hr>
 <h2>7. Coming back: the stain</h2>
 <p>After all three functions return, <code>sp</code> is back where it started. But look at the memory:</p>
-<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-1-rework/docs/blogs/img/stack-1/stack-stain.png" alt=""></figure>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/main/docs/blogs/img/stack-1/stack-stain.png" alt=""></figure>
 <p><em>Right: back in the task. The arrays are still there. Popping only moved <code>sp</code>.</em></p>
 <p>Nothing gets erased. The old values stay until something else writes over them. A few words did change after the return, and each one came from a later <code>push</code>, so they're new values, not leftovers.</p>
 <p>That's where FreeRTOS's <strong>high-water mark</strong> comes from. It counts how many bytes at the far end are still <code>0xA5</code>. Here that's 424 bytes, the part above the red line. Like a stain on a wall, it shows how high the water once came.</p>
@@ -116,7 +116,7 @@ void func_a(uint32_t x) {
 <hr>
 <h2>8. What happens when it doesn't fit?</h2>
 <p>To see it, I built a second version where <code>func_c</code>'s array is 640 bytes, bigger than the whole 512-byte stack. Here is the memory where the stack begins:</p>
-<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/docs/stack-1-rework/docs/blogs/img/stack-1/stack-overflow.png" alt=""></figure>
+<figure><img src="https://raw.githubusercontent.com/binhnguyenthanh051-ops/traveo-body-domain/main/docs/blogs/img/stack-1/stack-overflow.png" alt=""></figure>
 <p><em><code>sp</code> ended up 196 bytes below the stack, inside another variable.</em></p>
 <p>Nothing stopped the CPU from writing there. The array, and then the saved registers, landed in <code>s_demo_spill</code>, the variable below the stack: 264 bytes of it.</p>
 <p>FreeRTOS only noticed at the next task switch. It checks that the stack's lowest 16 bytes are still <code>0xA5</code>. They weren't, so it called its overflow hook. GDB caught the hook, called from the task-switch code, with the task's name: <code>&quot;stackdemo&quot;</code>.</p>
