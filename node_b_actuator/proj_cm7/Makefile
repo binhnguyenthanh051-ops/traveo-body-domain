@@ -168,6 +168,14 @@ ifeq ($(CAN_ECHO_TEST),1)
 DEFINES+=CAN_ECHO_TEST=1
 endif
 
+# Bench toggle (blog, 2026-11-14): `STACK_DEMO=1` adds a small task whose call chain
+# (func_a -> func_b -> func_c, each with a local array) is there to be stopped in with
+# the debugger and dumped word by word; `STACK_DEMO=2` makes func_c's array overflow
+# the task's stack, to show FreeRTOS's overflow hook (src/stack_demo.c).
+ifneq ($(filter 1 2,$(STACK_DEMO)),)
+DEFINES+=STACK_DEMO=$(STACK_DEMO)
+endif
+
 # Select softfp or hardfp floating point. Default is softfp.
 VFP_SELECT=hardfp
 
