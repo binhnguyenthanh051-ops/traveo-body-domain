@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="600" viewBox="0 0 960 600">
+<defs>
+<pattern id="stale" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#eef1f5"/><line x1="0" y1="0" x2="0" y2="8" stroke="#b6c0cc" stroke-width="3"/></pattern>
+<marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1f2937"/></marker>
+</defs>
+<rect width="960" height="600" fill="#ffffff"/>
+<text x="170" y="28.0" font-family="'Segoe UI', Arial, sans-serif" font-size="15" fill="#1f2937" text-anchor="start" font-weight="bold">Node B · CM7 RAM</text>
+<text x="560" y="28.0" font-family="'Segoe UI', Arial, sans-serif" font-size="15" fill="#1f2937" text-anchor="start" font-weight="bold">inside .bss</text>
+<rect x="170" y="48" width="280" height="56" rx="4" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1.2"/>
+<text x="310.0" y="74.0" font-family="'Segoe UI', Arial, sans-serif" font-size="16" fill="#1f2937" text-anchor="middle" font-weight="bold">vectors, .data, .noinit</text>
+<text x="310.0" y="96.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#6b7280" text-anchor="middle" font-weight="normal"></text>
+<text x="156" y="64.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#6b7280" text-anchor="end" font-weight="normal">0x28004000</text>
+<rect x="170" y="116" width="280" height="190" rx="4" fill="#e0f2f1" stroke="#14b8a6" stroke-width="1.2"/>
+<text x="310.0" y="209.0" font-family="'Segoe UI', Arial, sans-serif" font-size="16" fill="#1f2937" text-anchor="middle" font-weight="bold">.bss</text>
+<text x="310.0" y="231.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#6b7280" text-anchor="middle" font-weight="normal">all static variables</text>
+<text x="156" y="132.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#6b7280" text-anchor="end" font-weight="normal">0x28004ad4</text>
+<rect x="170" y="318" width="280" height="150" rx="4" fill="#ffffff" stroke="#9ca3af" stroke-width="1.2" stroke-dasharray="6 5"/>
+<text x="310.0" y="391.0" font-family="'Segoe UI', Arial, sans-serif" font-size="16" fill="#1f2937" text-anchor="middle" font-weight="bold">free gap, ~860 KB</text>
+<text x="310.0" y="413.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#6b7280" text-anchor="middle" font-weight="normal">the .heap area, unused</text>
+<text x="156" y="334.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#6b7280" text-anchor="end" font-weight="normal">0x280072b4</text>
+<rect x="170" y="480" width="280" height="70" rx="4" fill="#fee2e2" stroke="#ef4444" stroke-width="1.2"/>
+<text x="310.0" y="513.0" font-family="'Segoe UI', Arial, sans-serif" font-size="16" fill="#1f2937" text-anchor="middle" font-weight="bold">main stack (MSP), 4 KB</text>
+<text x="310.0" y="535.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#6b7280" text-anchor="middle" font-weight="normal">main() and every interrupt</text>
+<text x="156" y="496.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#6b7280" text-anchor="end" font-weight="normal">0x280df000</text>
+<text x="156" y="566.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="end" font-weight="bold">0x280e0000</text>
+<text x="170" y="586.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">↑ sp starts here at reset and grows up</text>
+<line x1="450" y1="116" x2="560" y2="48" stroke="#9ca3af" stroke-dasharray="4 4"/>
+<line x1="450" y1="306" x2="560" y2="408" stroke="#9ca3af" stroke-dasharray="4 4"/>
+<rect x="560" y="48" width="330" height="360" rx="8" fill="none" stroke="#9ca3af" stroke-dasharray="4 4"/>
+<rect x="576" y="64" width="298" height="54" rx="4" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.2"/>
+<text x="590" y="87.0" font-family="'Segoe UI', Arial, sans-serif" font-size="16" fill="#1f2937" text-anchor="start" font-weight="bold">can_task stack · 2 KB</text>
+<text x="590" y="107.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#6b7280" text-anchor="start" font-weight="normal">0x28005020 · then its TCB</text>
+<rect x="576" y="130" width="298" height="54" rx="4" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.2"/>
+<text x="590" y="153.0" font-family="'Segoe UI', Arial, sans-serif" font-size="16" fill="#1f2937" text-anchor="start" font-weight="bold">log task stack · 512 B</text>
+<text x="590" y="173.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#6b7280" text-anchor="start" font-weight="normal">0x280058ec · then its TCB</text>
+<rect x="576" y="196" width="298" height="54" rx="4" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.2"/>
+<text x="590" y="219.0" font-family="'Segoe UI', Arial, sans-serif" font-size="16" fill="#1f2937" text-anchor="start" font-weight="bold">timer task stack · 1 KB</text>
+<text x="590" y="239.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#6b7280" text-anchor="start" font-weight="normal">0x28005bb8 · then its TCB</text>
+<rect x="576" y="262" width="298" height="54" rx="4" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.2"/>
+<text x="590" y="285.0" font-family="'Segoe UI', Arial, sans-serif" font-size="16" fill="#1f2937" text-anchor="start" font-weight="bold">idle task stack · 512 B</text>
+<text x="590" y="305.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#6b7280" text-anchor="start" font-weight="normal">0x28006074 · then its TCB</text>
+<rect x="576" y="328" width="298" height="54" rx="4" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.2"/>
+<text x="590" y="351.0" font-family="'Segoe UI', Arial, sans-serif" font-size="16" fill="#1f2937" text-anchor="start" font-weight="bold">heartbeat stack · 512 B</text>
+<text x="590" y="371.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#6b7280" text-anchor="start" font-weight="normal">0x28006330 · then its TCB</text>
+<text x="560" y="432.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#6b7280" text-anchor="start" font-weight="normal">Each task's stack is just a static array,</text>
+<text x="560" y="452.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#6b7280" text-anchor="start" font-weight="normal">placed by the linker like any other variable.</text>
+</svg>

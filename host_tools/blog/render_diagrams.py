@@ -9,7 +9,7 @@ Two steps, because headless Edge here can screenshot but not dump the DOM:
     # 2. screenshot each figure at its own size (2x) with headless Microsoft Edge
     python host_tools/blog/render_diagrams.py shoot docs/blogs/img/m5
 
-Output: fig-01.png, fig-02.png, ... in block order, plus hero.png from hero.svg.
+Output: fig-01.png, fig-02.png, ... in block order, plus a PNG for every *.svg (hero.svg, ...).
 The Mermaid library comes from its CDN; nothing is downloaded to disk.
 """
 import html
@@ -98,12 +98,13 @@ def shoot(out: str) -> int:
         png.unlink(missing_ok=True)
         shot(out_dir / f"_{name}.html", png, w + 2 * PAD, h + 2 * PAD, profile)
         print(f"{png.name}  {png.stat().st_size // 1024} KB")
-    hero = out_dir / "hero.svg"
-    if hero.exists():
-        w, h = svg_size(hero.read_text(encoding="utf-8"))
-        (out_dir / "hero.png").unlink(missing_ok=True)
-        shot(hero, out_dir / "hero.png", w, h, profile)
-        print(f"hero.png  {(out_dir / 'hero.png').stat().st_size // 1024} KB")
+    # hero.svg, plus any hand-drawn figure (e.g. the stack tanks from stack_tank.py)
+    for svg in sorted(out_dir.glob("*.svg")):
+        w, h = svg_size(svg.read_text(encoding="utf-8"))
+        png = svg.with_suffix(".png")
+        png.unlink(missing_ok=True)
+        shot(svg, png, w, h, profile)
+        print(f"{png.name}  {png.stat().st_size // 1024} KB")
     return 0
 
 

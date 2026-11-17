@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="570" viewBox="0 0 960 570">
+<defs>
+<pattern id="stale" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#eef1f5"/><line x1="0" y1="0" x2="0" y2="8" stroke="#b6c0cc" stroke-width="3"/></pattern>
+<marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1f2937"/></marker>
+</defs>
+<rect width="960" height="570" fill="#ffffff"/>
+<rect x="30" y="20" width="760" height="30" fill="#e5e7eb" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="40.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x28006f8c</text>
+<text x="190" y="40.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">8 words</text>
+<text x="340" y="40.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">r4–r11, saved by FreeRTOS's switch code</text>
+<rect x="30" y="50" width="760" height="30" fill="#e5e7eb" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="70.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x28006fac</text>
+<text x="190" y="70.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0xfffffffd</text>
+<text x="340" y="70.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">EXC_RETURN</text>
+<rect x="30" y="80" width="760" height="30" fill="#e5e7eb" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="100.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x28006fb0</text>
+<text x="190" y="100.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x00000004</text>
+<text x="340" y="100.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">r0   ← saved by the CPU when the switch interrupt hit</text>
+<rect x="30" y="110" width="760" height="30" fill="#e5e7eb" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="130.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x28006fb4</text>
+<text x="190" y="130.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x28006fd0</text>
+<text x="340" y="130.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">r1</text>
+<rect x="30" y="140" width="760" height="30" fill="#e5e7eb" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="160.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x28006fb8</text>
+<text x="190" y="160.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x10000000</text>
+<text x="340" y="160.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">r2</text>
+<rect x="30" y="170" width="760" height="30" fill="#e5e7eb" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="190.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x28006fbc</text>
+<text x="190" y="190.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0xe000e000</text>
+<text x="340" y="190.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">r3</text>
+<rect x="30" y="200" width="760" height="30" fill="#e5e7eb" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="220.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x28006fc0</text>
+<text x="190" y="220.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0xa5a5a5a5</text>
+<text x="340" y="220.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">r12</text>
+<rect x="30" y="230" width="760" height="30" fill="#e5e7eb" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="250.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x28006fc4</text>
+<text x="190" y="250.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x10080ebd</text>
+<text x="340" y="250.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">lr</text>
+<rect x="30" y="260" width="760" height="30" fill="#e5e7eb" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="280.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x28006fc8</text>
+<text x="190" y="280.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x10080ecc</text>
+<text x="340" y="280.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">pc</text>
+<rect x="30" y="290" width="760" height="30" fill="#e5e7eb" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="310.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x28006fcc</text>
+<text x="190" y="310.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x61000000</text>
+<text x="340" y="310.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">xPSR</text>
+<rect x="30" y="320" width="760" height="30" fill="#fff7ed" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="340.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x28006fd0</text>
+<text x="190" y="340.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0xcccc0001</text>
+<text x="340" y="340.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="bold">arr_c[0]</text>
+<text x="800" y="340.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="bold">← sp in func_c</text>
+<rect x="30" y="350" width="760" height="30" fill="#fff7ed" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="370.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal"></text>
+<text x="190" y="370.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">⋮</text>
+<text x="340" y="370.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">arr_c[1] … arr_c[48]: 48 more words, up to 0xcccc0031</text>
+<line x1="20" y1="380" x2="940" y2="380" stroke="#1f2937" stroke-width="3"/>
+<text x="810" y="372.0" font-family="'Segoe UI', Arial, sans-serif" font-size="13" fill="#1f2937" text-anchor="start" font-weight="bold">the stack starts here</text>
+<rect x="30" y="380" width="760" height="30" fill="#fee2e2" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="400.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x28007094</text>
+<text x="190" y="400.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0xcccc0032</text>
+<text x="340" y="400.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">lowest 16 B: FreeRTOS expects 0xA5 here</text>
+<rect x="30" y="410" width="760" height="30" fill="#fee2e2" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="430.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x28007098</text>
+<text x="190" y="430.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0xcccc0033</text>
+<text x="340" y="430.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal"></text>
+<rect x="30" y="440" width="760" height="30" fill="#fee2e2" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="460.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x2800709c</text>
+<text x="190" y="460.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0xcccc0034</text>
+<text x="340" y="460.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal"></text>
+<rect x="30" y="470" width="760" height="30" fill="#fee2e2" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="490.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0x280070a0</text>
+<text x="190" y="490.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">0xcccc0035</text>
+<text x="340" y="490.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal"></text>
+<rect x="30" y="500" width="760" height="30" fill="#ffffff" stroke="#ffffff" stroke-width="2"/>
+<text x="40" y="520.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal"></text>
+<text x="190" y="520.0" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">⋮</text>
+<text x="340" y="520.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1f2937" text-anchor="start" font-weight="normal">the rest of arr_c, then the frames of func_b, func_a, the task</text>
+<text x="40" y="552.0" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#6b7280" text-anchor="start" font-weight="normal">Above the line: s_demo_spill, the variable that sits below the stack in RAM.</text>
+</svg>
