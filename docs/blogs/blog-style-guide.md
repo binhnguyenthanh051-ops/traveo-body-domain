@@ -181,6 +181,65 @@ Design-essay milestones follow *Problem-Solution-Implementation-Test*. A pure br
 milestone can tell the story as findings — *what I expected · what the silicon did · the
 lesson* — inside the same frame (*Post Template*). Don't announce the lens in the intro.
 
+## 14. Teaching Posts — what the stack series taught (2026-11)
+
+The stack series (Parts VI–VII) was rewritten twice before it worked. These are the reasons, as rules.
+
+**Audience and example**
+- **Write for a fresher**: knows RAM, a pointer and a function call, has never looked inside the
+  thing. Define each term where it first appears. Senior detail (ABI tables, handler assembly, float
+  ABI) only where the story needs it; otherwise move it to the next post or cut it.
+- **Teach with a small example built for the post**, not production code: three functions, values
+  easy to spot in a dump (`0xAAAA0001`, `0xBBBB…`). Keep production code for the story post.
+- **Definitions go general first, then specific** ("a stack is …", then "a task's stack is …").
+- **Say when a number is a coincidence** of the example ("here each call happens to take 24 B"),
+  or readers learn it as a rule.
+- **Show where things live**: for a memory topic, a RAM map from the map file plus the real map lines.
+
+**Evidence**
+- **Measured beats computed.** If a figure can show real bytes, capture them on silicon (GDB behind a
+  named bring-up switch, §7). Computed values carry an Honest line until the capture replaces them.
+- **Figures are drawn by a script from the evidence files**, never typed by hand
+  (`host_tools/blog/stack_demo_figs.py`). Scripts assert what they claim: a replayed frame equals the
+  next real dump; extracted tool data equals the tool's own report.
+- **No absolute claims about systems outside the project** (other RTOSes, AUTOSAR): say what holds in
+  general, name no product (clean-room), and accept the author's correction from their own use.
+
+**Moving figures (GIFs)**
+- **Use a GIF for anything that changes over time**: a stack filling and draining, a context switch,
+  an algorithm walking a graph, a tool refusing. One change per frame; a step counter `n / N`;
+  a title and one or two lines per frame; mark what was **written in this step** (yellow outline).
+- 4–13 frames, first frame ~3 s, middle 1.8–2.4 s, last 3–4 s, under 1 MB, 960 px wide.
+  Built with Pillow from SVG frames rendered by headless Edge (`stack_demo_gif.py`,
+  `stack_bound_gifs.py`). **Escape text** in SVG and **parse every frame** before rendering: an
+  unescaped `<build_mac_input>` once baked a browser error page into a GIF.
+- A GIF replaces the static figures it covers; don't keep both.
+
+**Memory pictures**
+- **One orientation for the whole series: lowest address on top**, like a debugger's memory window;
+  say it once. The stack then fills from the bottom up.
+- Colour by owner (one colour per function or per "who saved it"), hatched = left over below `sp`,
+  grey with faded `a5a5a5a5` = never used.
+
+**Voice** (adds to §4)
+- **Do a voice pass at the end**: vary sentence length, use "I" for what the author did and chose,
+  contractions, plain verbs. Cut "X: Y" colon sentences, "exactly", "the rule above all others",
+  "not just … but".
+- **Never invent the author's feelings or history** ("I had never looked inside a stack"). Only what
+  the record shows.
+
+**Series continuity**
+- When an earlier post changes, re-check the next post's hook ("Post 1 ends with …"), what it assumes
+  is already explained, and its section references. Then refresh its numbers against the latest image.
+- End the user manual with **"Where to read more"**: public documents by ID and section **title**
+  (titles survive revisions; numbers move).
+
+**Publishing** (adds to §11)
+- The branch named in `--img-base` must be **pushed before the author pastes**. Post 1 went out before
+  its branch existed; check the URLs return 200, then hand over the HTML.
+- After pasting, check every GIF still moves in the Medium draft; if one comes through still, upload
+  it directly.
+
 ---
 
 *A living guide: when the author gives feedback on a draft, add or change the rule here in the
